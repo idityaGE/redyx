@@ -1,0 +1,66 @@
+@startuml SD15_WebSocket_Notification
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-15: WebSocket Connection + Offline Notification Delivery
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Notification\nService\n(Pod A)" as NOTIF_A
+participant "Notification\nService\n(Pod B)" as NOTIF_B
+database "Redis\n(db3)" as REDIS
+database "pg-platform" as DB
+queue "Kafka" as KAFKA
+
+== 1. WebSocket Connection on Login ==
+
+U -> FE : Login successful
+FE -> GW : WS Upgrade /api/notifications/ws\n+ JWT in query param
+GW -> GW : Validate JWT
+GW -> NOTIF_A : WebSocket handshake\n(load-balanced to Pod A)
+NOTIF_A -> REDIS : SET ws:user123 = pod-A\n(connection registry)
+NOTIF_A -> DB : SELECT unread notifications\nWHERE user_id = user123\nAND status = 'unread'
+NOTIF_A -> U : Push queued notifications\nvia WebSocket
+NOTIF_A --> FE : WS Connected
+FE --> U : Notification bell shows\nunread count
+
+== 2. Heartbeat (keep-alive) ==
+
+loop Every 30 seconds
+    NOTIF_A -> U : WS Ping
+    U -> NOTIF_A : WS Pong
+end
+
+== 3. Real-Time Event Arrives ==
+
+KAFKA ->> NOTIF_B : "CommentCreated" event\n(target: user123)
+note right of NOTIF_B
+    Event lands on Pod B,
+    but user's WebSocket
+    is on Pod A
+end note
+NOTIF_B -> REDIS : GET ws:user123
+REDIS --> NOTIF_B : pod-A
+NOTIF_B -> REDIS : PUBLISH channel:pod-A\n{user123, notification_data}
+REDIS ->> NOTIF_A : Subscribe receives message
+NOTIF_A -> REDIS : INCR unread:user123
+NOTIF_A -> U : WS push\n{type: "reply", message: "..."}
+FE --> U : Notification bell updates
+
+== 4. User Goes Offline ==
+
+U -> FE : Close browser tab
+FE -> NOTIF_A : WS Disconnect
+NOTIF_A -> REDIS : DELETE ws:user123
+note right of REDIS : User no longer in registry
+
+KAFKA ->> NOTIF_B : New event for user123
+NOTIF_B -> REDIS : GET ws:user123
+REDIS --> NOTIF_B : (nil) — user offline
+NOTIF_B -> DB : INSERT notification\n(user_id: user123,\nstatus: unread)
+note right of DB
+    Stored for delivery
+    when user reconnects
+    (back to step 1)
+end note
+@enduml

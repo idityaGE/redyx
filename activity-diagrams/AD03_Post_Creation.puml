@@ -1,0 +1,87 @@
+@startuml AD03_Post_Creation
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-03: Post Creation\n(Spam Check → Shard Routing → Kafka Fan-out)
+
+start
+
+:User submits post\n(title, body/URL/media,\ncommunity_id, is_anonymous);
+
+partition "**Auth & Permission Check**" {
+    if (User authenticated?) then (yes)
+        if (User is member of\nthis community?) then (yes)
+            if (User banned from\ncommunity?) then (no)
+            else (yes)
+                :Return 403:\n"You are banned from\nthis community";
+                stop
+            endif
+        else (no)
+            :Return 403:\n"Join the community first";
+            stop
+        endif
+    else (no)
+        :Return 401: Unauthorized;
+        stop
+    endif
+}
+
+partition "**Rate Limit Check**" {
+    if (Under 5 posts/hour limit?) then (yes)
+    else (no)
+        :Return 429:\n"Too many posts,\ntry again later";
+        stop
+    endif
+}
+
+partition "**Pre-publish Spam Check**\n(sync call to Spam Detection)" {
+    :Send content to P11\nSpam Detection Service;
+
+    fork
+        :Check keyword blocklist;
+    fork again
+        :Check URL reputation\n(if link post);
+    fork again
+        :Check duplicate content\n(hash comparison);
+    fork again
+        :Check account age\n(< 24h = blocked);
+    end fork
+
+    if (Content passes all checks?) then (yes)
+    else (no)
+        :Return error with\nrejection reason;
+        stop
+    endif
+}
+
+partition "**Shard Routing**" {
+    :Hash community_id through\nconsistent hash ring;
+    :Identify target shard\n(pg-post shard N);
+    :Open connection to\ntarget shard's DB pool;
+}
+
+partition "**Write Post**" {
+    :Insert post record into\ntarget shard\n(score=1, upvote_count=1);
+    :Auto-apply author's\nown upvote in Redis;
+}
+
+partition "**Async Event Fan-out**\n(Kafka: PostCreated)" {
+    :Publish PostCreated event\nto Kafka topic;
+
+    fork
+        :Search Service\nindexes post in Meilisearch;
+    fork again
+        :Notification Service\nalerts community followers;
+    fork again
+        :Spam Detection\nruns async analysis;
+    end fork
+}
+
+:Return created post\nwith ID, URL, score;
+
+stop
+
+@enduml

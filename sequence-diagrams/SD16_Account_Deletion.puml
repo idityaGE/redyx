@@ -1,0 +1,76 @@
+@startuml SD16_Account_Deletion
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-16: Account Deletion (Anonymity Purge)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DBAUTH
+participant "User\nService" as USER
+database "pg-user" as DBUSER
+queue "Kafka" as KAFKA
+participant "Post\nService" as POST
+participant "Comment\nService" as CMT
+participant "Vote\nService" as VOTE
+participant "Notification\nService" as NOTIF
+database "Redis" as REDIS
+
+U -> FE : Click "Delete Account"
+FE --> U : Confirmation dialog\n"This cannot be undone"
+U -> FE : Confirm + enter password
+
+FE -> GW : POST /api/auth/delete-account\n{password} + JWT
+GW -> GW : Validate JWT
+
+== Step 1: Verify Identity ==
+GW -> AUTH : gRPC DeleteAccount()
+AUTH -> DBAUTH : Fetch credentials
+AUTH -> AUTH : Verify password (argon2id)
+alt Password incorrect
+    AUTH --> GW : 401 Unauthorized
+    GW --> FE : JSON {error}
+    FE --> U : "Incorrect password"
+else Password correct
+
+    == Step 2: Publish Deletion Event ==
+    AUTH -> AUTH : Generate deletion_token\n(unique per deletion)
+    AUTH ->> KAFKA : Publish "AccountDeleted"\n{user_id, deletion_token}
+    AUTH --> GW : 202 Accepted\n"Deletion in progress"
+    GW --> FE : JSON {status: "deleting"}
+    FE --> U : "Your account is being deleted"
+
+    == Step 3: Async Purge (parallel consumers) ==
+
+    KAFKA ->> POST : Consume "AccountDeleted"
+    POST -> POST : UPDATE posts\nSET author = '[deleted]',\nbody = '[deleted]'\nWHERE author_id = user_id
+
+    KAFKA ->> CMT : Consume "AccountDeleted"
+    CMT -> CMT : UPDATE comments\nSET author = '[deleted]',\nbody = '[deleted]'\nWHERE author_id = user_id
+
+    KAFKA ->> VOTE : Consume "AccountDeleted"
+    VOTE -> VOTE : Anonymize vote records\n(remove user_id, keep scores)
+
+    KAFKA ->> NOTIF : Consume "AccountDeleted"
+    NOTIF -> NOTIF : Delete all notifications\nfor user_id
+    NOTIF -> NOTIF : Close WebSocket\nif connected
+
+    KAFKA ->> USER : Consume "AccountDeleted"
+    USER -> DBUSER : DELETE FROM profiles\nWHERE user_id
+    USER -> REDIS : DELETE profile:username\nDELETE karma:user_id\nDELETE communities:user_id
+
+    KAFKA ->> AUTH : Consume "AccountDeleted"\n(self-consume to finalize)
+    AUTH -> DBAUTH : DELETE credentials,\nOAuth tokens, email
+    AUTH -> REDIS : DELETE OTP, refresh tokens
+    AUTH -> DBAUTH : INSERT deletion_log\n(deletion_token, completed_at)
+end
+
+note right of DBAUTH
+    After purge:
+    - No PII remains
+    - Posts/comments show [deleted]
+    - Vote scores preserved but anonymized
+    - Email, password hash, OAuth wiped
+end note
+@enduml

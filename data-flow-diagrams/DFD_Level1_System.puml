@@ -1,0 +1,185 @@
+@startuml DFD_Level1_System
+!theme plain
+top to bottom direction
+
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 15
+skinparam padding 4
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam rectangle {
+    BorderThickness 2
+}
+skinparam usecase {
+    BorderThickness 2
+    FontSize 11
+}
+skinparam database {
+    BorderThickness 2
+    FontSize 11
+}
+skinparam arrow {
+    Color #455A64
+    FontColor #37474F
+    FontSize 10
+}
+
+title DFD Level 1 — System Data Flow\nRedyx Platform
+
+' ═══════════════════════════════════
+' EXTERNAL ENTITIES
+' ═══════════════════════════════════
+rectangle "**User**\n(Visitor / Member / Mod)" as USER #E3F2FD;line:1565C0
+rectangle "**Google OAuth**" as GOOGLE #FFF3E0;line:E65100
+rectangle "**Email (SMTP)**" as EMAIL #FFF3E0;line:E65100
+rectangle "**CloudFront CDN**" as CDN #FFF3E0;line:E65100
+
+' ═══════════════════════════════════
+' PROCESSES
+' ═══════════════════════════════════
+usecase "**P10**\nRate\nLimiting" as P10 #FFCDD2;line:C62828
+usecase "**P1**\nAuth\nService" as P1 #C8E6C9;line:2E7D32
+usecase "**P2**\nUser\nService" as P2 #C8E6C9;line:2E7D32
+usecase "**P3**\nCommunity\nService" as P3 #C8E6C9;line:2E7D32
+usecase "**P4**\nPost\nService" as P4 #C8E6C9;line:2E7D32
+usecase "**P5**\nComment\nService" as P5 #C8E6C9;line:2E7D32
+usecase "**P6**\nVote\nService" as P6 #C8E6C9;line:2E7D32
+usecase "**P7**\nSearch\nService" as P7 #C8E6C9;line:2E7D32
+usecase "**P8**\nMedia\nService" as P8 #C8E6C9;line:2E7D32
+usecase "**P9**\nNotification\nService" as P9 #C8E6C9;line:2E7D32
+usecase "**P11**\nSpam\nDetection" as P11 #C8E6C9;line:2E7D32
+usecase "**P12**\nModeration\nService" as P12 #C8E6C9;line:2E7D32
+
+' ═══════════════════════════════════
+' DATA STORES
+' ═══════════════════════════════════
+database "**D1** pg-auth" as D1 #FFECB3;line:F57F17
+database "**D2** pg-user" as D2 #FFECB3;line:F57F17
+database "**D3** pg-community" as D3 #FFECB3;line:F57F17
+database "**D4** pg-post (sharded)" as D4 #FFECB3;line:F57F17
+database "**D5** pg-platform" as D5 #FFECB3;line:F57F17
+database "**D6** ScyllaDB" as D6 #FFECB3;line:F57F17
+database "**D7** Redis" as D7 #FFE0B2;line:E65100
+database "**D8** Meilisearch" as D8 #FFECB3;line:F57F17
+database "**D9** AWS S3" as D9 #FFECB3;line:F57F17
+database "**D10** Kafka" as D10 #E1BEE7;line:7B1FA2
+
+' ═══════════════════════════════════
+' LAYOUT HINTS (hidden links)
+' ═══════════════════════════════════
+USER -[hidden]down- P10
+P10 -[hidden]right- P1
+P1 -[hidden]right- P2
+P2 -[hidden]right- P3
+P3 -[hidden]down- P4
+P4 -[hidden]right- P5
+P5 -[hidden]right- P6
+P6 -[hidden]down- P7
+P7 -[hidden]right- P9
+P9 -[hidden]right- P11
+P11 -[hidden]right- P12
+P8 -[hidden]right- P7
+
+D1 -[hidden]right- D2
+D2 -[hidden]right- D3
+D4 -[hidden]right- D6
+D5 -[hidden]right- D7
+D7 -[hidden]right- D8
+
+' ═══════════════════════════════════
+' USER INBOUND FLOWS
+' ═══════════════════════════════════
+USER -down-> P10 : Every request\n(rate check)
+USER -down-> P1 : Registration,\nlogin, logout
+USER -down-> P2 : Profile view/edit
+USER -down-> P3 : Community\ncreate/join/leave
+USER -down-> P4 : Post create/edit,\nfeed request
+USER -down-> P5 : Comment create/\nedit/delete
+USER -down-> P6 : Upvote / downvote
+USER -down-> P7 : Search queries
+USER -down-> P8 : File uploads
+USER -down-> P12 : Reports,\nmod actions
+
+' ═══════════════════════════════════
+' USER OUTBOUND FLOWS
+' ═══════════════════════════════════
+P1 -up-> USER : JWT tokens
+P4 -up-> USER : Posts, feeds
+P5 -up-> USER : Comment trees
+P6 -up-> USER : Vote counts
+P7 -up-> USER : Search results
+P9 -up-> USER : Notifications\n(WebSocket)
+P10 -up-> USER : 429 Retry-After
+
+' ═══════════════════════════════════
+' EXTERNAL ENTITY FLOWS
+' ═══════════════════════════════════
+P1 -right-> GOOGLE : Auth code
+GOOGLE -left-> P1 : Tokens, email
+
+P1 -down-> EMAIL : OTP emails
+P9 -down-> EMAIL : Alert emails
+
+P8 --> CDN : Media files
+CDN -up-> USER : Cached media
+
+' ═══════════════════════════════════
+' PROCESS → DATA STORE FLOWS
+' ═══════════════════════════════════
+P1 --> D1 : Credentials,\nOAuth tokens
+P1 --> D7 : OTP (db2),\ntoken blacklist
+
+P2 --> D2 : Profiles, karma
+P2 --> D7 : Cached profiles (db4)
+
+P3 --> D3 : Communities,\nmemberships
+P3 --> D7 : Cached metadata (db4)
+
+P4 --> D4 : Posts\n(shard-routed)
+P4 --> D7 : Hot feeds (db4)
+P4 --> D10 : PostCreated/\nUpdated/Deleted
+
+P5 --> D6 : Comment trees\n(partition: post_id)
+P5 --> D10 : CommentCreated
+
+P6 --> D7 : Vote state,\ncounts (db0)
+P6 --> D5 : Persistent\nvote records
+P6 --> D10 : VoteCreated
+
+P7 --> D8 : Search index\nand queries
+P7 --> D7 : Autocomplete\ncache (db4)
+
+P8 --> D9 : Upload/retrieve\nmedia
+
+P9 --> D5 : Notification\nhistory
+P9 --> D7 : WS registry,\nunread (db3)
+
+P10 --> D7 : Rate counters (db1)
+
+P11 --> D7 : Behavior\nscores (db5)
+P11 --> D5 : Bans, audit log
+
+P12 --> D5 : Mod log, bans,\nreports
+
+' ═══════════════════════════════════
+' KAFKA CONSUMPTION (async events)
+' ═══════════════════════════════════
+D10 --> P4 : VoteCreated\n→ update score
+D10 --> P5 : VoteCreated\n→ update score
+D10 --> P2 : VoteCreated\n→ update karma
+D10 --> P7 : Post/Comment events\n→ index
+D10 --> P9 : Post/Comment events\n→ notify
+D10 --> P11 : All events\n→ spam analysis
+
+' ═══════════════════════════════════
+' INTER-SERVICE gRPC (dotted lines)
+' ═══════════════════════════════════
+P5 ..> P4 : gRPC: increment\ncomment count
+P12 ..> P4 : gRPC: remove/\npin/lock post
+P12 ..> P3 : gRPC: check\nmod role
+P4 ..> P3 : gRPC: get user\ncommunities
+
+@enduml

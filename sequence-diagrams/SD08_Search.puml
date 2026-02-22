@@ -1,0 +1,40 @@
+@startuml SD08_Search
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-08: Search Posts
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Search\nService" as SEARCH
+database "Meilisearch" as MEILI
+database "Redis\n(db4)" as CACHE
+
+U -> FE : Type "golang concurrency"\nin search bar
+
+== Autocomplete (as user types) ==
+FE -> GW : GET /api/search/autocomplete?q=gol
+GW -> SEARCH : gRPC Autocomplete("gol")
+SEARCH -> CACHE : GET autocomplete:gol
+alt Cache HIT
+    CACHE --> SEARCH : ["golang", "gold", "golf"]
+else Cache MISS
+    SEARCH -> MEILI : Search communities\nprefix match "gol"
+    MEILI --> SEARCH : Results
+    SEARCH -> CACHE : SET autocomplete:gol\n(TTL: 30 min)
+end
+SEARCH --> GW : Suggestions
+GW --> FE : JSON ["r/golang", "r/golf"]
+FE --> U : Show dropdown suggestions
+
+== Full Search (on submit) ==
+U -> FE : Press Enter
+FE -> GW : GET /api/search?q=golang+concurrency\n&sort=relevance
+GW -> SEARCH : gRPC SearchPosts()
+SEARCH -> MEILI : Multi-index search\n(posts + comments + communities)
+MEILI --> SEARCH : Ranked results\n(relevance + recency + score)
+SEARCH --> GW : Search results
+GW --> FE : JSON response
+FE -> FE : Server-side render
+FE --> U : Search results page
+@enduml

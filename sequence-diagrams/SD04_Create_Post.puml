@@ -1,0 +1,48 @@
+@startuml SD04_Create_Post
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-04: Create Post (Sync + Async Events)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Spam\nDetection" as SPAM
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DB
+queue "Kafka" as KAFKA
+participant "Search\nService" as SEARCH
+participant "Notification\nService" as NOTIF
+database "Meilisearch" as MEILI
+
+U -> FE : Write post (title, body, community)
+FE -> GW : POST /api/posts\n{title, body, community_id}\n+ JWT in header
+GW -> GW : Validate JWT
+GW -> GW : Rate limit (5 posts/hour)
+
+== Synchronous: Spam Check + Save ==
+GW -> SPAM : gRPC CheckContent()
+SPAM -> SPAM : Keyword blocklist\nURL reputation\nDuplicate detection\nAccount age check
+alt Content flagged
+    SPAM --> GW : REJECTED (reason)
+    GW --> FE : 422 Unprocessable
+    FE --> U : "Post rejected: [reason]"
+else Content clean
+    SPAM --> GW : APPROVED
+    GW -> POST : gRPC CreatePost()
+    POST -> POST : Hash community_id\n-> select shard
+    POST -> DB : INSERT into correct shard
+    POST --> GW : 201 Created {post_id}
+    GW --> FE : JSON {post_id, url}
+    FE --> U : Redirect to new post
+end
+
+== Asynchronous: Kafka Fan-Out ==
+POST ->> KAFKA : Publish "PostCreated"\n{post_id, community_id, author}
+KAFKA ->> SEARCH : Consume event
+SEARCH -> MEILI : Index post
+KAFKA ->> NOTIF : Consume event
+NOTIF -> NOTIF : Find community followers
+NOTIF -> NOTIF : Push via WebSocket\n(if online)
+KAFKA ->> SPAM : Consume event
+SPAM -> SPAM : Post-publish analysis\n(pattern detection)
+@enduml

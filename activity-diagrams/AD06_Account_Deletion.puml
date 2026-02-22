@@ -1,0 +1,113 @@
+@startuml AD06_Account_Deletion
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-06: Account Deletion / Anonymity Purge
+
+start
+
+:User requests account deletion;
+
+partition "**Identity Confirmation**" {
+    if (Auth method?) then (email/password)
+        :Prompt for password;
+        if (Password correct?) then (yes)
+        else (no)
+            :Return 401:\n"Incorrect password";
+            stop
+        endif
+    else (Google OAuth)
+        :Prompt for Google re-auth;
+        if (Re-auth successful?) then (yes)
+        else (no)
+            :Return 401:\n"Could not verify identity";
+            stop
+        endif
+    endif
+}
+
+:Mark account as\nPENDING_DELETION in pg-auth;
+note right
+    Optional: 30-day grace period
+    where user can cancel.
+    After grace period,
+    purge proceeds.
+end note
+
+partition "**Auth Data Purge**\n(pg-auth)" {
+    :Delete password hash;
+    :Delete encrypted email;
+    :Delete all OAuth tokens\nfrom oauth_accounts;
+    :Delete all OTP records;
+    :Invalidate all active\nrefresh tokens (Redis blacklist);
+}
+
+partition "**Profile Purge**\n(pg-user via gRPC)" {
+    :Delete display name, bio, avatar URL;
+    :Reset karma to 0;
+    :Delete settings record;
+    :Delete avatar file from S3\n(via Media Service);
+}
+
+partition "**Content Anonymization**\n(parallel across services)" {
+    fork
+        partition "Posts (pg-post)" {
+            :Set author_id = NULL\non all user's posts;
+            :Set author_username = "[deleted]";
+            :Clear post body\non all user's posts;
+            note right
+                Title kept for
+                thread context;
+                body wiped
+            end note
+        }
+    fork again
+        partition "Comments (ScyllaDB)" {
+            :Set author_id = NULL\non all user's comments;
+            :Set author_username = "[deleted]";
+            :Set body = "[deleted]";
+            note right
+                Tree structure preserved,
+                child comments untouched
+            end note
+        }
+    fork again
+        partition "Votes (Redis + pg-platform)" {
+            :Delete all vote keys\nfrom Redis (db0);
+            :Set user_id = NULL\non vote records in pg-platform;
+        }
+    fork again
+        partition "Community Memberships" {
+            :Remove user from all\ncommunity memberships;
+            :Decrement member counts;
+            :Revoke any moderator roles;
+        }
+    end fork
+}
+
+partition "**Notification + Search Cleanup**" {
+    fork
+        :Delete all notifications\nfor this user (pg-platform);
+        :Close WebSocket connection\nif active;
+        :Remove from connection\nregistry (Redis db3);
+    fork again
+        :Update search index:\nreplace author on all\nindexed content (Meilisearch);
+    fork again
+        :Delete saved posts list;
+    end fork
+}
+
+partition "**Final Cleanup**" {
+    :Release username\n(available after 30 days);
+    :Delete user record\nfrom pg-auth;
+    :Log deletion event\nin audit log (pg-platform);
+}
+
+:Account permanently deleted;
+
+stop
+
+@enduml

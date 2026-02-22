@@ -1,0 +1,174 @@
+@startuml CL05_Comment_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-05: Comment Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Comment <<struct>> {
+        + ID : uuid.UUID
+        + PostID : uuid.UUID
+        + ParentID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + AuthorUsername : string
+        + Body : string
+        + Path : string
+        + Depth : int
+        + Score : int64
+        + UpvoteCount : int64
+        + DownvoteCount : int64
+        + ReplyCount : int
+        + IsDeleted : bool
+        + IsRemoved : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class CommentTree <<struct>> {
+        + Root : *CommentNode
+        + TotalCount : int
+        + HasMore : bool
+    }
+
+    class CommentNode <<struct>> {
+        + Comment : *Comment
+        + Children : []*CommentNode
+        + HasMoreChildren : bool
+        + ChildCount : int
+    }
+
+    enum CommentSortType <<enum>> {
+        BEST
+        TOP
+        NEW
+        CONTROVERSIAL
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface CommentRepository <<interface>> {
+        + Create(ctx, comment) : (*Comment, error)
+        + GetByID(ctx, postID, commentID) : (*Comment, error)
+        + Update(ctx, comment) : error
+        + SoftDelete(ctx, postID, commentID) : error
+        + GetCommentTree(ctx, postID, sort, maxDepth, page) : (*CommentTree, error)
+        + GetReplies(ctx, postID, parentPath, sort, page) : ([]*Comment, error)
+        + UpdateScore(ctx, postID, commentID, upvotes, downvotes) : error
+        + CountByPost(ctx, postID) : (int64, error)
+        + AnonymizeByUser(ctx, userID) : error
+        + MarkRemoved(ctx, postID, commentID) : error
+    }
+
+    class ScyllaCommentRepo <<struct>> {
+        - session : *gocql.Session
+        - keyspace : string
+    }
+
+    note left of ScyllaCommentRepo
+        Partition key: post_id
+        Clustering: path (materialized)
+        Wide-column model in ScyllaDB
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface CommentService <<interface>> {
+        + CreateComment(ctx, req) : (*Comment, error)
+        + GetComment(ctx, postID, commentID) : (*Comment, error)
+        + EditComment(ctx, userID, postID, commentID, body) : error
+        + DeleteComment(ctx, userID, postID, commentID) : error
+        + GetCommentTree(ctx, postID, sort, maxDepth, page) : (*CommentTree, error)
+        + GetMoreReplies(ctx, postID, parentPath, sort, page) : ([]*CommentNode, error)
+        + RemoveComment(ctx, modID, postID, commentID) : error
+    }
+
+    class CommentServiceImpl <<struct>> {
+        - repo : CommentRepository
+        - producer : EventProducer
+        - postClient : PostServiceClient
+        - communityClient : CommunityServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface PostServiceClient <<interface>> {
+        + IncrementCommentCount(ctx, postID, delta) : error
+        + GetPost(ctx, postID) : (*PostInfo, error)
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+    }
+
+    class TreeBuilder <<struct>> {
+        + BuildTree(comments []*Comment, maxDepth int) : *CommentTree
+        + FlattenTree(tree *CommentTree) : []*Comment
+    }
+
+    class PostInfo <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + IsLocked : bool
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class VoteEventConsumer <<struct>> {
+        - repo : CommentRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of VoteEventConsumer
+        Consumes VoteCreated events
+        for comment score updates
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class CommentGRPCServer <<struct>> {
+        - service : CommentService
+        + pb.UnimplementedCommentServiceServer
+    }
+}
+
+' ─── Relationships ───
+CommentTree --> CommentNode
+CommentNode --> Comment
+Comment --> CommentSortType
+
+ScyllaCommentRepo ..|> CommentRepository : implements
+
+CommentServiceImpl ..|> CommentService : implements
+CommentServiceImpl --> CommentRepository : uses
+CommentServiceImpl --> EventProducer : uses
+CommentServiceImpl --> PostServiceClient : uses
+CommentServiceImpl --> CommunityServiceClient : uses
+CommentServiceImpl --> TreeBuilder : uses
+
+VoteEventConsumer --> CommentRepository : uses
+
+CommentGRPCServer --> CommentService : uses
+
+CommentRepository ..> Comment : manages
+CommentRepository ..> CommentTree : returns
+
+@enduml

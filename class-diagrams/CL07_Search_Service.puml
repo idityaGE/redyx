@@ -1,0 +1,207 @@
+@startuml CL07_Search_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-07: Search Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class SearchQuery <<struct>> {
+        + Query : string
+        + CommunityID : uuid.UUID
+        + SearchScope : SearchScope
+        + Sort : SearchSort
+        + Page : int
+        + PageSize : int
+        + Filters : SearchFilters
+    }
+
+    class SearchFilters <<struct>> {
+        + TimeRange : TimeRange
+        + PostType : string
+        + MinScore : int
+    }
+
+    class SearchResult <<struct>> {
+        + Items : []*SearchItem
+        + TotalHits : int64
+        + Page : int
+        + TotalPages : int
+        + QueryTimeMs : int64
+    }
+
+    class SearchItem <<struct>> {
+        + ID : uuid.UUID
+        + Type : SearchItemType
+        + Title : string
+        + Body : string
+        + AuthorUsername : string
+        + CommunityName : string
+        + Score : int64
+        + CommentCount : int
+        + CreatedAt : time.Time
+        + Highlights : map[string]string
+    }
+
+    class PostDocument <<struct>> {
+        + ID : string
+        + Title : string
+        + Body : string
+        + AuthorUsername : string
+        + CommunityID : string
+        + CommunityName : string
+        + PostType : string
+        + Score : int64
+        + CommentCount : int
+        + CreatedAt : int64
+    }
+
+    class CommunityDocument <<struct>> {
+        + ID : string
+        + Name : string
+        + Description : string
+        + MemberCount : int64
+        + CreatedAt : int64
+    }
+
+    enum SearchScope <<enum>> {
+        ALL
+        POSTS
+        COMMUNITIES
+        COMMENTS
+    }
+
+    enum SearchSort <<enum>> {
+        RELEVANCE
+        TOP
+        NEW
+    }
+
+    enum SearchItemType <<enum>> {
+        POST
+        COMMUNITY
+        COMMENT
+    }
+
+    enum TimeRange <<enum>> {
+        HOUR
+        DAY
+        WEEK
+        MONTH
+        YEAR
+        ALL
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface SearchIndex <<interface>> {
+        + Search(ctx, query) : (*SearchResult, error)
+        + Autocomplete(ctx, prefix, scope) : ([]*SearchItem, error)
+        + IndexPost(ctx, doc) : error
+        + IndexCommunity(ctx, doc) : error
+        + RemovePost(ctx, postID) : error
+        + RemoveCommunity(ctx, communityID) : error
+        + UpdatePostScore(ctx, postID, score) : error
+    }
+
+    class MeilisearchIndex <<struct>> {
+        - client : *meilisearch.Client
+        - postIndex : string
+        - communityIndex : string
+    }
+
+    note left of MeilisearchIndex
+        Meilisearch instance
+        Indexes: posts, communities
+        Ranked by relevance + recency + score
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface SearchService <<interface>> {
+        + Search(ctx, query) : (*SearchResult, error)
+        + Autocomplete(ctx, prefix, scope) : ([]*SearchItem, error)
+        + IndexPost(ctx, post) : error
+        + IndexCommunity(ctx, community) : error
+        + RemovePost(ctx, postID) : error
+        + UpdatePostScore(ctx, postID, score) : error
+    }
+
+    class SearchServiceImpl <<struct>> {
+        - index : SearchIndex
+        - cache : CacheClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class PostEventConsumer <<struct>> {
+        - service : SearchService
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    class CommunityEventConsumer <<struct>> {
+        - service : SearchService
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of PostEventConsumer
+        Consumes: PostCreated,
+        PostUpdated, PostRemoved
+        to keep search index in sync
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class SearchGRPCServer <<struct>> {
+        - service : SearchService
+        + pb.UnimplementedSearchServiceServer
+    }
+}
+
+' ─── Relationships ───
+SearchQuery --> SearchScope
+SearchQuery --> SearchSort
+SearchQuery --> SearchFilters
+SearchFilters --> TimeRange
+SearchResult --> SearchItem
+SearchItem --> SearchItemType
+
+MeilisearchIndex ..|> SearchIndex : implements
+MeilisearchIndex ..> PostDocument : indexes
+MeilisearchIndex ..> CommunityDocument : indexes
+
+SearchServiceImpl ..|> SearchService : implements
+SearchServiceImpl --> SearchIndex : uses
+SearchServiceImpl --> CacheClient : uses
+
+PostEventConsumer --> SearchService : uses
+CommunityEventConsumer --> SearchService : uses
+
+SearchGRPCServer --> SearchService : uses
+
+SearchIndex ..> SearchResult : returns
+SearchIndex ..> SearchItem : returns
+
+@enduml

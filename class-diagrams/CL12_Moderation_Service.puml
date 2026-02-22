@@ -1,0 +1,237 @@
+@startuml CL12_Moderation_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-12: Moderation Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class ModAction <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + ModeratorID : uuid.UUID
+        + ModeratorUsername : string
+        + ActionType : ModActionType
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + TargetUsername : string
+        + Reason : string
+        + Details : string
+        + CreatedAt : time.Time
+    }
+
+    class CommunityBan <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + UserID : uuid.UUID
+        + Username : string
+        + BannedBy : uuid.UUID
+        + Reason : string
+        + Duration : time.Duration
+        + IsPermanent : bool
+        + ExpiresAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class Report <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + ReporterID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Reason : ReportReason
+        + Description : string
+        + Status : ReportStatus
+        + ReviewedBy : uuid.UUID
+        + ReviewedAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class ModQueueItem <<struct>> {
+        + Report : *Report
+        + TargetContent : string
+        + TargetAuthor : string
+        + CommunityName : string
+        + ReportCount : int
+    }
+
+    enum ModActionType <<enum>> {
+        REMOVE_POST
+        APPROVE_POST
+        REMOVE_COMMENT
+        APPROVE_COMMENT
+        BAN_USER
+        UNBAN_USER
+        MUTE_USER
+        PIN_POST
+        UNPIN_POST
+        LOCK_POST
+        UNLOCK_POST
+        FLAIR_POST
+    }
+
+    enum TargetType <<enum>> {
+        POST
+        COMMENT
+        USER
+    }
+
+    enum ReportReason <<enum>> {
+        SPAM
+        HARASSMENT
+        HATE_SPEECH
+        MISINFORMATION
+        NSFW
+        SELF_HARM
+        COMMUNITY_RULE
+        OTHER
+    }
+
+    enum ReportStatus <<enum>> {
+        PENDING
+        REVIEWED
+        ACTIONED
+        DISMISSED
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface ModActionRepository <<interface>> {
+        + Create(ctx, action) : error
+        + ListByCommunity(ctx, communityID, page) : ([]*ModAction, error)
+        + ListByModerator(ctx, modID, page) : ([]*ModAction, error)
+        + GetByID(ctx, id) : (*ModAction, error)
+    }
+
+    interface BanRepository <<interface>> {
+        + CreateBan(ctx, ban) : error
+        + RevokeBan(ctx, communityID, userID) : error
+        + GetActiveBan(ctx, communityID, userID) : (*CommunityBan, error)
+        + ListBans(ctx, communityID, page) : ([]*CommunityBan, error)
+        + IsUserBanned(ctx, communityID, userID) : (bool, error)
+        + CleanupExpired(ctx) : (int, error)
+    }
+
+    interface ReportRepository <<interface>> {
+        + Create(ctx, report) : error
+        + GetByID(ctx, id) : (*Report, error)
+        + ListByCommunity(ctx, communityID, status, page) : ([]*Report, error)
+        + UpdateStatus(ctx, reportID, status, reviewedBy) : error
+        + GetModQueue(ctx, communityID, page) : ([]*ModQueueItem, error)
+        + CountPending(ctx, communityID) : (int64, error)
+    }
+
+    class PostgresModRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    note left of PostgresModRepo
+        pg-platform schema: moderation
+        Mod logs, bans, reports
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface ModerationService <<interface>> {
+        + RemovePost(ctx, modID, communityID, postID, reason) : error
+        + ApprovePost(ctx, modID, communityID, postID) : error
+        + RemoveComment(ctx, modID, communityID, postID, commentID, reason) : error
+        + ApproveComment(ctx, modID, communityID, postID, commentID) : error
+        + BanUser(ctx, modID, communityID, userID, reason, duration) : error
+        + UnbanUser(ctx, modID, communityID, userID) : error
+        + PinPost(ctx, modID, communityID, postID) : error
+        + UnpinPost(ctx, modID, communityID, postID) : error
+        + LockPost(ctx, modID, communityID, postID) : error
+        + UnlockPost(ctx, modID, communityID, postID) : error
+        + ReportContent(ctx, reporterID, req) : error
+        + GetModQueue(ctx, modID, communityID, page) : ([]*ModQueueItem, error)
+        + ReviewReport(ctx, modID, reportID, status) : error
+        + GetModLog(ctx, communityID, page) : ([]*ModAction, error)
+        + IsUserBanned(ctx, communityID, userID) : (bool, error)
+    }
+
+    class ModerationServiceImpl <<struct>> {
+        - actionRepo : ModActionRepository
+        - banRepo : BanRepository
+        - reportRepo : ReportRepository
+        - producer : EventProducer
+        - communityClient : CommunityServiceClient
+        - postClient : PostServiceClient
+        - commentClient : CommentServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+    }
+
+    interface PostServiceClient <<interface>> {
+        + SetRemoved(ctx, postID, removed) : error
+        + SetPinned(ctx, postID, pinned) : error
+        + SetLocked(ctx, postID, locked) : error
+    }
+
+    interface CommentServiceClient <<interface>> {
+        + MarkRemoved(ctx, postID, commentID) : error
+    }
+
+    note right of ModerationServiceImpl
+        All actions are logged
+        in the mod log for
+        transparency. Publishes
+        events to Kafka for
+        notification + search.
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class ModerationGRPCServer <<struct>> {
+        - service : ModerationService
+        + pb.UnimplementedModerationServiceServer
+    }
+}
+
+' ─── Relationships ───
+ModAction --> ModActionType
+ModAction --> TargetType
+Report --> TargetType
+Report --> ReportReason
+Report --> ReportStatus
+ModQueueItem --> Report
+
+PostgresModRepo ..|> ModActionRepository : implements
+PostgresModRepo ..|> BanRepository : implements
+PostgresModRepo ..|> ReportRepository : implements
+
+ModerationServiceImpl ..|> ModerationService : implements
+ModerationServiceImpl --> ModActionRepository : uses
+ModerationServiceImpl --> BanRepository : uses
+ModerationServiceImpl --> ReportRepository : uses
+ModerationServiceImpl --> EventProducer : uses
+ModerationServiceImpl --> CommunityServiceClient : uses
+ModerationServiceImpl --> PostServiceClient : uses
+ModerationServiceImpl --> CommentServiceClient : uses
+
+ModerationGRPCServer --> ModerationService : uses
+
+ModActionRepository ..> ModAction : manages
+BanRepository ..> CommunityBan : manages
+ReportRepository ..> Report : manages
+ReportRepository ..> ModQueueItem : returns
+
+@enduml

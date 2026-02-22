@@ -1,0 +1,238 @@
+@startuml CL04_Post_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-04: Post Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Post <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + AuthorUsername : string
+        + Title : string
+        + Body : string
+        + URL : string
+        + MediaURL : string
+        + PostType : PostType
+        + Score : int64
+        + UpvoteCount : int64
+        + DownvoteCount : int64
+        + CommentCount : int64
+        + IsAnonymous : bool
+        + IsPinned : bool
+        + IsRemoved : bool
+        + IsLocked : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class SavedPost <<struct>> {
+        + UserID : uuid.UUID
+        + PostID : uuid.UUID
+        + SavedAt : time.Time
+    }
+
+    enum PostType <<enum>> {
+        TEXT
+        LINK
+        MEDIA
+    }
+
+    enum SortType <<enum>> {
+        HOT
+        NEW
+        TOP
+        RISING
+    }
+
+    enum TimeFilter <<enum>> {
+        HOUR
+        DAY
+        WEEK
+        MONTH
+        YEAR
+        ALL
+    }
+
+    class FeedRequest <<struct>> {
+        + UserID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Sort : SortType
+        + TimeFilter : TimeFilter
+        + Page : int
+        + PageSize : int
+    }
+}
+
+' ─── Sharding ───
+package "Sharding" <<Rectangle>> #E0F7FA {
+
+    interface ShardRouter <<interface>> {
+        + GetShard(communityID) : (*ShardInfo, error)
+        + GetAllShards() : []*ShardInfo
+        + AddShard(shard) : error
+        + RemoveShard(shardID) : error
+    }
+
+    class ConsistentHashRouter <<struct>> {
+        - ring : *HashRing
+        - shards : map[string]*ShardInfo
+        - virtualNodes : int
+        - mu : sync.RWMutex
+    }
+
+    class HashRing <<struct>> {
+        - nodes : []uint32
+        - nodeMap : map[uint32]string
+    }
+
+    class ShardInfo <<struct>> {
+        + ID : string
+        + DSN : string
+        + IsActive : bool
+        + VirtualNodes : int
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface PostRepository <<interface>> {
+        + Create(ctx, post) : (*Post, error)
+        + GetByID(ctx, id, communityID) : (*Post, error)
+        + Update(ctx, post) : error
+        + Delete(ctx, id, communityID) : error
+        + ListByCommunity(ctx, communityID, sort, timeFilter, page) : ([]*Post, error)
+        + ListByUser(ctx, userID, page) : ([]*Post, error)
+        + UpdateScore(ctx, id, communityID, upvotes, downvotes) : error
+        + IncrementCommentCount(ctx, id, communityID, delta) : error
+        + SetPinned(ctx, id, communityID, pinned) : error
+        + SetRemoved(ctx, id, communityID, removed) : error
+        + AnonymizeByUser(ctx, userID) : error
+    }
+
+    interface SavedPostRepository <<interface>> {
+        + Save(ctx, userID, postID) : error
+        + Unsave(ctx, userID, postID) : error
+        + ListSaved(ctx, userID, page) : ([]*Post, error)
+        + IsSaved(ctx, userID, postID) : (bool, error)
+    }
+
+    class ShardedPostRepo <<struct>> {
+        - router : ShardRouter
+        - pools : map[string]*sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface PostService <<interface>> {
+        + CreatePost(ctx, req) : (*Post, error)
+        + GetPost(ctx, id) : (*Post, error)
+        + UpdatePost(ctx, userID, postID, req) : error
+        + DeletePost(ctx, userID, postID) : error
+        + GetFeed(ctx, feedReq) : ([]*Post, error)
+        + GetHomeFeed(ctx, userID, sort, page) : ([]*Post, error)
+        + UpdateScore(ctx, postID, upvotes, downvotes) : error
+        + PinPost(ctx, modID, postID, pinned) : error
+        + RemovePost(ctx, modID, postID) : error
+        + SavePost(ctx, userID, postID) : error
+        + UnsavePost(ctx, userID, postID) : error
+        + ListSaved(ctx, userID, page) : ([]*Post, error)
+    }
+
+    class PostServiceImpl <<struct>> {
+        - repo : PostRepository
+        - savedRepo : SavedPostRepository
+        - router : ShardRouter
+        - cache : CacheClient
+        - producer : EventProducer
+        - communityClient : CommunityServiceClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+        + GetUserCommunities(ctx, userID) : ([]uuid.UUID, error)
+    }
+
+    class RankingAlgorithm <<struct>> {
+        + HotScore(upvotes, downvotes, createdAt) : float64
+        + TopScore(upvotes, downvotes) : float64
+        + RisingScore(upvotes, downvotes, createdAt, commentCount) : float64
+        + ControversyScore(upvotes, downvotes) : float64
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class VoteEventConsumer <<struct>> {
+        - repo : PostRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of VoteEventConsumer
+        Consumes VoteCreated events
+        to update post scores
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class PostGRPCServer <<struct>> {
+        - service : PostService
+        + pb.UnimplementedPostServiceServer
+    }
+}
+
+' ─── Relationships ───
+Post --> PostType
+FeedRequest --> SortType
+FeedRequest --> TimeFilter
+
+ConsistentHashRouter ..|> ShardRouter : implements
+ConsistentHashRouter --> HashRing : uses
+ConsistentHashRouter --> ShardInfo : manages
+
+ShardedPostRepo ..|> PostRepository : implements
+ShardedPostRepo ..|> SavedPostRepository : implements
+ShardedPostRepo --> ShardRouter : uses
+
+PostServiceImpl ..|> PostService : implements
+PostServiceImpl --> PostRepository : uses
+PostServiceImpl --> SavedPostRepository : uses
+PostServiceImpl --> ShardRouter : uses
+PostServiceImpl --> CacheClient : uses
+PostServiceImpl --> EventProducer : uses
+PostServiceImpl --> CommunityServiceClient : uses
+PostServiceImpl --> RankingAlgorithm : uses
+
+VoteEventConsumer --> PostRepository : uses
+
+PostGRPCServer --> PostService : uses
+
+PostRepository ..> Post : manages
+SavedPostRepository ..> SavedPost : manages
+
+@enduml

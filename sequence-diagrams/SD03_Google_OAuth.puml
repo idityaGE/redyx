@@ -1,0 +1,44 @@
+@startuml SD03_Google_OAuth
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-03: Google OAuth Registration/Login
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Google\nOAuth" as GOOGLE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+
+U -> FE : Click "Sign in with Google"
+FE -> GOOGLE : Redirect to Google consent screen
+U -> GOOGLE : Approve access
+GOOGLE --> FE : Redirect with auth code
+
+FE -> GW : POST /api/auth/oauth/google\n{auth_code}
+GW -> AUTH : gRPC GoogleOAuth()
+AUTH -> GOOGLE : Exchange auth code for tokens
+GOOGLE --> AUTH : {access_token, id_token, email}
+
+AUTH -> DB : Lookup user by Google email
+alt Existing user (linked account)
+    AUTH -> AUTH : Generate JWT
+    AUTH --> GW : 200 OK + tokens
+    GW --> FE : Set cookies
+    FE --> U : Redirect to home feed
+else New user
+    AUTH --> GW : 200 OK (needs username)
+    GW --> FE : JSON {email, needs_username: true}
+    FE --> U : "Choose a username"
+
+    U -> FE : Enter username
+    FE -> GW : POST /api/auth/oauth/google/complete\n{email, username}
+    GW -> AUTH : gRPC CompleteOAuthRegistration()
+    AUTH -> DB : Check username uniqueness
+    AUTH -> DB : Create user (status: active, provider: google)
+    AUTH -> AUTH : Generate JWT
+    AUTH --> GW : 201 Created + tokens
+    GW --> FE : Set cookies
+    FE --> U : Redirect to home feed
+end
+@enduml

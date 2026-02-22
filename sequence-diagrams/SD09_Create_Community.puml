@@ -1,0 +1,33 @@
+@startuml SD09_Create_Community
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-09: Create Community
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Community\nService" as COMM
+database "pg-community" as DB
+database "Redis\n(db4)" as CACHE
+
+U -> FE : Fill community form\n(name, description, rules, visibility)
+FE -> GW : POST /api/communities\n{name, description, visibility}\n+ JWT
+GW -> GW : Validate JWT
+GW -> GW : Rate limit\n(1 community/day)
+
+GW -> COMM : gRPC CreateCommunity()
+
+COMM -> DB : Check name uniqueness
+alt Name taken
+    COMM --> GW : Error: name taken
+    GW --> FE : 409 Conflict
+    FE --> U : "Community name already exists"
+else Name available
+    COMM -> DB : INSERT community\n(owner = user_id, status = active)
+    COMM -> DB : INSERT membership\n(user_id, community_id, role = owner)
+    COMM -> CACHE : Invalidate community list cache
+    COMM --> GW : 201 Created\n{community_id, name}
+    GW --> FE : JSON response
+    FE --> U : Redirect to r/new-community
+end
+@enduml

@@ -1,0 +1,45 @@
+@startuml SD07_Comment_Notification
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-07: Create Comment + Real-Time Notification
+
+actor "Author" as A
+actor "Commenter" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Comment\nService" as CMT
+database "ScyllaDB" as SCYLLA
+queue "Kafka" as KAFKA
+participant "Notification\nService" as NOTIF
+database "Redis\n(db3)" as REDIS
+database "pg-platform" as DB
+
+U -> FE : Write reply on Author's post
+FE -> GW : POST /api/comments\n{post_id, parent_id, body}\n+ JWT
+GW -> GW : Validate JWT + rate limit
+
+GW -> CMT : gRPC CreateComment()
+CMT -> CMT : Build materialized path\n(parent_path + "/" + new_id)
+CMT -> SCYLLA : INSERT comment\n(partition: post_id,\nclustering: path)
+CMT --> GW : 201 Created {comment_id}
+GW --> FE : JSON response
+FE --> U : Comment appears in thread
+
+== Async: Notification ==
+CMT ->> KAFKA : Publish "CommentCreated"\n{post_id, parent_id,\nauthor_id, commenter}
+
+KAFKA ->> NOTIF : Consume event
+NOTIF -> NOTIF : Identify recipients:\n- post author\n- parent comment author
+
+NOTIF -> REDIS : Lookup user_id -> pod_id\n(WebSocket registry)
+alt Author is ONLINE
+    NOTIF -> REDIS : INCR unread:author_id
+    NOTIF -> A : Push via WebSocket\n"New reply on your post"
+else Author is OFFLINE
+    NOTIF -> DB : Store notification\n(status: unread)
+    note right of DB
+        Delivered when Author
+        reconnects WebSocket
+    end note
+end
+@enduml

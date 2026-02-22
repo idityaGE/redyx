@@ -1,0 +1,839 @@
+@startuml SD01_Registration
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+title SD-01: User Registration (Email + OTP)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+database "Redis\n(db2)" as REDIS
+participant "Email\nProvider" as EMAIL
+
+U -> FE : Fill registration form\n(email, username, password)
+FE -> GW : POST /api/auth/register\n{email, username, password}
+GW -> GW : Rate limit check (Redis db1)
+GW -> AUTH : gRPC RegisterUser()
+
+AUTH -> DB : Check username uniqueness
+alt Username taken
+    AUTH --> GW : Error: username taken
+    GW --> FE : 409 Conflict
+    FE --> U : "Username already taken"
+else Username available
+    AUTH -> AUTH : Hash password (argon2id)
+    AUTH -> DB : Insert user (status: pending)
+    AUTH -> AUTH : Generate 6-digit OTP
+    AUTH -> REDIS : Store OTP (key: email, TTL: 5 min)
+    AUTH -> EMAIL : Send OTP email
+    AUTH --> GW : 201 Created (awaiting verification)
+    GW --> FE : JSON response
+    FE --> U : "Check your email for OTP"
+end
+
+U -> FE : Enter OTP code
+FE -> GW : POST /api/auth/verify-otp\n{email, otp}
+GW -> AUTH : gRPC VerifyOTP()
+AUTH -> REDIS : Get stored OTP for email
+alt OTP matches
+    AUTH -> DB : Update user status: active
+    AUTH -> REDIS : Delete OTP
+    AUTH -> AUTH : Generate JWT (access + refresh)
+    AUTH --> GW : 200 OK + tokens
+    GW --> FE : Set cookies (access + refresh token)
+    FE --> U : Redirect to home
+else OTP invalid or expired
+    AUTH --> GW : Error: invalid OTP
+    GW --> FE : 401 Unauthorized
+    FE --> U : "Invalid or expired code"
+end
+@enduml
+
+
+@startuml SD02_Login
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-02: User Login (Email + Password)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+
+U -> FE : Enter email + password
+FE -> GW : POST /api/auth/login\n{email, password}
+GW -> GW : Rate limit check
+GW -> AUTH : gRPC LoginUser()
+
+AUTH -> DB : Fetch user by email
+alt User not found
+    AUTH --> GW : Error: invalid credentials
+    GW --> FE : 401 Unauthorized
+    FE --> U : "Invalid email or password"
+else User found
+    AUTH -> AUTH : Verify password (argon2id)
+    alt Password mismatch
+        AUTH --> GW : Error: invalid credentials
+        GW --> FE : 401 Unauthorized
+        FE --> U : "Invalid email or password"
+    else Password correct
+        AUTH -> AUTH : Generate JWT\n(access: 15min, refresh: 7d)
+        AUTH --> GW : 200 OK + tokens
+        GW --> FE : Set cookies
+        FE --> U : Redirect to home feed
+    end
+end
+@enduml
+
+
+@startuml SD03_Google_OAuth
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-03: Google OAuth Registration/Login
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Google\nOAuth" as GOOGLE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+
+U -> FE : Click "Sign in with Google"
+FE -> GOOGLE : Redirect to Google consent screen
+U -> GOOGLE : Approve access
+GOOGLE --> FE : Redirect with auth code
+
+FE -> GW : POST /api/auth/oauth/google\n{auth_code}
+GW -> AUTH : gRPC GoogleOAuth()
+AUTH -> GOOGLE : Exchange auth code for tokens
+GOOGLE --> AUTH : {access_token, id_token, email}
+
+AUTH -> DB : Lookup user by Google email
+alt Existing user (linked account)
+    AUTH -> AUTH : Generate JWT
+    AUTH --> GW : 200 OK + tokens
+    GW --> FE : Set cookies
+    FE --> U : Redirect to home feed
+else New user
+    AUTH --> GW : 200 OK (needs username)
+    GW --> FE : JSON {email, needs_username: true}
+    FE --> U : "Choose a username"
+
+    U -> FE : Enter username
+    FE -> GW : POST /api/auth/oauth/google/complete\n{email, username}
+    GW -> AUTH : gRPC CompleteOAuthRegistration()
+    AUTH -> DB : Check username uniqueness
+    AUTH -> DB : Create user (status: active, provider: google)
+    AUTH -> AUTH : Generate JWT
+    AUTH --> GW : 201 Created + tokens
+    GW --> FE : Set cookies
+    FE --> U : Redirect to home feed
+end
+@enduml
+
+
+@startuml SD04_Create_Post
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-04: Create Post (Sync + Async Events)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Spam\nDetection" as SPAM
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DB
+queue "Kafka" as KAFKA
+participant "Search\nService" as SEARCH
+participant "Notification\nService" as NOTIF
+database "Meilisearch" as MEILI
+
+U -> FE : Write post (title, body, community)
+FE -> GW : POST /api/posts\n{title, body, community_id}\n+ JWT in header
+GW -> GW : Validate JWT
+GW -> GW : Rate limit (5 posts/hour)
+
+== Synchronous: Spam Check + Save ==
+GW -> SPAM : gRPC CheckContent()
+SPAM -> SPAM : Keyword blocklist\nURL reputation\nDuplicate detection\nAccount age check
+alt Content flagged
+    SPAM --> GW : REJECTED (reason)
+    GW --> FE : 422 Unprocessable
+    FE --> U : "Post rejected: [reason]"
+else Content clean
+    SPAM --> GW : APPROVED
+    GW -> POST : gRPC CreatePost()
+    POST -> POST : Hash community_id\n-> select shard
+    POST -> DB : INSERT into correct shard
+    POST --> GW : 201 Created {post_id}
+    GW --> FE : JSON {post_id, url}
+    FE --> U : Redirect to new post
+end
+
+== Asynchronous: Kafka Fan-Out ==
+POST ->> KAFKA : Publish "PostCreated"\n{post_id, community_id, author}
+KAFKA ->> SEARCH : Consume event
+SEARCH -> MEILI : Index post
+KAFKA ->> NOTIF : Consume event
+NOTIF -> NOTIF : Find community followers
+NOTIF -> NOTIF : Push via WebSocket\n(if online)
+KAFKA ->> SPAM : Consume event
+SPAM -> SPAM : Post-publish analysis\n(pattern detection)
+@enduml
+
+
+@startuml SD05_Vote
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-05: Upvote/Downvote (Redis + Kafka Fan-Out)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Vote\nService" as VOTE
+database "Redis\n(db0)" as REDIS
+queue "Kafka" as KAFKA
+database "pg-platform" as DB
+participant "Post\nService" as POST
+participant "User\nService" as USER
+participant "Spam\nDetection" as SPAM
+
+U -> FE : Click upvote on post
+FE -> GW : POST /api/votes\n{target_id, target_type: "post",\ndirection: "up"} + JWT
+GW -> GW : Validate JWT + rate limit
+
+GW -> VOTE : gRPC CastVote()
+VOTE -> REDIS : GET vote:user123:post456
+alt Already voted same direction
+    VOTE --> GW : 200 OK (no-op, idempotent)
+    GW --> FE : JSON {score: unchanged}
+    FE --> U : No visual change
+else New vote or direction change
+    VOTE -> REDIS : SET vote:user123:post456 = "up"
+    VOTE -> REDIS : INCR post:456:score
+    VOTE --> GW : 200 OK {new_score}
+    GW --> FE : JSON {score: 43}
+    FE --> U : Update vote arrow + score
+
+    == Async Persistence + Fan-Out ==
+    VOTE ->> KAFKA : Publish "VoteCreated"\n{user, target, direction, author_id}
+    VOTE ->> DB : Persist vote record (async)
+
+    KAFKA ->> POST : Consume event
+    POST -> POST : Update post score in pg-post
+
+    KAFKA ->> USER : Consume event
+    USER -> USER : Recalculate author karma
+
+    KAFKA ->> SPAM : Consume event
+    SPAM -> SPAM : Check for vote\nmanipulation patterns
+end
+@enduml
+
+
+@startuml SD06_Home_Feed
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-06: View Home Feed (with Redis Cache)
+
+actor "User" as U
+participant "Astro SSR" as FE
+participant "Envoy\nGateway" as GW
+participant "Post\nService" as POST
+database "Redis\n(db4)" as CACHE
+participant "Community\nService" as COMM
+database "pg-post\n(sharded)" as DB
+
+U -> FE : Navigate to home page
+FE -> GW : GET /api/feed?sort=hot&page=1\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> POST : gRPC GetHomeFeed(user_id, sort, page)
+
+POST -> CACHE : GET feed:user123:hot:page1
+alt Cache HIT
+    CACHE --> POST : Cached feed JSON
+    POST --> GW : Feed data
+    GW --> FE : JSON response
+    FE -> FE : Server-side render\n(Astro SSR)
+    FE --> U : Rendered HTML page
+else Cache MISS
+    POST -> COMM : gRPC GetUserCommunities(user_id)
+    COMM -> CACHE : GET communities:user123
+    alt Community list cached
+        CACHE --> COMM : [community_ids]
+    else
+        COMM -> COMM : Query pg-community
+        COMM -> CACHE : SET communities:user123\n(TTL: 1 hour)
+    end
+    COMM --> POST : [community_ids]
+
+    loop For each shard containing these communities
+        POST -> DB : SELECT posts\nWHERE community_id IN (...)\nORDER BY hot_score\nLIMIT 25
+    end
+    POST -> POST : Merge + sort results\nacross shards
+    POST -> CACHE : SET feed:user123:hot:page1\n(TTL: 5 min)
+    POST --> GW : Feed data
+    GW --> FE : JSON response
+    FE -> FE : Server-side render
+    FE --> U : Rendered HTML page
+end
+@enduml
+
+
+@startuml SD07_Comment_Notification
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-07: Create Comment + Real-Time Notification
+
+actor "Author" as A
+actor "Commenter" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Comment\nService" as CMT
+database "ScyllaDB" as SCYLLA
+queue "Kafka" as KAFKA
+participant "Notification\nService" as NOTIF
+database "Redis\n(db3)" as REDIS
+database "pg-platform" as DB
+
+U -> FE : Write reply on Author's post
+FE -> GW : POST /api/comments\n{post_id, parent_id, body}\n+ JWT
+GW -> GW : Validate JWT + rate limit
+
+GW -> CMT : gRPC CreateComment()
+CMT -> CMT : Build materialized path\n(parent_path + "/" + new_id)
+CMT -> SCYLLA : INSERT comment\n(partition: post_id,\nclustering: path)
+CMT --> GW : 201 Created {comment_id}
+GW --> FE : JSON response
+FE --> U : Comment appears in thread
+
+== Async: Notification ==
+CMT ->> KAFKA : Publish "CommentCreated"\n{post_id, parent_id,\nauthor_id, commenter}
+
+KAFKA ->> NOTIF : Consume event
+NOTIF -> NOTIF : Identify recipients:\n- post author\n- parent comment author
+
+NOTIF -> REDIS : Lookup user_id -> pod_id\n(WebSocket registry)
+alt Author is ONLINE
+    NOTIF -> REDIS : INCR unread:author_id
+    NOTIF -> A : Push via WebSocket\n"New reply on your post"
+else Author is OFFLINE
+    NOTIF -> DB : Store notification\n(status: unread)
+    note right of DB
+        Delivered when Author
+        reconnects WebSocket
+    end note
+end
+@enduml
+
+
+@startuml SD08_Search
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-08: Search Posts
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Search\nService" as SEARCH
+database "Meilisearch" as MEILI
+database "Redis\n(db4)" as CACHE
+
+U -> FE : Type "golang concurrency"\nin search bar
+
+== Autocomplete (as user types) ==
+FE -> GW : GET /api/search/autocomplete?q=gol
+GW -> SEARCH : gRPC Autocomplete("gol")
+SEARCH -> CACHE : GET autocomplete:gol
+alt Cache HIT
+    CACHE --> SEARCH : ["golang", "gold", "golf"]
+else Cache MISS
+    SEARCH -> MEILI : Search communities\nprefix match "gol"
+    MEILI --> SEARCH : Results
+    SEARCH -> CACHE : SET autocomplete:gol\n(TTL: 30 min)
+end
+SEARCH --> GW : Suggestions
+GW --> FE : JSON ["r/golang", "r/golf"]
+FE --> U : Show dropdown suggestions
+
+== Full Search (on submit) ==
+U -> FE : Press Enter
+FE -> GW : GET /api/search?q=golang+concurrency\n&sort=relevance
+GW -> SEARCH : gRPC SearchPosts()
+SEARCH -> MEILI : Multi-index search\n(posts + comments + communities)
+MEILI --> SEARCH : Ranked results\n(relevance + recency + score)
+SEARCH --> GW : Search results
+GW --> FE : JSON response
+FE -> FE : Server-side render
+FE --> U : Search results page
+@enduml
+@startuml SD09_Create_Community
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-09: Create Community
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Community\nService" as COMM
+database "pg-community" as DB
+database "Redis\n(db4)" as CACHE
+
+U -> FE : Fill community form\n(name, description, rules, visibility)
+FE -> GW : POST /api/communities\n{name, description, visibility}\n+ JWT
+GW -> GW : Validate JWT
+GW -> GW : Rate limit\n(1 community/day)
+
+GW -> COMM : gRPC CreateCommunity()
+
+COMM -> DB : Check name uniqueness
+alt Name taken
+    COMM --> GW : Error: name taken
+    GW --> FE : 409 Conflict
+    FE --> U : "Community name already exists"
+else Name available
+    COMM -> DB : INSERT community\n(owner = user_id, status = active)
+    COMM -> DB : INSERT membership\n(user_id, community_id, role = owner)
+    COMM -> CACHE : Invalidate community list cache
+    COMM --> GW : 201 Created\n{community_id, name}
+    GW --> FE : JSON response
+    FE --> U : Redirect to r/new-community
+end
+@enduml
+@startuml SD10_Join_Leave_Community
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-10: Join / Leave Community
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Community\nService" as COMM
+database "pg-community" as DB
+database "Redis\n(db4)" as CACHE
+
+== Join Community ==
+
+U -> FE : Click "Join" on r/golang
+FE -> GW : POST /api/communities/golang/join\n+ JWT
+GW -> GW : Validate JWT
+GW -> COMM : gRPC JoinCommunity()
+
+COMM -> DB : Check if already a member
+alt Already a member
+    COMM --> GW : 200 OK (idempotent, no-op)
+    GW --> FE : JSON {status: "already_member"}
+    FE --> U : Button stays "Joined"
+else Not a member
+    COMM -> DB : Check community visibility
+    alt Private community
+        COMM --> GW : 403 Forbidden
+        GW --> FE : JSON {error: "private community"}
+        FE --> U : "This community is private"
+    else Public or restricted
+        COMM -> DB : INSERT membership\n(user_id, community_id, role = member)
+        COMM -> DB : INCREMENT member_count
+        COMM -> CACHE : DELETE communities:user_id
+        COMM -> CACHE : DELETE community:golang:metadata
+        COMM --> GW : 200 OK
+        GW --> FE : JSON {status: "joined"}
+        FE --> U : Button changes to "Joined"
+    end
+end
+
+== Leave Community ==
+
+U -> FE : Click "Leave" on r/golang
+FE -> GW : POST /api/communities/golang/leave\n+ JWT
+GW -> GW : Validate JWT
+GW -> COMM : gRPC LeaveCommunity()
+
+COMM -> DB : Check membership
+alt Not a member
+    COMM --> GW : 200 OK (idempotent, no-op)
+else Is a member
+    alt User is the sole owner
+        COMM --> GW : 400 Bad Request
+        GW --> FE : JSON {error}
+        FE --> U : "Transfer ownership\nbefore leaving"
+    else Can leave
+        COMM -> DB : DELETE membership
+        COMM -> DB : DECREMENT member_count
+        COMM -> CACHE : DELETE communities:user_id
+        COMM -> CACHE : DELETE community:golang:metadata
+        COMM --> GW : 200 OK
+        GW --> FE : JSON {status: "left"}
+        FE --> U : Button changes to "Join"
+    end
+end
+@enduml
+@startuml SD11_Media_Upload
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-11: Create Image/Video Post (Media Upload)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Media\nService" as MEDIA
+participant "ClamAV\nScanner" as CLAM
+database "AWS S3" as S3
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DB
+queue "Kafka" as KAFKA
+
+U -> FE : Select image + write title\n+ choose community
+FE -> GW : POST /api/media/upload\n(multipart/form-data)\n+ JWT
+GW -> GW : Validate JWT + rate limit
+
+== Step 1: Upload + Process Media ==
+GW -> MEDIA : gRPC UploadMedia()
+MEDIA -> MEDIA : Validate file type\n(jpg, png, gif, mp4)\n+ size limit (20MB)
+alt Invalid file
+    MEDIA --> GW : 400 Bad Request
+    GW --> FE : JSON {error: "invalid file type"}
+    FE --> U : "Unsupported format"
+else Valid file
+    MEDIA -> CLAM : Scan for malware
+    alt Malware detected
+        MEDIA --> GW : 422 Unprocessable
+        GW --> FE : JSON {error: "file rejected"}
+        FE --> U : "File rejected by security scan"
+    else Clean file
+        MEDIA -> MEDIA : Generate thumbnail
+        MEDIA -> S3 : PUT original image
+        S3 --> MEDIA : S3 URL (original)
+        MEDIA -> S3 : PUT thumbnail
+        S3 --> MEDIA : S3 URL (thumbnail)
+        MEDIA --> GW : 200 OK\n{media_url, thumbnail_url}
+        GW --> FE : JSON {media_url, thumbnail_url}
+    end
+end
+
+== Step 2: Create Post with Media Reference ==
+FE -> GW : POST /api/posts\n{title, community_id, type: "image",\nmedia_url, thumbnail_url}\n+ JWT
+GW -> POST : gRPC CreatePost()
+POST -> POST : Hash community_id -> shard
+POST -> DB : INSERT post with media URLs
+POST --> GW : 201 Created {post_id}
+GW --> FE : JSON {post_id, url}
+FE --> U : Redirect to new post
+
+POST ->> KAFKA : Publish "PostCreated"
+@enduml
+@startuml SD12_Moderation
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-12: Moderation (Remove Post + Ban User)
+
+actor "Moderator" as MOD
+actor "Author" as AUTH
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Moderation\nService" as MODSVC
+participant "Community\nService" as COMM
+database "pg-platform" as DB
+queue "Kafka" as KAFKA
+participant "Post\nService" as POST
+participant "Search\nService" as SEARCH
+participant "Notification\nService" as NOTIF
+
+== Remove a Post ==
+
+MOD -> FE : Click "Remove" on a post
+FE -> GW : DELETE /api/mod/posts/{post_id}\n{reason: "Rule 3 violation"}\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> MODSVC : gRPC RemovePost()
+MODSVC -> COMM : gRPC CheckModRole(user_id, community_id)
+COMM --> MODSVC : role = "moderator"
+
+alt Not a moderator
+    MODSVC --> GW : 403 Forbidden
+    GW --> FE : JSON {error: "not a moderator"}
+    FE --> MOD : "Permission denied"
+else Is moderator
+    MODSVC -> DB : INSERT mod_log\n(action: remove_post, reason, mod_id)
+    MODSVC ->> KAFKA : Publish "PostRemoved"\n{post_id, reason, mod_id}
+    MODSVC --> GW : 200 OK
+    GW --> FE : JSON {status: "removed"}
+    FE --> MOD : Post marked as removed
+
+    KAFKA ->> POST : Consume event
+    POST -> POST : Mark post as removed\nin pg-post
+
+    KAFKA ->> SEARCH : Consume event
+    SEARCH -> SEARCH : Remove from\nMeilisearch index
+
+    KAFKA ->> NOTIF : Consume event
+    NOTIF -> AUTH : WebSocket push\n"Your post was removed:\nRule 3 violation"
+end
+
+== Ban a User ==
+
+MOD -> FE : Click "Ban User" on author profile\n(duration: 7 days, reason: "spam")
+FE -> GW : POST /api/mod/communities/{id}/bans\n{user_id, duration: "7d",\nreason: "spam"}\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> MODSVC : gRPC BanUser()
+MODSVC -> COMM : gRPC CheckModRole(mod_id, community_id)
+COMM --> MODSVC : role = "moderator"
+
+MODSVC -> DB : INSERT ban record\n(user_id, community_id, expires_at,\nreason, banned_by)
+MODSVC -> DB : INSERT mod_log\n(action: ban_user, reason, mod_id)
+MODSVC ->> KAFKA : Publish "UserBanned"\n{user_id, community_id, duration}
+MODSVC --> GW : 200 OK
+GW --> FE : JSON {status: "banned"}
+FE --> MOD : "User banned for 7 days"
+
+KAFKA ->> NOTIF : Consume event
+NOTIF -> AUTH : WebSocket push\n"You have been banned from\nr/community for 7 days"
+@enduml
+@startuml SD13_Save_Content
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-13: Save / Unsave Post or Comment
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "User\nService" as USER
+database "pg-user" as DB
+
+== Save a Post ==
+
+U -> FE : Click "Save" bookmark icon
+FE -> GW : POST /api/saved\n{target_id, target_type: "post"}\n+ JWT
+GW -> GW : Validate JWT
+GW -> USER : gRPC SaveContent()
+
+USER -> DB : Check if already saved
+alt Already saved (idempotent)
+    USER --> GW : 200 OK (no-op)
+else Not saved
+    USER -> DB : INSERT saved_item\n(user_id, target_id, target_type,\nsaved_at)
+    USER --> GW : 201 Created
+end
+GW --> FE : JSON {status: "saved"}
+FE --> U : Bookmark icon filled
+
+== Unsave ==
+
+U -> FE : Click "Unsave" bookmark icon
+FE -> GW : DELETE /api/saved/{target_id}\n+ JWT
+GW -> GW : Validate JWT
+GW -> USER : gRPC UnsaveContent()
+
+USER -> DB : DELETE saved_item\nWHERE user_id AND target_id
+USER --> GW : 200 OK
+GW --> FE : JSON {status: "unsaved"}
+FE --> U : Bookmark icon empty
+
+== View Saved Items ==
+
+U -> FE : Navigate to "Saved" tab
+FE -> GW : GET /api/saved?page=1\n+ JWT
+GW -> USER : gRPC GetSavedContent()
+USER -> DB : SELECT saved_items\nORDER BY saved_at DESC\nLIMIT 25
+USER --> GW : List of saved items\n(post/comment IDs + metadata)
+GW --> FE : JSON response
+FE -> FE : Server-side render
+FE --> U : Saved items page
+@enduml
+@startuml SD14_View_Profile
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-14: View User Profile + Karma
+
+actor "Viewer" as V
+participant "Astro SSR" as FE
+participant "Envoy\nGateway" as GW
+participant "User\nService" as USER
+database "pg-user" as DBUSER
+database "Redis\n(db4)" as CACHE
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DBPOST
+participant "Comment\nService" as CMT
+database "ScyllaDB" as SCYLLA
+
+V -> FE : Navigate to u/someuser
+FE -> GW : GET /api/users/someuser\n(no JWT required for public profile)
+
+== Fetch Profile ==
+GW -> USER : gRPC GetProfile("someuser")
+USER -> CACHE : GET profile:someuser
+alt Cache HIT
+    CACHE --> USER : Cached profile
+else Cache MISS
+    USER -> DBUSER : SELECT username, karma,\ncake_day, avatar\nFROM users
+    USER -> CACHE : SET profile:someuser\n(TTL: 10 min)
+end
+USER --> GW : Profile data
+
+== Fetch User's Posts ==
+GW -> POST : gRPC GetUserPosts(user_id, page)
+POST -> DBPOST : SELECT posts\nWHERE author_id = user_id\nORDER BY created_at DESC\nLIMIT 25
+POST --> GW : Post list
+
+== Fetch User's Comments ==
+GW -> CMT : gRPC GetUserComments(user_id, page)
+CMT -> SCYLLA : Query comments by author\n(secondary index)
+CMT --> GW : Comment list
+
+GW --> FE : JSON {profile, posts, comments}
+FE -> FE : Server-side render
+FE --> V : Profile page\n(username, karma, cake_day,\nposts tab, comments tab)
+
+note right of V
+    Only username, karma,
+    and cake_day are visible.
+    Email and auth method
+    are never exposed.
+end note
+@enduml
+@startuml SD15_WebSocket_Notification
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-15: WebSocket Connection + Offline Notification Delivery
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Notification\nService\n(Pod A)" as NOTIF_A
+participant "Notification\nService\n(Pod B)" as NOTIF_B
+database "Redis\n(db3)" as REDIS
+database "pg-platform" as DB
+queue "Kafka" as KAFKA
+
+== 1. WebSocket Connection on Login ==
+
+U -> FE : Login successful
+FE -> GW : WS Upgrade /api/notifications/ws\n+ JWT in query param
+GW -> GW : Validate JWT
+GW -> NOTIF_A : WebSocket handshake\n(load-balanced to Pod A)
+NOTIF_A -> REDIS : SET ws:user123 = pod-A\n(connection registry)
+NOTIF_A -> DB : SELECT unread notifications\nWHERE user_id = user123\nAND status = 'unread'
+NOTIF_A -> U : Push queued notifications\nvia WebSocket
+NOTIF_A --> FE : WS Connected
+FE --> U : Notification bell shows\nunread count
+
+== 2. Heartbeat (keep-alive) ==
+
+loop Every 30 seconds
+    NOTIF_A -> U : WS Ping
+    U -> NOTIF_A : WS Pong
+end
+
+== 3. Real-Time Event Arrives ==
+
+KAFKA ->> NOTIF_B : "CommentCreated" event\n(target: user123)
+note right of NOTIF_B
+    Event lands on Pod B,
+    but user's WebSocket
+    is on Pod A
+end note
+NOTIF_B -> REDIS : GET ws:user123
+REDIS --> NOTIF_B : pod-A
+NOTIF_B -> REDIS : PUBLISH channel:pod-A\n{user123, notification_data}
+REDIS ->> NOTIF_A : Subscribe receives message
+NOTIF_A -> REDIS : INCR unread:user123
+NOTIF_A -> U : WS push\n{type: "reply", message: "..."}
+FE --> U : Notification bell updates
+
+== 4. User Goes Offline ==
+
+U -> FE : Close browser tab
+FE -> NOTIF_A : WS Disconnect
+NOTIF_A -> REDIS : DELETE ws:user123
+note right of REDIS : User no longer in registry
+
+KAFKA ->> NOTIF_B : New event for user123
+NOTIF_B -> REDIS : GET ws:user123
+REDIS --> NOTIF_B : (nil) — user offline
+NOTIF_B -> DB : INSERT notification\n(user_id: user123,\nstatus: unread)
+note right of DB
+    Stored for delivery
+    when user reconnects
+    (back to step 1)
+end note
+@enduml
+@startuml SD16_Account_Deletion
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-16: Account Deletion (Anonymity Purge)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DBAUTH
+participant "User\nService" as USER
+database "pg-user" as DBUSER
+queue "Kafka" as KAFKA
+participant "Post\nService" as POST
+participant "Comment\nService" as CMT
+participant "Vote\nService" as VOTE
+participant "Notification\nService" as NOTIF
+database "Redis" as REDIS
+
+U -> FE : Click "Delete Account"
+FE --> U : Confirmation dialog\n"This cannot be undone"
+U -> FE : Confirm + enter password
+
+FE -> GW : POST /api/auth/delete-account\n{password} + JWT
+GW -> GW : Validate JWT
+
+== Step 1: Verify Identity ==
+GW -> AUTH : gRPC DeleteAccount()
+AUTH -> DBAUTH : Fetch credentials
+AUTH -> AUTH : Verify password (argon2id)
+alt Password incorrect
+    AUTH --> GW : 401 Unauthorized
+    GW --> FE : JSON {error}
+    FE --> U : "Incorrect password"
+else Password correct
+
+    == Step 2: Publish Deletion Event ==
+    AUTH -> AUTH : Generate deletion_token\n(unique per deletion)
+    AUTH ->> KAFKA : Publish "AccountDeleted"\n{user_id, deletion_token}
+    AUTH --> GW : 202 Accepted\n"Deletion in progress"
+    GW --> FE : JSON {status: "deleting"}
+    FE --> U : "Your account is being deleted"
+
+    == Step 3: Async Purge (parallel consumers) ==
+
+    KAFKA ->> POST : Consume "AccountDeleted"
+    POST -> POST : UPDATE posts\nSET author = '[deleted]',\nbody = '[deleted]'\nWHERE author_id = user_id
+
+    KAFKA ->> CMT : Consume "AccountDeleted"
+    CMT -> CMT : UPDATE comments\nSET author = '[deleted]',\nbody = '[deleted]'\nWHERE author_id = user_id
+
+    KAFKA ->> VOTE : Consume "AccountDeleted"
+    VOTE -> VOTE : Anonymize vote records\n(remove user_id, keep scores)
+
+    KAFKA ->> NOTIF : Consume "AccountDeleted"
+    NOTIF -> NOTIF : Delete all notifications\nfor user_id
+    NOTIF -> NOTIF : Close WebSocket\nif connected
+
+    KAFKA ->> USER : Consume "AccountDeleted"
+    USER -> DBUSER : DELETE FROM profiles\nWHERE user_id
+    USER -> REDIS : DELETE profile:username\nDELETE karma:user_id\nDELETE communities:user_id
+
+    KAFKA ->> AUTH : Consume "AccountDeleted"\n(self-consume to finalize)
+    AUTH -> DBAUTH : DELETE credentials,\nOAuth tokens, email
+    AUTH -> REDIS : DELETE OTP, refresh tokens
+    AUTH -> DBAUTH : INSERT deletion_log\n(deletion_token, completed_at)
+end
+
+note right of DBAUTH
+    After purge:
+    - No PII remains
+    - Posts/comments show [deleted]
+    - Vote scores preserved but anonymized
+    - Email, password hash, OAuth wiped
+end note
+@enduml

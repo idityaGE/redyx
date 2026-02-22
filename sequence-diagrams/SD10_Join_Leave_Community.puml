@@ -1,0 +1,67 @@
+@startuml SD10_Join_Leave_Community
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-10: Join / Leave Community
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Community\nService" as COMM
+database "pg-community" as DB
+database "Redis\n(db4)" as CACHE
+
+== Join Community ==
+
+U -> FE : Click "Join" on r/golang
+FE -> GW : POST /api/communities/golang/join\n+ JWT
+GW -> GW : Validate JWT
+GW -> COMM : gRPC JoinCommunity()
+
+COMM -> DB : Check if already a member
+alt Already a member
+    COMM --> GW : 200 OK (idempotent, no-op)
+    GW --> FE : JSON {status: "already_member"}
+    FE --> U : Button stays "Joined"
+else Not a member
+    COMM -> DB : Check community visibility
+    alt Private community
+        COMM --> GW : 403 Forbidden
+        GW --> FE : JSON {error: "private community"}
+        FE --> U : "This community is private"
+    else Public or restricted
+        COMM -> DB : INSERT membership\n(user_id, community_id, role = member)
+        COMM -> DB : INCREMENT member_count
+        COMM -> CACHE : DELETE communities:user_id
+        COMM -> CACHE : DELETE community:golang:metadata
+        COMM --> GW : 200 OK
+        GW --> FE : JSON {status: "joined"}
+        FE --> U : Button changes to "Joined"
+    end
+end
+
+== Leave Community ==
+
+U -> FE : Click "Leave" on r/golang
+FE -> GW : POST /api/communities/golang/leave\n+ JWT
+GW -> GW : Validate JWT
+GW -> COMM : gRPC LeaveCommunity()
+
+COMM -> DB : Check membership
+alt Not a member
+    COMM --> GW : 200 OK (idempotent, no-op)
+else Is a member
+    alt User is the sole owner
+        COMM --> GW : 400 Bad Request
+        GW --> FE : JSON {error}
+        FE --> U : "Transfer ownership\nbefore leaving"
+    else Can leave
+        COMM -> DB : DELETE membership
+        COMM -> DB : DECREMENT member_count
+        COMM -> CACHE : DELETE communities:user_id
+        COMM -> CACHE : DELETE community:golang:metadata
+        COMM --> GW : 200 OK
+        GW --> FE : JSON {status: "left"}
+        FE --> U : Button changes to "Join"
+    end
+end
+@enduml

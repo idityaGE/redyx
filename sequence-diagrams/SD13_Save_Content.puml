@@ -1,0 +1,51 @@
+@startuml SD13_Save_Content
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-13: Save / Unsave Post or Comment
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "User\nService" as USER
+database "pg-user" as DB
+
+== Save a Post ==
+
+U -> FE : Click "Save" bookmark icon
+FE -> GW : POST /api/saved\n{target_id, target_type: "post"}\n+ JWT
+GW -> GW : Validate JWT
+GW -> USER : gRPC SaveContent()
+
+USER -> DB : Check if already saved
+alt Already saved (idempotent)
+    USER --> GW : 200 OK (no-op)
+else Not saved
+    USER -> DB : INSERT saved_item\n(user_id, target_id, target_type,\nsaved_at)
+    USER --> GW : 201 Created
+end
+GW --> FE : JSON {status: "saved"}
+FE --> U : Bookmark icon filled
+
+== Unsave ==
+
+U -> FE : Click "Unsave" bookmark icon
+FE -> GW : DELETE /api/saved/{target_id}\n+ JWT
+GW -> GW : Validate JWT
+GW -> USER : gRPC UnsaveContent()
+
+USER -> DB : DELETE saved_item\nWHERE user_id AND target_id
+USER --> GW : 200 OK
+GW --> FE : JSON {status: "unsaved"}
+FE --> U : Bookmark icon empty
+
+== View Saved Items ==
+
+U -> FE : Navigate to "Saved" tab
+FE -> GW : GET /api/saved?page=1\n+ JWT
+GW -> USER : gRPC GetSavedContent()
+USER -> DB : SELECT saved_items\nORDER BY saved_at DESC\nLIMIT 25
+USER --> GW : List of saved items\n(post/comment IDs + metadata)
+GW --> FE : JSON response
+FE -> FE : Server-side render
+FE --> U : Saved items page
+@enduml

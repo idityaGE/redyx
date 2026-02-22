@@ -1,0 +1,228 @@
+@startuml CL08_Notification_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-08: Notification Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Notification <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Type : NotificationType
+        + Title : string
+        + Body : string
+        + SourceUserID : uuid.UUID
+        + SourceUsername : string
+        + TargetID : uuid.UUID
+        + TargetType : string
+        + CommunityID : uuid.UUID
+        + CommunityName : string
+        + IsRead : bool
+        + CreatedAt : time.Time
+    }
+
+    class NotificationPreference <<struct>> {
+        + UserID : uuid.UUID
+        + Replies : bool
+        + Mentions : bool
+        + ModActions : bool
+        + CommunityPosts : bool
+        + MutedCommunities : []uuid.UUID
+        + UpdatedAt : time.Time
+    }
+
+    class WebSocketConnection <<struct>> {
+        + UserID : uuid.UUID
+        + PodID : string
+        + Conn : *websocket.Conn
+        + ConnectedAt : time.Time
+        + LastPingAt : time.Time
+    }
+
+    enum NotificationType <<enum>> {
+        REPLY_POST
+        REPLY_COMMENT
+        MENTION
+        MOD_REMOVE
+        MOD_APPROVE
+        MOD_BAN
+        COMMUNITY_POST
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface NotificationRepository <<interface>> {
+        + Create(ctx, notification) : error
+        + GetByID(ctx, id) : (*Notification, error)
+        + ListByUser(ctx, userID, page) : ([]*Notification, error)
+        + ListUnread(ctx, userID, page) : ([]*Notification, error)
+        + MarkRead(ctx, notificationID) : error
+        + MarkAllRead(ctx, userID) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+        + DeleteByUser(ctx, userID) : error
+    }
+
+    interface PreferenceRepository <<interface>> {
+        + Get(ctx, userID) : (*NotificationPreference, error)
+        + Update(ctx, pref) : error
+    }
+
+    interface ConnectionRegistry <<interface>> {
+        + Register(ctx, userID, podID) : error
+        + Unregister(ctx, userID) : error
+        + GetPodForUser(ctx, userID) : (string, error)
+        + IsOnline(ctx, userID) : (bool, error)
+        + SetUnreadCount(ctx, userID, count) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+    }
+
+    class PostgresNotificationRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisConnectionRegistry <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of RedisConnectionRegistry
+        Redis db3: connection registry
+        Key: ws:conn:{userID} -> podID
+        Key: ws:unread:{userID} -> count
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface NotificationService <<interface>> {
+        + SendNotification(ctx, notification) : error
+        + GetNotifications(ctx, userID, page) : ([]*Notification, error)
+        + GetUnread(ctx, userID, page) : ([]*Notification, error)
+        + MarkRead(ctx, userID, notificationID) : error
+        + MarkAllRead(ctx, userID) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+        + GetPreferences(ctx, userID) : (*NotificationPreference, error)
+        + UpdatePreferences(ctx, userID, pref) : error
+    }
+
+    class NotificationServiceImpl <<struct>> {
+        - repo : NotificationRepository
+        - prefRepo : PreferenceRepository
+        - registry : ConnectionRegistry
+        - wsManager : WebSocketManager
+        - emailSender : EmailSender
+    }
+
+    interface WebSocketManager <<interface>> {
+        + HandleConnection(ctx, userID, conn) : error
+        + SendToUser(ctx, userID, payload) : error
+        + BroadcastToPod(ctx, podID, userID, payload) : error
+        + DisconnectUser(ctx, userID) : error
+        + StartHeartbeat(ctx, conn) : error
+    }
+
+    class WebSocketManagerImpl <<struct>> {
+        - connections : sync.Map
+        - registry : ConnectionRegistry
+        - podID : string
+        - pubsub : *redis.PubSub
+        - heartbeatInterval : time.Duration
+    }
+
+    interface EmailSender <<interface>> {
+        + SendEmail(ctx, to, subject, body) : error
+    }
+
+    class NotificationRouter <<struct>> {
+        - registry : ConnectionRegistry
+        - wsManager : WebSocketManager
+        - repo : NotificationRepository
+        + Route(ctx, notification) : error
+    }
+
+    note right of NotificationRouter
+        Checks if user is online.
+        If yes: push via WebSocket.
+        If no: store for later delivery.
+    end note
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class EventConsumer <<struct>> {
+        - service : NotificationService
+        - prefRepo : PreferenceRepository
+        - router : NotificationRouter
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    note right of EventConsumer
+        Consumes: CommentCreated,
+        MentionDetected, PostRemoved,
+        UserBanned, PostCreated
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class NotificationGRPCServer <<struct>> {
+        - service : NotificationService
+        + pb.UnimplementedNotificationServiceServer
+    }
+
+    class WebSocketHandler <<struct>> {
+        - wsManager : WebSocketManager
+        - registry : ConnectionRegistry
+        + HandleUpgrade(w, r) : error
+    }
+
+    note right of WebSocketHandler
+        HTTP handler for WebSocket
+        upgrade at /ws/notifications
+    end note
+}
+
+' ─── Relationships ───
+Notification --> NotificationType
+WebSocketConnection --> WebSocketManagerImpl
+
+PostgresNotificationRepo ..|> NotificationRepository : implements
+PostgresNotificationRepo ..|> PreferenceRepository : implements
+RedisConnectionRegistry ..|> ConnectionRegistry : implements
+
+NotificationServiceImpl ..|> NotificationService : implements
+NotificationServiceImpl --> NotificationRepository : uses
+NotificationServiceImpl --> PreferenceRepository : uses
+NotificationServiceImpl --> ConnectionRegistry : uses
+NotificationServiceImpl --> WebSocketManager : uses
+NotificationServiceImpl --> EmailSender : uses
+
+WebSocketManagerImpl ..|> WebSocketManager : implements
+WebSocketManagerImpl --> ConnectionRegistry : uses
+
+NotificationRouter --> ConnectionRegistry : uses
+NotificationRouter --> WebSocketManager : uses
+NotificationRouter --> NotificationRepository : uses
+
+EventConsumer --> NotificationService : uses
+EventConsumer --> NotificationRouter : uses
+
+NotificationGRPCServer --> NotificationService : uses
+WebSocketHandler --> WebSocketManager : uses
+
+NotificationRepository ..> Notification : manages
+PreferenceRepository ..> NotificationPreference : manages
+
+@enduml

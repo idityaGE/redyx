@@ -1,0 +1,64 @@
+@startuml DFD_Level0_Context
+!theme plain
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 15
+skinparam padding 6
+
+skinparam rectangle {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2
+    StereotypeFontSize 11
+}
+
+skinparam usecase {
+    BackgroundColor #C8E6C9
+    BorderColor #2E7D32
+    FontColor #1B5E20
+    BorderThickness 2
+}
+
+skinparam arrow {
+    Color #37474F
+    FontColor #37474F
+    FontSize 11
+}
+
+title DFD Level 0 — Context Diagram\nRedyx Platform
+
+' ─── External Entities ───
+rectangle "**User**\n(Visitor / Member /\nModerator)" as USER #E3F2FD
+rectangle "**Google OAuth**\n(Identity Provider)" as GOOGLE #FFF3E0
+rectangle "**Email Provider**\n(SMTP)" as EMAIL #FFF3E0
+rectangle "**CloudFront CDN**\n(Media Delivery)" as CDN #FFF3E0
+
+' ─── Central Process ───
+usecase "      **0**\n\n  **Redyx**\n  **Platform**      " as REDYX
+
+' ─── Data Flows: User ↔ Redyx ───
+USER -right-> REDYX : Registration data,\nLogin credentials
+USER -right-> REDYX : Posts, comments, votes
+USER -right-> REDYX : Search queries
+USER -right-> REDYX : Mod actions, reports
+
+REDYX -left-> USER : Feeds, post data
+REDYX -left-> USER : Notifications (WebSocket)
+REDYX -left-> USER : Search results
+REDYX -left-> USER : Profiles, karma
+REDYX -left-> USER : Error responses, 429
+
+' ─── Data Flows: Redyx ↔ Google ───
+REDYX -right-> GOOGLE : OAuth auth code
+GOOGLE -left-> REDYX : Access token,\nuser email
+
+' ─── Data Flows: Redyx → Email ───
+REDYX -down-> EMAIL : OTP verification emails,\nnotification emails
+
+' ─── Data Flows: Redyx ↔ CDN ───
+REDYX -down-> CDN : Uploaded media\n(images, videos)
+CDN -up-> USER : Cached media\ncontent
+
+@enduml

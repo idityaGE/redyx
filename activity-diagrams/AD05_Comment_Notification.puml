@@ -1,0 +1,108 @@
+@startuml AD05_Comment_Notification
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-05: Comment Creation + Notification Pipeline
+
+start
+
+:User submits comment\n(post_id, parent_id, body);
+
+partition "**Validation & Auth**" {
+    if (User authenticated?) then (yes)
+    else (no)
+        :Return 401;
+        stop
+    endif
+
+    if (Under 30 comments/hour?) then (yes)
+    else (no)
+        :Return 429;
+        stop
+    endif
+
+    :Fetch post info via gRPC\nto Post Service;
+
+    if (Post exists?) then (yes)
+        if (Post is locked?) then (no)
+        else (yes)
+            :Return 403:\n"Post is locked";
+            stop
+        endif
+    else (no)
+        :Return 404:\n"Post not found";
+        stop
+    endif
+}
+
+partition "**Spam Check**\n(sync to P11)" {
+    :Send comment body to\nSpam Detection Service;
+
+    if (Account age >= 1 hour?) then (yes)
+    else (no)
+        :Return error:\n"New accounts must wait\n1 hour before commenting";
+        stop
+    endif
+
+    if (Passes blocklist + dupe check?) then (yes)
+    else (no)
+        :Return error:\n"Content rejected";
+        stop
+    endif
+}
+
+partition "**Build Materialized Path**" {
+    if (parent_id is null?) then (yes)
+        :Top-level comment\npath = "{comment_id}"\ndepth = 0;
+    else (reply)
+        :Fetch parent comment\nfrom ScyllaDB;
+        :path = parent.path + "/" + comment_id\ndepth = parent.depth + 1;
+    endif
+}
+
+partition "**Write to ScyllaDB**" {
+    :Insert comment row\npartition_key: post_id\nclustering_key: path;
+    note right
+        Denormalized fields:
+        author_username,
+        score=0, reply_count=0
+    end note
+}
+
+partition "**Post-write Updates**\n(gRPC + Kafka)" {
+    fork
+        :gRPC to Post Service:\nincrement comment_count;
+    fork again
+        :Publish CommentCreated\nevent to Kafka;
+    end fork
+}
+
+partition "**Notification Routing**\n(Kafka consumer in P9)" {
+    :Notification Service\nconsumes CommentCreated;
+
+    :Identify recipient\n(post author or parent\ncomment author);
+
+    :Check recipient's\nnotification preferences;
+
+    if (Notifications enabled\nfor replies?) then (yes)
+        :Look up recipient in\nRedis connection registry\n(db3: ws:conn:{user_id});
+
+        if (Recipient online?) then (yes)
+            :Find pod holding\nthe WebSocket;
+            :Push notification\nthrough WebSocket;
+            :Increment unread\ncount in Redis;
+        else (offline)
+            :Store notification\nin pg-platform;
+            :Deliver on next\nWebSocket connect;
+        endif
+    else (muted)
+        :Skip notification;
+    endif
+}
+
+stop
+
+@enduml

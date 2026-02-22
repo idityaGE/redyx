@@ -1,0 +1,51 @@
+@startuml SD14_View_Profile
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-14: View User Profile + Karma
+
+actor "Viewer" as V
+participant "Astro SSR" as FE
+participant "Envoy\nGateway" as GW
+participant "User\nService" as USER
+database "pg-user" as DBUSER
+database "Redis\n(db4)" as CACHE
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DBPOST
+participant "Comment\nService" as CMT
+database "ScyllaDB" as SCYLLA
+
+V -> FE : Navigate to u/someuser
+FE -> GW : GET /api/users/someuser\n(no JWT required for public profile)
+
+== Fetch Profile ==
+GW -> USER : gRPC GetProfile("someuser")
+USER -> CACHE : GET profile:someuser
+alt Cache HIT
+    CACHE --> USER : Cached profile
+else Cache MISS
+    USER -> DBUSER : SELECT username, karma,\ncake_day, avatar\nFROM users
+    USER -> CACHE : SET profile:someuser\n(TTL: 10 min)
+end
+USER --> GW : Profile data
+
+== Fetch User's Posts ==
+GW -> POST : gRPC GetUserPosts(user_id, page)
+POST -> DBPOST : SELECT posts\nWHERE author_id = user_id\nORDER BY created_at DESC\nLIMIT 25
+POST --> GW : Post list
+
+== Fetch User's Comments ==
+GW -> CMT : gRPC GetUserComments(user_id, page)
+CMT -> SCYLLA : Query comments by author\n(secondary index)
+CMT --> GW : Comment list
+
+GW --> FE : JSON {profile, posts, comments}
+FE -> FE : Server-side render
+FE --> V : Profile page\n(username, karma, cake_day,\nposts tab, comments tab)
+
+note right of V
+    Only username, karma,
+    and cake_day are visible.
+    Email and auth method
+    are never exposed.
+end note
+@enduml

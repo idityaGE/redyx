@@ -1,0 +1,77 @@
+@startuml AD01_Registration_OTP
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-01: User Registration + OTP Verification
+
+start
+
+:User submits registration form\n(email, username, password);
+
+partition "**Input Validation**" {
+    if (Email format valid?) then (yes)
+    else (no)
+        :Return error:\n"Invalid email format";
+        stop
+    endif
+
+    if (Username available?) then (yes)
+    else (no)
+        :Return error:\n"Username already taken";
+        stop
+    endif
+
+    if (Email already registered?) then (no)
+    else (yes)
+        :Return error:\n"Email already in use";
+        stop
+    endif
+
+    if (Password meets strength rules?) then (yes)
+    else (no)
+        :Return error:\n"Password too weak";
+        stop
+    endif
+}
+
+partition "**Account Creation**" {
+    :Hash password with argon2id\n(memory-hard, GPU-resistant);
+    :Insert user record into pg-auth\n(status: INACTIVE);
+}
+
+partition "**OTP Flow**" {
+    :Generate 6-digit OTP;
+    :Store OTP in Redis\n(key: otp:{user_id}, TTL: 5 min);
+    :Send OTP to user's email\nvia SMTP provider;
+    :Return "Check your email for\nverification code";
+
+    :User submits OTP code;
+
+    if (OTP matches and not expired?) then (yes)
+        :Mark OTP as used in Redis;
+        :Set user status to ACTIVE\nin pg-auth;
+    else (no)
+        if (OTP expired?) then (yes)
+            :Return error:\n"Code expired, request a new one";
+            stop
+        else (no)
+            :Return error:\n"Incorrect code";
+            stop
+        endif
+    endif
+}
+
+partition "**Token Issuance**" {
+    :Generate JWT access token\n(15 min TTL);
+    :Generate refresh token\n(7 day TTL);
+    :Return token pair to client;
+}
+
+:User is logged in and active;
+
+stop
+
+@enduml

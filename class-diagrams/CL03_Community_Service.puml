@@ -1,0 +1,162 @@
+@startuml CL03_Community_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-03: Community Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Community <<struct>> {
+        + ID : uuid.UUID
+        + Name : string
+        + Description : string
+        + BannerURL : string
+        + IconURL : string
+        + Visibility : Visibility
+        + MemberCount : int64
+        + CreatedBy : uuid.UUID
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class Membership <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Role : MemberRole
+        + JoinedAt : time.Time
+    }
+
+    class CommunityRule <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Title : string
+        + Description : string
+        + Position : int
+        + CreatedAt : time.Time
+    }
+
+    enum Visibility <<enum>> {
+        PUBLIC
+        RESTRICTED
+        PRIVATE
+    }
+
+    enum MemberRole <<enum>> {
+        MEMBER
+        MODERATOR
+        OWNER
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface CommunityRepository <<interface>> {
+        + Create(ctx, community) : (*Community, error)
+        + GetByID(ctx, id) : (*Community, error)
+        + GetByName(ctx, name) : (*Community, error)
+        + Update(ctx, community) : error
+        + Delete(ctx, id) : error
+        + List(ctx, page, pageSize) : ([]*Community, error)
+        + Search(ctx, query) : ([]*Community, error)
+        + IncrementMemberCount(ctx, id, delta) : error
+    }
+
+    interface MembershipRepository <<interface>> {
+        + AddMember(ctx, membership) : error
+        + RemoveMember(ctx, userID, communityID) : error
+        + GetMembership(ctx, userID, communityID) : (*Membership, error)
+        + ListMembers(ctx, communityID, page) : ([]*Membership, error)
+        + ListUserCommunities(ctx, userID, page) : ([]*Community, error)
+        + UpdateRole(ctx, userID, communityID, role) : error
+        + CountMembers(ctx, communityID) : (int64, error)
+    }
+
+    interface CommunityRuleRepository <<interface>> {
+        + Create(ctx, rule) : error
+        + ListByCommunity(ctx, communityID) : ([]*CommunityRule, error)
+        + Update(ctx, rule) : error
+        + Delete(ctx, ruleID) : error
+        + Reorder(ctx, communityID, ruleIDs) : error
+    }
+
+    class PostgresCommunityRepo <<struct>> {
+        - db : *sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface CommunityService <<interface>> {
+        + CreateCommunity(ctx, userID, req) : (*Community, error)
+        + GetCommunity(ctx, id) : (*Community, error)
+        + GetCommunityByName(ctx, name) : (*Community, error)
+        + UpdateCommunity(ctx, userID, communityID, req) : error
+        + DeleteCommunity(ctx, userID, communityID) : error
+        + ListCommunities(ctx, page, pageSize) : ([]*Community, error)
+        + JoinCommunity(ctx, userID, communityID) : error
+        + LeaveCommunity(ctx, userID, communityID) : error
+        + AssignModerator(ctx, actorID, targetUserID, communityID) : error
+        + GetUserRole(ctx, userID, communityID) : (MemberRole, error)
+        + ListUserCommunities(ctx, userID, page) : ([]*Community, error)
+    }
+
+    class CommunityServiceImpl <<struct>> {
+        - communityRepo : CommunityRepository
+        - memberRepo : MembershipRepository
+        - ruleRepo : CommunityRuleRepository
+        - cache : CacheClient
+        - producer : EventProducer
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class CommunityGRPCServer <<struct>> {
+        - service : CommunityService
+        + pb.UnimplementedCommunityServiceServer
+    }
+}
+
+' ─── Relationships ───
+Community --> Visibility
+Membership --> MemberRole
+CommunityRule --> Community : belongs to >
+
+PostgresCommunityRepo ..|> CommunityRepository : implements
+PostgresCommunityRepo ..|> MembershipRepository : implements
+PostgresCommunityRepo ..|> CommunityRuleRepository : implements
+
+CommunityServiceImpl ..|> CommunityService : implements
+CommunityServiceImpl --> CommunityRepository : uses
+CommunityServiceImpl --> MembershipRepository : uses
+CommunityServiceImpl --> CommunityRuleRepository : uses
+CommunityServiceImpl --> CacheClient : uses
+CommunityServiceImpl --> EventProducer : uses
+
+CommunityGRPCServer --> CommunityService : uses
+
+CommunityRepository ..> Community : manages
+MembershipRepository ..> Membership : manages
+CommunityRuleRepository ..> CommunityRule : manages
+
+@enduml

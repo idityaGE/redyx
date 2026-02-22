@@ -1,0 +1,52 @@
+@startuml SD01_Registration
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+title SD-01: User Registration (Email + OTP)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+database "Redis\n(db2)" as REDIS
+participant "Email\nProvider" as EMAIL
+
+U -> FE : Fill registration form\n(email, username, password)
+FE -> GW : POST /api/auth/register\n{email, username, password}
+GW -> GW : Rate limit check (Redis db1)
+GW -> AUTH : gRPC RegisterUser()
+
+AUTH -> DB : Check username uniqueness
+alt Username taken
+    AUTH --> GW : Error: username taken
+    GW --> FE : 409 Conflict
+    FE --> U : "Username already taken"
+else Username available
+    AUTH -> AUTH : Hash password (argon2id)
+    AUTH -> DB : Insert user (status: pending)
+    AUTH -> AUTH : Generate 6-digit OTP
+    AUTH -> REDIS : Store OTP (key: email, TTL: 5 min)
+    AUTH -> EMAIL : Send OTP email
+    AUTH --> GW : 201 Created (awaiting verification)
+    GW --> FE : JSON response
+    FE --> U : "Check your email for OTP"
+end
+
+U -> FE : Enter OTP code
+FE -> GW : POST /api/auth/verify-otp\n{email, otp}
+GW -> AUTH : gRPC VerifyOTP()
+AUTH -> REDIS : Get stored OTP for email
+alt OTP matches
+    AUTH -> DB : Update user status: active
+    AUTH -> REDIS : Delete OTP
+    AUTH -> AUTH : Generate JWT (access + refresh)
+    AUTH --> GW : 200 OK + tokens
+    GW --> FE : Set cookies (access + refresh token)
+    FE --> U : Redirect to home
+else OTP invalid or expired
+    AUTH --> GW : Error: invalid OTP
+    GW --> FE : 401 Unauthorized
+    FE --> U : "Invalid or expired code"
+end
+@enduml

@@ -1,0 +1,91 @@
+@startuml AD04_Vote_Processing
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-04: Vote Processing\n(Sync Redis Write → Async Kafka Fan-out)
+
+start
+
+:User clicks upvote or downvote\n(target_id, target_type, direction);
+
+partition "**Validation**" {
+    if (User authenticated?) then (yes)
+    else (no)
+        :Return 401;
+        stop
+    endif
+
+    if (Under 60 votes/min?) then (yes)
+    else (no)
+        :Return 429;
+        stop
+    endif
+}
+
+partition "**Idempotency Check**\n(Redis db0)" {
+    :Read current vote state\nfrom Redis\nkey: vote:{type}:{target}:{user};
+
+    if (Existing vote found?) then (yes)
+        if (Same direction as\ncurrent vote?) then (yes)
+            :No-op, return\ncurrent counts;
+            stop
+        else (different direction)
+            :Record old_direction\nfor delta calculation;
+            note right
+                Switching up→down = -2
+                Switching down→up = +2
+            end note
+        endif
+    else (no vote yet)
+        :old_direction = NONE;
+    endif
+}
+
+partition "**Sync State Update**\n(Redis atomic operations)" {
+    :Set new vote direction\nin Redis (db0);
+
+    if (Direction = NONE\n(removing vote)?) then (yes)
+        :Delete vote key from Redis;
+        if (old was UP?) then (yes)
+            :Decrement upvote count;
+        else (old was DOWN)
+            :Decrement downvote count;
+        endif
+    else (UP or DOWN)
+        if (old_direction = NONE?) then (yes)
+            :Increment new direction count;
+        else (switching)
+            :Decrement old direction count;
+            :Increment new direction count;
+        endif
+    endif
+
+    :Read updated VoteCount\n(upvotes, downvotes, score);
+}
+
+partition "**Publish Kafka Event**" {
+    :Publish VoteCreated event\n{user_id, target_id, target_type,\nold_direction, new_direction,\nauthor_id, timestamp};
+}
+
+:Return updated vote counts\nand user's vote state to client;
+
+partition "**Async Consumers**\n(Kafka: VoteCreated)" {
+    fork
+        :Post/Comment Service\nupdates score in DB;
+    fork again
+        :User Service\nadjusts author karma;
+    fork again
+        :Spam Detection\nchecks for vote manipulation;
+    end fork
+}
+
+partition "**Durable Persistence**\n(async background)" {
+    :Write vote record to\npg-platform (votes schema)\nfor durability;
+}
+
+stop
+
+@enduml

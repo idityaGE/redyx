@@ -1,0 +1,162 @@
+@startuml CL10_Rate_Limiting_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-10: Rate Limiting Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class RateLimitConfig <<struct>> {
+        + Endpoint : string
+        + Tier : UserTier
+        + MaxRequests : int
+        + WindowSize : time.Duration
+        + Algorithm : RateLimitAlgorithm
+    }
+
+    class RateLimitResult <<struct>> {
+        + Allowed : bool
+        + Remaining : int
+        + ResetAt : time.Time
+        + RetryAfter : time.Duration
+        + Limit : int
+    }
+
+    class RateLimitKey <<struct>> {
+        + Identifier : string
+        + Endpoint : string
+        + Tier : UserTier
+    }
+
+    class ActionLimit <<struct>> {
+        + Action : string
+        + MaxCount : int
+        + Window : time.Duration
+    }
+
+    enum UserTier <<enum>> {
+        ANONYMOUS
+        AUTHENTICATED
+        TRUSTED
+    }
+
+    enum RateLimitAlgorithm <<enum>> {
+        TOKEN_BUCKET
+        SLIDING_WINDOW
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface RateLimitStore <<interface>> {
+        + CheckAndIncrement(ctx, key, limit, window) : (*RateLimitResult, error)
+        + GetRemaining(ctx, key) : (int, error)
+        + Reset(ctx, key) : error
+        + BanTemporarily(ctx, identifier, duration) : error
+        + IsBanned(ctx, identifier) : (bool, error)
+    }
+
+    class RedisRateLimitStore <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of RedisRateLimitStore
+        Redis db1: rate limit counters
+        Token bucket: INCR + TTL
+        Sliding window: ZADD + ZCOUNT
+        Auto-expire with TTL
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface RateLimiter <<interface>> {
+        + Allow(ctx, key) : (*RateLimitResult, error)
+        + AllowAction(ctx, userID, action) : (*RateLimitResult, error)
+        + GetConfig(endpoint, tier) : *RateLimitConfig
+        + BanUser(ctx, identifier, duration) : error
+        + IsUserBanned(ctx, identifier) : (bool, error)
+    }
+
+    class TokenBucketLimiter <<struct>> {
+        - store : RateLimitStore
+        - configs : map[string]map[UserTier]*RateLimitConfig
+    }
+
+    class SlidingWindowLimiter <<struct>> {
+        - store : RateLimitStore
+        - actionLimits : map[string]*ActionLimit
+    }
+
+    class RateLimitServiceImpl <<struct>> {
+        - generalLimiter : TokenBucketLimiter
+        - actionLimiter : SlidingWindowLimiter
+        - store : RateLimitStore
+        - configLoader : ConfigLoader
+    }
+
+    interface ConfigLoader <<interface>> {
+        + LoadRateLimitConfigs() : (map[string]map[UserTier]*RateLimitConfig, error)
+        + LoadActionLimits() : (map[string]*ActionLimit, error)
+    }
+
+    note right of RateLimitServiceImpl
+        General API: Token Bucket
+          Anonymous: 10 req/min
+          Authenticated: 100 req/min
+          Trusted: 300 req/min
+        --
+        Actions: Sliding Window
+          Posts: 5/hour
+          Comments: 30/hour
+          Votes: 60/min
+          Communities: 1/day
+          Register: 3/hour per IP
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class RateLimitGRPCServer <<struct>> {
+        - service : RateLimiter
+        + pb.UnimplementedRateLimitServiceServer
+    }
+
+    note right of RateLimitGRPCServer
+        Called by Envoy external
+        auth filter before each
+        request reaches backend
+    end note
+}
+
+' ─── Relationships ───
+RateLimitConfig --> UserTier
+RateLimitConfig --> RateLimitAlgorithm
+RateLimitKey --> UserTier
+
+RedisRateLimitStore ..|> RateLimitStore : implements
+
+RateLimitServiceImpl ..|> RateLimiter : implements
+RateLimitServiceImpl --> TokenBucketLimiter : uses
+RateLimitServiceImpl --> SlidingWindowLimiter : uses
+RateLimitServiceImpl --> RateLimitStore : uses
+RateLimitServiceImpl --> ConfigLoader : uses
+
+TokenBucketLimiter --> RateLimitStore : uses
+SlidingWindowLimiter --> RateLimitStore : uses
+
+RateLimitGRPCServer --> RateLimiter : uses
+
+RateLimitStore ..> RateLimitResult : returns
+RateLimiter ..> RateLimitResult : returns
+
+@enduml

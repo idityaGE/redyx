@@ -1,0 +1,177 @@
+@startuml CL02_User_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-02: User Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class UserProfile <<struct>> {
+        + ID : uuid.UUID
+        + Username : string
+        + DisplayName : string
+        + Bio : string
+        + AvatarURL : string
+        + Karma : int64
+        + PostKarma : int64
+        + CommentKarma : int64
+        + CakeDay : time.Time
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class UserSettings <<struct>> {
+        + UserID : uuid.UUID
+        + EmailNotifications : bool
+        + ShowOnlineStatus : bool
+        + DefaultSortOrder : SortOrder
+        + Theme : string
+        + UpdatedAt : time.Time
+    }
+
+    class KarmaEvent <<struct>> {
+        + UserID : uuid.UUID
+        + Delta : int
+        + TargetType : string
+        + TargetID : uuid.UUID
+        + Timestamp : time.Time
+    }
+
+    enum SortOrder <<enum>> {
+        HOT
+        NEW
+        TOP
+        RISING
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface UserRepository <<interface>> {
+        + CreateProfile(ctx, profile) : error
+        + GetProfileByID(ctx, id) : (*UserProfile, error)
+        + GetProfileByUsername(ctx, username) : (*UserProfile, error)
+        + UpdateProfile(ctx, profile) : error
+        + DeleteProfile(ctx, id) : error
+        + UpdateKarma(ctx, userID, delta) : error
+        + GetPostHistory(ctx, userID, page) : ([]*PostSummary, error)
+        + GetCommentHistory(ctx, userID, page) : ([]*CommentSummary, error)
+    }
+
+    interface UserSettingsRepository <<interface>> {
+        + GetSettings(ctx, userID) : (*UserSettings, error)
+        + UpdateSettings(ctx, settings) : error
+    }
+
+    class PostgresUserRepo <<struct>> {
+        - db : *sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface UserService <<interface>> {
+        + GetProfile(ctx, userID) : (*UserProfile, error)
+        + GetProfileByUsername(ctx, username) : (*UserProfile, error)
+        + UpdateProfile(ctx, userID, req) : error
+        + UpdateAvatar(ctx, userID, avatarURL) : error
+        + GetSettings(ctx, userID) : (*UserSettings, error)
+        + UpdateSettings(ctx, userID, settings) : error
+        + GetPostHistory(ctx, userID, page) : ([]*PostSummary, error)
+        + GetCommentHistory(ctx, userID, page) : ([]*CommentSummary, error)
+        + DeleteAccount(ctx, userID) : error
+    }
+
+    class UserServiceImpl <<struct>> {
+        - repo : UserRepository
+        - settingsRepo : UserSettingsRepository
+        - cache : CacheClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    class RedisCacheClient <<struct>> {
+        - rdb : *redis.Client
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class KarmaConsumer <<struct>> {
+        - repo : UserRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of KarmaConsumer
+        Consumes VoteCreated events
+        from Kafka to update karma
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class UserGRPCServer <<struct>> {
+        - service : UserService
+        + pb.UnimplementedUserServiceServer
+    }
+}
+
+' ─── DTOs ───
+package "DTOs" <<Rectangle>> #E0F7FA {
+    class PostSummary <<struct>> {
+        + ID : uuid.UUID
+        + Title : string
+        + CommunityName : string
+        + Score : int
+        + CommentCount : int
+        + CreatedAt : time.Time
+    }
+
+    class CommentSummary <<struct>> {
+        + ID : uuid.UUID
+        + Body : string
+        + PostTitle : string
+        + Score : int
+        + CreatedAt : time.Time
+    }
+}
+
+' ─── Relationships ───
+UserProfile --> SortOrder
+UserSettings --> SortOrder
+
+PostgresUserRepo ..|> UserRepository : implements
+PostgresUserRepo ..|> UserSettingsRepository : implements
+RedisCacheClient ..|> CacheClient : implements
+
+UserServiceImpl ..|> UserService : implements
+UserServiceImpl --> UserRepository : uses
+UserServiceImpl --> UserSettingsRepository : uses
+UserServiceImpl --> CacheClient : uses
+
+KarmaConsumer --> UserRepository : uses
+
+UserGRPCServer --> UserService : uses
+
+UserRepository ..> UserProfile : manages
+UserRepository ..> PostSummary : returns
+UserRepository ..> CommentSummary : returns
+UserSettingsRepository ..> UserSettings : manages
+KarmaConsumer ..> KarmaEvent : processes
+
+@enduml

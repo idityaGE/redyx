@@ -1,0 +1,48 @@
+@startuml SD06_Home_Feed
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-06: View Home Feed (with Redis Cache)
+
+actor "User" as U
+participant "Astro SSR" as FE
+participant "Envoy\nGateway" as GW
+participant "Post\nService" as POST
+database "Redis\n(db4)" as CACHE
+participant "Community\nService" as COMM
+database "pg-post\n(sharded)" as DB
+
+U -> FE : Navigate to home page
+FE -> GW : GET /api/feed?sort=hot&page=1\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> POST : gRPC GetHomeFeed(user_id, sort, page)
+
+POST -> CACHE : GET feed:user123:hot:page1
+alt Cache HIT
+    CACHE --> POST : Cached feed JSON
+    POST --> GW : Feed data
+    GW --> FE : JSON response
+    FE -> FE : Server-side render\n(Astro SSR)
+    FE --> U : Rendered HTML page
+else Cache MISS
+    POST -> COMM : gRPC GetUserCommunities(user_id)
+    COMM -> CACHE : GET communities:user123
+    alt Community list cached
+        CACHE --> COMM : [community_ids]
+    else
+        COMM -> COMM : Query pg-community
+        COMM -> CACHE : SET communities:user123\n(TTL: 1 hour)
+    end
+    COMM --> POST : [community_ids]
+
+    loop For each shard containing these communities
+        POST -> DB : SELECT posts\nWHERE community_id IN (...)\nORDER BY hot_score\nLIMIT 25
+    end
+    POST -> POST : Merge + sort results\nacross shards
+    POST -> CACHE : SET feed:user123:hot:page1\n(TTL: 5 min)
+    POST --> GW : Feed data
+    GW --> FE : JSON response
+    FE -> FE : Server-side render
+    FE --> U : Rendered HTML page
+end
+@enduml

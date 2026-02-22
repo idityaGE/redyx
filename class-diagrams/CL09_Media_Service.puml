@@ -1,0 +1,178 @@
+@startuml CL09_Media_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-09: Media Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class MediaFile <<struct>> {
+        + ID : uuid.UUID
+        + OwnerID : uuid.UUID
+        + OriginalFilename : string
+        + ContentType : string
+        + FileSize : int64
+        + Width : int
+        + Height : int
+        + S3Key : string
+        + S3Bucket : string
+        + CDNUrl : string
+        + ThumbnailKey : string
+        + ThumbnailURL : string
+        + Status : MediaStatus
+        + CreatedAt : time.Time
+    }
+
+    class UploadRequest <<struct>> {
+        + UserID : uuid.UUID
+        + Filename : string
+        + ContentType : string
+        + FileSize : int64
+        + Purpose : UploadPurpose
+    }
+
+    class UploadResult <<struct>> {
+        + MediaID : uuid.UUID
+        + URL : string
+        + ThumbnailURL : string
+        + CDNUrl : string
+    }
+
+    class ImageDimensions <<struct>> {
+        + Width : int
+        + Height : int
+    }
+
+    enum MediaStatus <<enum>> {
+        UPLOADING
+        PROCESSING
+        READY
+        FAILED
+        DELETED
+    }
+
+    enum UploadPurpose <<enum>> {
+        POST_IMAGE
+        POST_VIDEO
+        AVATAR
+        COMMUNITY_ICON
+        COMMUNITY_BANNER
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface ObjectStorage <<interface>> {
+        + Upload(ctx, key, reader, contentType) : error
+        + Download(ctx, key) : (io.ReadCloser, error)
+        + Delete(ctx, key) : error
+        + GeneratePresignedURL(ctx, key, expiry) : (string, error)
+        + GetCDNUrl(key) : string
+    }
+
+    class S3Storage <<struct>> {
+        - client : *s3.Client
+        - bucket : string
+        - cdnDomain : string
+        - region : string
+    }
+
+    note left of S3Storage
+        AWS S3 bucket: reddit-media
+        CloudFront CDN for delivery
+        Signed URLs for private access
+        Lifecycle: Glacier after 90 days
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface MediaService <<interface>> {
+        + Upload(ctx, req, reader) : (*UploadResult, error)
+        + GetMedia(ctx, mediaID) : (*MediaFile, error)
+        + DeleteMedia(ctx, userID, mediaID) : error
+        + GeneratePresignedUploadURL(ctx, req) : (string, error)
+    }
+
+    class MediaServiceImpl <<struct>> {
+        - storage : ObjectStorage
+        - processor : ImageProcessor
+        - scanner : FileScanner
+        - validator : FileValidator
+    }
+
+    interface ImageProcessor <<interface>> {
+        + GenerateThumbnail(ctx, reader, maxWidth, maxHeight) : (io.Reader, error)
+        + GetDimensions(reader) : (*ImageDimensions, error)
+        + ResizeImage(ctx, reader, width, height) : (io.Reader, error)
+    }
+
+    interface FileScanner <<interface>> {
+        + Scan(ctx, reader) : (bool, error)
+    }
+
+    class ClamAVScanner <<struct>> {
+        - addr : string
+        - timeout : time.Duration
+    }
+
+    class FileValidator <<struct>> {
+        - maxFileSize : int64
+        - allowedTypes : map[string]bool
+        - maxImageWidth : int
+        - maxImageHeight : int
+        - maxVideoLength : time.Duration
+    }
+
+    class ThumbnailProcessor <<struct>> {
+        - maxWidth : int
+        - maxHeight : int
+        - quality : int
+    }
+
+    note right of FileValidator
+        Validates: file type (MIME),
+        file size, image dimensions,
+        video duration
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class MediaGRPCServer <<struct>> {
+        - service : MediaService
+        + pb.UnimplementedMediaServiceServer
+    }
+}
+
+' ─── Relationships ───
+MediaFile --> MediaStatus
+UploadRequest --> UploadPurpose
+
+S3Storage ..|> ObjectStorage : implements
+
+MediaServiceImpl ..|> MediaService : implements
+MediaServiceImpl --> ObjectStorage : uses
+MediaServiceImpl --> ImageProcessor : uses
+MediaServiceImpl --> FileScanner : uses
+MediaServiceImpl --> FileValidator : uses
+
+ClamAVScanner ..|> FileScanner : implements
+ThumbnailProcessor ..|> ImageProcessor : implements
+
+MediaGRPCServer --> MediaService : uses
+
+MediaService ..> MediaFile : manages
+MediaService ..> UploadResult : returns
+ImageProcessor ..> ImageDimensions : returns
+
+@enduml

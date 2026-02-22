@@ -1,0 +1,47 @@
+@startuml SD05_Vote
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-05: Upvote/Downvote (Redis + Kafka Fan-Out)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Vote\nService" as VOTE
+database "Redis\n(db0)" as REDIS
+queue "Kafka" as KAFKA
+database "pg-platform" as DB
+participant "Post\nService" as POST
+participant "User\nService" as USER
+participant "Spam\nDetection" as SPAM
+
+U -> FE : Click upvote on post
+FE -> GW : POST /api/votes\n{target_id, target_type: "post",\ndirection: "up"} + JWT
+GW -> GW : Validate JWT + rate limit
+
+GW -> VOTE : gRPC CastVote()
+VOTE -> REDIS : GET vote:user123:post456
+alt Already voted same direction
+    VOTE --> GW : 200 OK (no-op, idempotent)
+    GW --> FE : JSON {score: unchanged}
+    FE --> U : No visual change
+else New vote or direction change
+    VOTE -> REDIS : SET vote:user123:post456 = "up"
+    VOTE -> REDIS : INCR post:456:score
+    VOTE --> GW : 200 OK {new_score}
+    GW --> FE : JSON {score: 43}
+    FE --> U : Update vote arrow + score
+
+    == Async Persistence + Fan-Out ==
+    VOTE ->> KAFKA : Publish "VoteCreated"\n{user, target, direction, author_id}
+    VOTE ->> DB : Persist vote record (async)
+
+    KAFKA ->> POST : Consume event
+    POST -> POST : Update post score in pg-post
+
+    KAFKA ->> USER : Consume event
+    USER -> USER : Recalculate author karma
+
+    KAFKA ->> SPAM : Consume event
+    SPAM -> SPAM : Check for vote\nmanipulation patterns
+end
+@enduml

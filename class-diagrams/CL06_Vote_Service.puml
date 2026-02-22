@@ -1,0 +1,176 @@
+@startuml CL06_Vote_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-06: Vote Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Vote <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Direction : VoteDirection
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class VoteCount <<struct>> {
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Upvotes : int64
+        + Downvotes : int64
+        + Score : int64
+    }
+
+    class VoteEvent <<struct>> {
+        + UserID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + OldDirection : VoteDirection
+        + NewDirection : VoteDirection
+        + AuthorID : uuid.UUID
+        + Timestamp : time.Time
+    }
+
+    enum TargetType <<enum>> {
+        POST
+        COMMENT
+    }
+
+    enum VoteDirection <<enum>> {
+        UP
+        DOWN
+        NONE
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface VoteRepository <<interface>> {
+        + GetVote(ctx, userID, targetID, targetType) : (*Vote, error)
+        + SetVote(ctx, vote) : error
+        + RemoveVote(ctx, userID, targetID, targetType) : error
+        + GetVotesByUser(ctx, userID, targetIDs, targetType) : (map[uuid.UUID]VoteDirection, error)
+        + PersistVote(ctx, vote) : error
+        + AnonymizeByUser(ctx, userID) : error
+    }
+
+    interface VoteCountRepository <<interface>> {
+        + GetCount(ctx, targetID, targetType) : (*VoteCount, error)
+        + GetCounts(ctx, targetIDs, targetType) : (map[uuid.UUID]*VoteCount, error)
+        + IncrementUpvote(ctx, targetID, targetType, delta) : error
+        + IncrementDownvote(ctx, targetID, targetType, delta) : error
+    }
+
+    class RedisVoteRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    class RedisVoteCountRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    class PostgresVoteRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    note left of RedisVoteRepo
+        Redis db0: real-time vote state
+        Key: vote:{targetType}:{targetID}:{userID}
+        Value: UP | DOWN | NONE
+    end note
+
+    note left of PostgresVoteRepo
+        pg-platform schema: votes
+        Durable persistence for
+        vote records
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface VoteService <<interface>> {
+        + CastVote(ctx, userID, targetID, targetType, direction) : (*VoteCount, error)
+        + RemoveVote(ctx, userID, targetID, targetType) : (*VoteCount, error)
+        + GetUserVote(ctx, userID, targetID, targetType) : (VoteDirection, error)
+        + GetUserVotes(ctx, userID, targetIDs, targetType) : (map[uuid.UUID]VoteDirection, error)
+        + GetVoteCount(ctx, targetID, targetType) : (*VoteCount, error)
+        + GetVoteCounts(ctx, targetIDs, targetType) : (map[uuid.UUID]*VoteCount, error)
+    }
+
+    class VoteServiceImpl <<struct>> {
+        - voteRepo : VoteRepository
+        - countRepo : VoteCountRepository
+        - producer : EventProducer
+        - postClient : PostServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface PostServiceClient <<interface>> {
+        + GetPostAuthor(ctx, postID) : (uuid.UUID, error)
+    }
+}
+
+' ─── Kafka Producer ───
+package "Events" <<Rectangle>> #F3E5F5 {
+
+    class KafkaVoteProducer <<struct>> {
+        - producer : *kafka.Producer
+        - topic : string
+    }
+
+    note right of KafkaVoteProducer
+        Publishes VoteCreated events
+        consumed by: Post, Comment,
+        User (karma), Spam Detection
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class VoteGRPCServer <<struct>> {
+        - service : VoteService
+        + pb.UnimplementedVoteServiceServer
+    }
+}
+
+' ─── Relationships ───
+Vote --> TargetType
+Vote --> VoteDirection
+VoteCount --> TargetType
+VoteEvent --> TargetType
+VoteEvent --> VoteDirection
+
+RedisVoteRepo ..|> VoteRepository : implements
+RedisVoteCountRepo ..|> VoteCountRepository : implements
+PostgresVoteRepo ..|> VoteRepository : implements
+
+VoteServiceImpl ..|> VoteService : implements
+VoteServiceImpl --> VoteRepository : uses
+VoteServiceImpl --> VoteCountRepository : uses
+VoteServiceImpl --> EventProducer : uses
+VoteServiceImpl --> PostServiceClient : uses
+
+KafkaVoteProducer ..|> EventProducer : implements
+KafkaVoteProducer ..> VoteEvent : publishes
+
+VoteGRPCServer --> VoteService : uses
+
+VoteRepository ..> Vote : manages
+VoteCountRepository ..> VoteCount : manages
+
+@enduml

@@ -1,0 +1,259 @@
+@startuml CL11_Spam_Detection_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-11: Spam & Abuse Detection Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class ContentCheckRequest <<struct>> {
+        + ContentID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + ContentType : string
+        + Title : string
+        + Body : string
+        + URLs : []string
+        + CommunityID : uuid.UUID
+    }
+
+    class ContentCheckResult <<struct>> {
+        + Allowed : bool
+        + Reason : string
+        + Action : SpamAction
+        + Confidence : float64
+        + MatchedRules : []string
+    }
+
+    class BehaviorScore <<struct>> {
+        + UserID : uuid.UUID
+        + TrustScore : float64
+        + AccountAge : time.Duration
+        + Karma : int64
+        + ReportCount : int
+        + SpamFlagCount : int
+        + LastUpdated : time.Time
+    }
+
+    class BanRecord <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + BanType : BanType
+        + Reason : string
+        + IssuedBy : string
+        + ExpiresAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class AuditLogEntry <<struct>> {
+        + ID : uuid.UUID
+        + Action : string
+        + TargetID : uuid.UUID
+        + TargetType : string
+        + Reason : string
+        + AutomatedBy : string
+        + Timestamp : time.Time
+    }
+
+    class AutoModRule <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Pattern : string
+        + Action : SpamAction
+        + MinAccountAge : time.Duration
+        + MinKarma : int
+        + IsActive : bool
+    }
+
+    enum SpamAction <<enum>> {
+        ALLOW
+        REMOVE
+        FLAG_FOR_REVIEW
+        SHADOW_BAN
+        TEMPORARY_BAN
+    }
+
+    enum BanType <<enum>> {
+        SHADOW_BAN
+        IP_BAN
+        ACCOUNT_BAN
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface SpamRepository <<interface>> {
+        + CreateBanRecord(ctx, record) : error
+        + GetActiveBan(ctx, userID) : (*BanRecord, error)
+        + ListBans(ctx, page) : ([]*BanRecord, error)
+        + RevokeBan(ctx, banID) : error
+        + CreateAuditLog(ctx, entry) : error
+        + ListAuditLogs(ctx, page) : ([]*AuditLogEntry, error)
+    }
+
+    interface AutoModRepository <<interface>> {
+        + CreateRule(ctx, rule) : error
+        + ListRules(ctx, communityID) : ([]*AutoModRule, error)
+        + UpdateRule(ctx, rule) : error
+        + DeleteRule(ctx, ruleID) : error
+    }
+
+    interface BehaviorStore <<interface>> {
+        + GetScore(ctx, userID) : (*BehaviorScore, error)
+        + UpdateScore(ctx, score) : error
+        + IncrementSpamFlags(ctx, userID) : error
+        + StoreHashedIP(ctx, hash, userID, ttl) : error
+        + GetUsersByIPHash(ctx, hash) : ([]uuid.UUID, error)
+    }
+
+    class PostgresSpamRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisBehaviorStore <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of PostgresSpamRepo
+        pg-platform schema: spam
+        Ban records, audit logs,
+        AutoMod rules
+    end note
+
+    note left of RedisBehaviorStore
+        Redis db5: behavior scoring
+        Hashed IPs with 24h TTL
+        Trust scores per user
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface SpamDetectionService <<interface>> {
+        + CheckContent(ctx, req) : (*ContentCheckResult, error)
+        + AnalyzeBehavior(ctx, userID) : (*BehaviorScore, error)
+        + ShadowBanUser(ctx, userID, reason) : error
+        + TemporaryBanIP(ctx, ipHash, duration) : error
+        + GetBehaviorScore(ctx, userID) : (*BehaviorScore, error)
+        + ReportUser(ctx, reporterID, targetID, reason) : error
+    }
+
+    class SpamDetectionServiceImpl <<struct>> {
+        - repo : SpamRepository
+        - autoModRepo : AutoModRepository
+        - behaviorStore : BehaviorStore
+        - blocklist : BlocklistChecker
+        - urlChecker : URLReputationChecker
+        - duplicateDetector : DuplicateDetector
+    }
+
+    interface BlocklistChecker <<interface>> {
+        + ContainsBannedWords(text) : (bool, []string)
+        + ReloadBlocklist(ctx) : error
+    }
+
+    interface URLReputationChecker <<interface>> {
+        + CheckURLs(ctx, urls) : (bool, []string)
+    }
+
+    interface DuplicateDetector <<interface>> {
+        + IsDuplicate(ctx, userID, contentHash) : (bool, error)
+        + RecordContent(ctx, userID, contentHash, ttl) : error
+    }
+
+    class RegexBlocklist <<struct>> {
+        - patterns : []*regexp.Regexp
+        - mu : sync.RWMutex
+    }
+
+    class RedisDuplicateDetector <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note right of SpamDetectionServiceImpl
+        Pre-publish: keyword filter,
+        URL check, duplicate detection,
+        account age restrictions
+        --
+        Post-publish: pattern detection,
+        vote manipulation analysis,
+        trust scoring
+    end note
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class ContentEventConsumer <<struct>> {
+        - service : SpamDetectionService
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    class VotePatternConsumer <<struct>> {
+        - behaviorStore : BehaviorStore
+        - repo : SpamRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of ContentEventConsumer
+        Post-publish async analysis
+        Consumes: PostCreated,
+        CommentCreated events
+    end note
+
+    note right of VotePatternConsumer
+        Detects vote manipulation
+        Cluster analysis on timing
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class SpamGRPCServer <<struct>> {
+        - service : SpamDetectionService
+        + pb.UnimplementedSpamDetectionServiceServer
+    }
+}
+
+' ─── Relationships ───
+ContentCheckResult --> SpamAction
+BanRecord --> BanType
+AutoModRule --> SpamAction
+
+PostgresSpamRepo ..|> SpamRepository : implements
+PostgresSpamRepo ..|> AutoModRepository : implements
+RedisBehaviorStore ..|> BehaviorStore : implements
+
+SpamDetectionServiceImpl ..|> SpamDetectionService : implements
+SpamDetectionServiceImpl --> SpamRepository : uses
+SpamDetectionServiceImpl --> AutoModRepository : uses
+SpamDetectionServiceImpl --> BehaviorStore : uses
+SpamDetectionServiceImpl --> BlocklistChecker : uses
+SpamDetectionServiceImpl --> URLReputationChecker : uses
+SpamDetectionServiceImpl --> DuplicateDetector : uses
+
+RegexBlocklist ..|> BlocklistChecker : implements
+RedisDuplicateDetector ..|> DuplicateDetector : implements
+
+ContentEventConsumer --> SpamDetectionService : uses
+VotePatternConsumer --> BehaviorStore : uses
+VotePatternConsumer --> SpamRepository : uses
+
+SpamGRPCServer --> SpamDetectionService : uses
+
+SpamRepository ..> BanRecord : manages
+SpamRepository ..> AuditLogEntry : manages
+AutoModRepository ..> AutoModRule : manages
+BehaviorStore ..> BehaviorScore : manages
+
+@enduml

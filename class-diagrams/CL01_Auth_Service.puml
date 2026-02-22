@@ -1,0 +1,220 @@
+@startuml CL01_Auth_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-01: Auth Service — Class Diagram
+
+' ─── Models (Structs) ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class User <<struct>> {
+        + ID : uuid.UUID
+        + Email : string
+        + Username : string
+        + PasswordHash : string
+        + AuthProvider : AuthProvider
+        + IsVerified : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class OAuthAccount <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Provider : string
+        + ProviderUserID : string
+        + AccessToken : string
+        + RefreshToken : string
+        + ExpiresAt : time.Time
+    }
+
+    class OTPRecord <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Code : string
+        + Purpose : OTPPurpose
+        + ExpiresAt : time.Time
+        + IsUsed : bool
+    }
+
+    class TokenPair <<struct>> {
+        + AccessToken : string
+        + RefreshToken : string
+        + AccessExpiresAt : time.Time
+        + RefreshExpiresAt : time.Time
+    }
+
+    enum AuthProvider <<enum>> {
+        EMAIL
+        GOOGLE
+    }
+
+    enum OTPPurpose <<enum>> {
+        EMAIL_VERIFICATION
+        PASSWORD_RESET
+    }
+}
+
+' ─── Repository Layer (Interfaces) ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface AuthRepository <<interface>> {
+        + CreateUser(ctx, user) : (*User, error)
+        + GetUserByEmail(ctx, email) : (*User, error)
+        + GetUserByID(ctx, id) : (*User, error)
+        + GetUserByUsername(ctx, username) : (*User, error)
+        + UpdateUser(ctx, user) : error
+        + DeleteUser(ctx, id) : error
+    }
+
+    interface OAuthRepository <<interface>> {
+        + CreateOAuthAccount(ctx, account) : error
+        + GetOAuthAccount(ctx, provider, providerUserID) : (*OAuthAccount, error)
+        + DeleteOAuthAccounts(ctx, userID) : error
+    }
+
+    interface OTPRepository <<interface>> {
+        + StoreOTP(ctx, record) : error
+        + GetOTP(ctx, userID, purpose) : (*OTPRecord, error)
+        + MarkUsed(ctx, otpID) : error
+        + DeleteExpired(ctx) : error
+    }
+
+    class PostgresAuthRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisOTPRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+}
+
+' ─── Service Layer (Interfaces) ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface AuthService <<interface>> {
+        + Register(ctx, req) : (*TokenPair, error)
+        + Login(ctx, email, password) : (*TokenPair, error)
+        + GoogleOAuth(ctx, authCode) : (*TokenPair, error)
+        + VerifyOTP(ctx, userID, code, purpose) : error
+        + RefreshToken(ctx, refreshToken) : (*TokenPair, error)
+        + Logout(ctx, refreshToken) : error
+        + DeleteAccount(ctx, userID) : error
+    }
+
+    interface PasswordHasher <<interface>> {
+        + Hash(password) : (string, error)
+        + Verify(hash, password) : (bool, error)
+    }
+
+    interface TokenManager <<interface>> {
+        + GeneratePair(userID, username) : (*TokenPair, error)
+        + ValidateAccessToken(token) : (*Claims, error)
+        + BlacklistRefreshToken(ctx, token) : error
+        + IsBlacklisted(ctx, token) : (bool, error)
+    }
+
+    interface OTPSender <<interface>> {
+        + SendOTP(ctx, email, code) : error
+    }
+
+    interface GoogleOAuthClient <<interface>> {
+        + ExchangeCode(ctx, authCode) : (*GoogleUserInfo, error)
+    }
+
+    class AuthServiceImpl <<struct>> {
+        - repo : AuthRepository
+        - oauthRepo : OAuthRepository
+        - otpRepo : OTPRepository
+        - hasher : PasswordHasher
+        - tokens : TokenManager
+        - otpSender : OTPSender
+        - googleClient : GoogleOAuthClient
+    }
+
+    class Argon2Hasher <<struct>> {
+        - memory : uint32
+        - iterations : uint32
+        - parallelism : uint8
+        - saltLength : uint32
+        - keyLength : uint32
+    }
+
+    class JWTManager <<struct>> {
+        - accessSecret : []byte
+        - refreshSecret : []byte
+        - accessTTL : time.Duration
+        - refreshTTL : time.Duration
+        - blacklist : *redis.Client
+    }
+
+    class Claims <<struct>> {
+        + UserID : uuid.UUID
+        + Username : string
+        + jwt.RegisteredClaims
+    }
+
+    class GoogleUserInfo <<struct>> {
+        + Email : string
+        + Name : string
+        + Picture : string
+        + ProviderUserID : string
+    }
+}
+
+' ─── gRPC / Handler Layer ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class AuthGRPCServer <<struct>> {
+        - service : AuthService
+        + pb.UnimplementedAuthServiceServer
+    }
+
+    note right of AuthGRPCServer
+        Implements gRPC server
+        for auth.proto
+    end note
+}
+
+' ─── Relationships ───
+' Model associations
+User --> AuthProvider
+OTPRecord --> OTPPurpose
+OAuthAccount --> User : belongs to >
+
+' Repository implementations
+PostgresAuthRepo ..|> AuthRepository : implements
+PostgresAuthRepo ..|> OAuthRepository : implements
+RedisOTPRepo ..|> OTPRepository : implements
+
+' Service implementations
+AuthServiceImpl ..|> AuthService : implements
+Argon2Hasher ..|> PasswordHasher : implements
+JWTManager ..|> TokenManager : implements
+
+' Service dependencies (composition)
+AuthServiceImpl --> AuthRepository : uses
+AuthServiceImpl --> OAuthRepository : uses
+AuthServiceImpl --> OTPRepository : uses
+AuthServiceImpl --> PasswordHasher : uses
+AuthServiceImpl --> TokenManager : uses
+AuthServiceImpl --> OTPSender : uses
+AuthServiceImpl --> GoogleOAuthClient : uses
+
+' Handler depends on service
+AuthGRPCServer --> AuthService : uses
+
+' Repo works with models
+AuthRepository ..> User : manages
+OAuthRepository ..> OAuthAccount : manages
+OTPRepository ..> OTPRecord : manages
+TokenManager ..> TokenPair : creates
+TokenManager ..> Claims : parses
+JWTManager ..> Claims : creates
+
+@enduml

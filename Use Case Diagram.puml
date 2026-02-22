@@ -1,0 +1,143 @@
+@startuml Redyx_Use_Case_Diagram
+
+!theme plain
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecaseBorderColor #1a365d
+skinparam usecaseBackgroundColor #f0f4f8
+skinparam actorBorderColor #1a365d
+skinparam rectangleBorderColor #1a365d
+
+title Redyx - Use Case Diagram
+
+left to right direction
+
+' ========== ACTORS ==========
+actor "Guest" as Guest
+actor "User" as User
+actor "Moderator" as Mod
+actor "System" as Sys
+
+' Inheritance
+User -|> Guest
+Mod -|> User
+
+' ========== SYSTEM BOUNDARY ==========
+rectangle "Redyx Platform" {
+
+    ' --- Authentication ---
+    package "Authentication" {
+        usecase "Register" as UC_Register
+        usecase "Login" as UC_Login
+        usecase "Logout" as UC_Logout
+        usecase "Verify OTP" as UC_OTP
+    }
+
+    ' --- Content Viewing ---
+    package "Content" {
+        usecase "View Posts" as UC_ViewPosts
+        usecase "View Comments" as UC_ViewComments
+        usecase "View Community" as UC_ViewCommunity
+        usecase "Search" as UC_Search
+    }
+
+    ' --- Community Management ---
+    package "Community" {
+        usecase "Create Community" as UC_CreateComm
+        usecase "Join Community" as UC_JoinComm
+        usecase "Leave Community" as UC_LeaveComm
+    }
+
+    ' --- Post & Comment ---
+    package "Posts & Comments" {
+        usecase "Create Post" as UC_CreatePost
+        usecase "Create Comment" as UC_CreateComment
+        usecase "Edit Own Content" as UC_EditContent
+        usecase "Delete Own Content" as UC_DeleteContent
+    }
+
+    ' --- Voting & Saving ---
+    package "Engagement" {
+        usecase "Vote" as UC_Vote
+        usecase "Save Content" as UC_Save
+        usecase "View Home Feed" as UC_Feed
+    }
+
+    ' --- Profile ---
+    package "Profile" {
+        usecase "View Profile" as UC_ViewProfile
+        usecase "Edit Settings" as UC_EditSettings
+    }
+
+    ' --- Moderation ---
+    package "Moderation" {
+        usecase "Remove Content" as UC_RemoveContent
+        usecase "Ban/Mute User" as UC_BanUser
+        usecase "Pin Post" as UC_PinPost
+        usecase "Edit Community Rules" as UC_EditRules
+    }
+
+    ' --- System Processes ---
+    package "System Processes" {
+        usecase "Calculate Karma" as UC_Karma
+        usecase "Generate Feed" as UC_GenFeed
+        usecase "Send Notification" as UC_Notify
+    }
+}
+
+' ========== ASSOCIATIONS ==========
+
+' Guest actions
+Guest --> UC_Register
+Guest --> UC_Login
+Guest --> UC_ViewPosts
+Guest --> UC_ViewComments
+Guest --> UC_ViewCommunity
+Guest --> UC_Search
+
+' User actions (inherits Guest, adds these)
+User --> UC_Logout
+User --> UC_CreateComm
+User --> UC_JoinComm
+User --> UC_LeaveComm
+User --> UC_CreatePost
+User --> UC_CreateComment
+User --> UC_EditContent
+User --> UC_DeleteContent
+User --> UC_Vote
+User --> UC_Save
+User --> UC_Feed
+User --> UC_ViewProfile
+User --> UC_EditSettings
+
+' Moderator actions (inherits User, adds these)
+Mod --> UC_RemoveContent
+Mod --> UC_BanUser
+Mod --> UC_PinPost
+Mod --> UC_EditRules
+
+' System processes
+Sys --> UC_Karma
+Sys --> UC_GenFeed
+Sys --> UC_Notify
+
+' ========== INCLUDE / EXTEND ==========
+
+' Register includes OTP verification
+UC_Register ..> UC_OTP : <<include>>
+
+' Vote triggers karma calculation
+UC_Vote ..> UC_Karma : <<include>>
+
+' Create Post/Comment can trigger notifications
+UC_CreatePost ..> UC_Notify : <<include>>
+UC_CreateComment ..> UC_Notify : <<include>>
+
+' Home Feed uses the generated feed
+UC_Feed ..> UC_GenFeed : <<include>>
+
+' Moderation actions trigger notifications
+UC_RemoveContent ..> UC_Notify : <<include>>
+UC_BanUser ..> UC_Notify : <<include>>
+
+@enduml

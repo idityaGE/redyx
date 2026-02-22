@@ -1,0 +1,71 @@
+@startuml AD02_Google_OAuth
+!theme sunlust
+skinparam defaultFontSize 13
+skinparam ActivityFontSize 13
+skinparam ArrowFontSize 12
+skinparam padding 5
+
+title AD-02: Google OAuth Login / Registration
+
+start
+
+:User clicks "Sign in with Google";
+
+:Frontend redirects to Google\nOAuth consent screen\n(scope: email, profile);
+
+:User authorizes the app on Google;
+
+:Google redirects back to Redyx\nwith authorization code;
+
+partition "**Code Exchange**" {
+    :Auth Service sends auth code\nto Google token endpoint;
+    :Google returns access token\n+ ID token;
+    :Auth Service extracts email\nand provider_user_id from tokens;
+}
+
+partition "**Account Resolution**" {
+    if (OAuth account exists\nfor this provider_user_id?) then (yes)
+        :Look up linked user_id\nfrom oauth_accounts table;
+        :Fetch user from pg-auth;
+        note right
+            Returning user,
+            skip registration
+        end note
+    else (no)
+        if (Email already registered\nwith email/password?) then (yes)
+            :Link Google OAuth\nto existing account;
+            :Store OAuth tokens\nin oauth_accounts;
+            note right
+                Account linking:
+                same email, new provider
+            end note
+        else (no)
+            :Prompt user to\nchoose a username;
+
+            if (Username available?) then (yes)
+                :Create new user in pg-auth\n(status: ACTIVE, provider: GOOGLE);
+                :Store OAuth tokens\nin oauth_accounts;
+                :Create profile in pg-user\n(via gRPC to User Service);
+                note right
+                    No OTP needed,
+                    Google verified the email
+                end note
+            else (no)
+                :Return error:\n"Username taken, pick another";
+                stop
+            endif
+        endif
+    endif
+}
+
+partition "**Token Issuance**" {
+    :Generate JWT access token (15 min);
+    :Generate refresh token (7 days);
+    :Return token pair to client;
+}
+
+:User is logged in;
+
+stop
+
+@enduml

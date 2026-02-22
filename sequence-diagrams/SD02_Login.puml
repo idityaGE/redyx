@@ -1,0 +1,35 @@
+@startuml SD02_Login
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-02: User Login (Email + Password)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Auth\nService" as AUTH
+database "pg-auth" as DB
+
+U -> FE : Enter email + password
+FE -> GW : POST /api/auth/login\n{email, password}
+GW -> GW : Rate limit check
+GW -> AUTH : gRPC LoginUser()
+
+AUTH -> DB : Fetch user by email
+alt User not found
+    AUTH --> GW : Error: invalid credentials
+    GW --> FE : 401 Unauthorized
+    FE --> U : "Invalid email or password"
+else User found
+    AUTH -> AUTH : Verify password (argon2id)
+    alt Password mismatch
+        AUTH --> GW : Error: invalid credentials
+        GW --> FE : 401 Unauthorized
+        FE --> U : "Invalid email or password"
+    else Password correct
+        AUTH -> AUTH : Generate JWT\n(access: 15min, refresh: 7d)
+        AUTH --> GW : 200 OK + tokens
+        GW --> FE : Set cookies
+        FE --> U : Redirect to home feed
+    end
+end
+@enduml

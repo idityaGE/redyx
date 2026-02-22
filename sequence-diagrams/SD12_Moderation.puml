@@ -1,0 +1,68 @@
+@startuml SD12_Moderation
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-12: Moderation (Remove Post + Ban User)
+
+actor "Moderator" as MOD
+actor "Author" as AUTH
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Moderation\nService" as MODSVC
+participant "Community\nService" as COMM
+database "pg-platform" as DB
+queue "Kafka" as KAFKA
+participant "Post\nService" as POST
+participant "Search\nService" as SEARCH
+participant "Notification\nService" as NOTIF
+
+== Remove a Post ==
+
+MOD -> FE : Click "Remove" on a post
+FE -> GW : DELETE /api/mod/posts/{post_id}\n{reason: "Rule 3 violation"}\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> MODSVC : gRPC RemovePost()
+MODSVC -> COMM : gRPC CheckModRole(user_id, community_id)
+COMM --> MODSVC : role = "moderator"
+
+alt Not a moderator
+    MODSVC --> GW : 403 Forbidden
+    GW --> FE : JSON {error: "not a moderator"}
+    FE --> MOD : "Permission denied"
+else Is moderator
+    MODSVC -> DB : INSERT mod_log\n(action: remove_post, reason, mod_id)
+    MODSVC ->> KAFKA : Publish "PostRemoved"\n{post_id, reason, mod_id}
+    MODSVC --> GW : 200 OK
+    GW --> FE : JSON {status: "removed"}
+    FE --> MOD : Post marked as removed
+
+    KAFKA ->> POST : Consume event
+    POST -> POST : Mark post as removed\nin pg-post
+
+    KAFKA ->> SEARCH : Consume event
+    SEARCH -> SEARCH : Remove from\nMeilisearch index
+
+    KAFKA ->> NOTIF : Consume event
+    NOTIF -> AUTH : WebSocket push\n"Your post was removed:\nRule 3 violation"
+end
+
+== Ban a User ==
+
+MOD -> FE : Click "Ban User" on author profile\n(duration: 7 days, reason: "spam")
+FE -> GW : POST /api/mod/communities/{id}/bans\n{user_id, duration: "7d",\nreason: "spam"}\n+ JWT
+GW -> GW : Validate JWT
+
+GW -> MODSVC : gRPC BanUser()
+MODSVC -> COMM : gRPC CheckModRole(mod_id, community_id)
+COMM --> MODSVC : role = "moderator"
+
+MODSVC -> DB : INSERT ban record\n(user_id, community_id, expires_at,\nreason, banned_by)
+MODSVC -> DB : INSERT mod_log\n(action: ban_user, reason, mod_id)
+MODSVC ->> KAFKA : Publish "UserBanned"\n{user_id, community_id, duration}
+MODSVC --> GW : 200 OK
+GW --> FE : JSON {status: "banned"}
+FE --> MOD : "User banned for 7 days"
+
+KAFKA ->> NOTIF : Consume event
+NOTIF -> AUTH : WebSocket push\n"You have been banned from\nr/community for 7 days"
+@enduml

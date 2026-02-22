@@ -1,0 +1,54 @@
+@startuml SD11_Media_Upload
+!theme plain
+skinparam backgroundColor #FEFEFE
+title SD-11: Create Image/Video Post (Media Upload)
+
+actor "User" as U
+participant "Astro\nFrontend" as FE
+participant "Envoy\nGateway" as GW
+participant "Media\nService" as MEDIA
+participant "ClamAV\nScanner" as CLAM
+database "AWS S3" as S3
+participant "Post\nService" as POST
+database "pg-post\n(sharded)" as DB
+queue "Kafka" as KAFKA
+
+U -> FE : Select image + write title\n+ choose community
+FE -> GW : POST /api/media/upload\n(multipart/form-data)\n+ JWT
+GW -> GW : Validate JWT + rate limit
+
+== Step 1: Upload + Process Media ==
+GW -> MEDIA : gRPC UploadMedia()
+MEDIA -> MEDIA : Validate file type\n(jpg, png, gif, mp4)\n+ size limit (20MB)
+alt Invalid file
+    MEDIA --> GW : 400 Bad Request
+    GW --> FE : JSON {error: "invalid file type"}
+    FE --> U : "Unsupported format"
+else Valid file
+    MEDIA -> CLAM : Scan for malware
+    alt Malware detected
+        MEDIA --> GW : 422 Unprocessable
+        GW --> FE : JSON {error: "file rejected"}
+        FE --> U : "File rejected by security scan"
+    else Clean file
+        MEDIA -> MEDIA : Generate thumbnail
+        MEDIA -> S3 : PUT original image
+        S3 --> MEDIA : S3 URL (original)
+        MEDIA -> S3 : PUT thumbnail
+        S3 --> MEDIA : S3 URL (thumbnail)
+        MEDIA --> GW : 200 OK\n{media_url, thumbnail_url}
+        GW --> FE : JSON {media_url, thumbnail_url}
+    end
+end
+
+== Step 2: Create Post with Media Reference ==
+FE -> GW : POST /api/posts\n{title, community_id, type: "image",\nmedia_url, thumbnail_url}\n+ JWT
+GW -> POST : gRPC CreatePost()
+POST -> POST : Hash community_id -> shard
+POST -> DB : INSERT post with media URLs
+POST --> GW : 201 Created {post_id}
+GW --> FE : JSON {post_id, url}
+FE --> U : Redirect to new post
+
+POST ->> KAFKA : Publish "PostCreated"
+@enduml

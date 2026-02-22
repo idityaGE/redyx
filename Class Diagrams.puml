@@ -1,0 +1,2418 @@
+@startuml CL01_Auth_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-01: Auth Service — Class Diagram
+
+' ─── Models (Structs) ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class User <<struct>> {
+        + ID : uuid.UUID
+        + Email : string
+        + Username : string
+        + PasswordHash : string
+        + AuthProvider : AuthProvider
+        + IsVerified : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class OAuthAccount <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Provider : string
+        + ProviderUserID : string
+        + AccessToken : string
+        + RefreshToken : string
+        + ExpiresAt : time.Time
+    }
+
+    class OTPRecord <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Code : string
+        + Purpose : OTPPurpose
+        + ExpiresAt : time.Time
+        + IsUsed : bool
+    }
+
+    class TokenPair <<struct>> {
+        + AccessToken : string
+        + RefreshToken : string
+        + AccessExpiresAt : time.Time
+        + RefreshExpiresAt : time.Time
+    }
+
+    enum AuthProvider <<enum>> {
+        EMAIL
+        GOOGLE
+    }
+
+    enum OTPPurpose <<enum>> {
+        EMAIL_VERIFICATION
+        PASSWORD_RESET
+    }
+}
+
+' ─── Repository Layer (Interfaces) ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface AuthRepository <<interface>> {
+        + CreateUser(ctx, user) : (*User, error)
+        + GetUserByEmail(ctx, email) : (*User, error)
+        + GetUserByID(ctx, id) : (*User, error)
+        + GetUserByUsername(ctx, username) : (*User, error)
+        + UpdateUser(ctx, user) : error
+        + DeleteUser(ctx, id) : error
+    }
+
+    interface OAuthRepository <<interface>> {
+        + CreateOAuthAccount(ctx, account) : error
+        + GetOAuthAccount(ctx, provider, providerUserID) : (*OAuthAccount, error)
+        + DeleteOAuthAccounts(ctx, userID) : error
+    }
+
+    interface OTPRepository <<interface>> {
+        + StoreOTP(ctx, record) : error
+        + GetOTP(ctx, userID, purpose) : (*OTPRecord, error)
+        + MarkUsed(ctx, otpID) : error
+        + DeleteExpired(ctx) : error
+    }
+
+    class PostgresAuthRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisOTPRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+}
+
+' ─── Service Layer (Interfaces) ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface AuthService <<interface>> {
+        + Register(ctx, req) : (*TokenPair, error)
+        + Login(ctx, email, password) : (*TokenPair, error)
+        + GoogleOAuth(ctx, authCode) : (*TokenPair, error)
+        + VerifyOTP(ctx, userID, code, purpose) : error
+        + RefreshToken(ctx, refreshToken) : (*TokenPair, error)
+        + Logout(ctx, refreshToken) : error
+        + DeleteAccount(ctx, userID) : error
+    }
+
+    interface PasswordHasher <<interface>> {
+        + Hash(password) : (string, error)
+        + Verify(hash, password) : (bool, error)
+    }
+
+    interface TokenManager <<interface>> {
+        + GeneratePair(userID, username) : (*TokenPair, error)
+        + ValidateAccessToken(token) : (*Claims, error)
+        + BlacklistRefreshToken(ctx, token) : error
+        + IsBlacklisted(ctx, token) : (bool, error)
+    }
+
+    interface OTPSender <<interface>> {
+        + SendOTP(ctx, email, code) : error
+    }
+
+    interface GoogleOAuthClient <<interface>> {
+        + ExchangeCode(ctx, authCode) : (*GoogleUserInfo, error)
+    }
+
+    class AuthServiceImpl <<struct>> {
+        - repo : AuthRepository
+        - oauthRepo : OAuthRepository
+        - otpRepo : OTPRepository
+        - hasher : PasswordHasher
+        - tokens : TokenManager
+        - otpSender : OTPSender
+        - googleClient : GoogleOAuthClient
+    }
+
+    class Argon2Hasher <<struct>> {
+        - memory : uint32
+        - iterations : uint32
+        - parallelism : uint8
+        - saltLength : uint32
+        - keyLength : uint32
+    }
+
+    class JWTManager <<struct>> {
+        - accessSecret : []byte
+        - refreshSecret : []byte
+        - accessTTL : time.Duration
+        - refreshTTL : time.Duration
+        - blacklist : *redis.Client
+    }
+
+    class Claims <<struct>> {
+        + UserID : uuid.UUID
+        + Username : string
+        + jwt.RegisteredClaims
+    }
+
+    class GoogleUserInfo <<struct>> {
+        + Email : string
+        + Name : string
+        + Picture : string
+        + ProviderUserID : string
+    }
+}
+
+' ─── gRPC / Handler Layer ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class AuthGRPCServer <<struct>> {
+        - service : AuthService
+        + pb.UnimplementedAuthServiceServer
+    }
+
+    note right of AuthGRPCServer
+        Implements gRPC server
+        for auth.proto
+    end note
+}
+
+' ─── Relationships ───
+' Model associations
+User --> AuthProvider
+OTPRecord --> OTPPurpose
+OAuthAccount --> User : belongs to >
+
+' Repository implementations
+PostgresAuthRepo ..|> AuthRepository : implements
+PostgresAuthRepo ..|> OAuthRepository : implements
+RedisOTPRepo ..|> OTPRepository : implements
+
+' Service implementations
+AuthServiceImpl ..|> AuthService : implements
+Argon2Hasher ..|> PasswordHasher : implements
+JWTManager ..|> TokenManager : implements
+
+' Service dependencies (composition)
+AuthServiceImpl --> AuthRepository : uses
+AuthServiceImpl --> OAuthRepository : uses
+AuthServiceImpl --> OTPRepository : uses
+AuthServiceImpl --> PasswordHasher : uses
+AuthServiceImpl --> TokenManager : uses
+AuthServiceImpl --> OTPSender : uses
+AuthServiceImpl --> GoogleOAuthClient : uses
+
+' Handler depends on service
+AuthGRPCServer --> AuthService : uses
+
+' Repo works with models
+AuthRepository ..> User : manages
+OAuthRepository ..> OAuthAccount : manages
+OTPRepository ..> OTPRecord : manages
+TokenManager ..> TokenPair : creates
+TokenManager ..> Claims : parses
+JWTManager ..> Claims : creates
+
+@enduml
+@startuml CL02_User_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-02: User Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class UserProfile <<struct>> {
+        + ID : uuid.UUID
+        + Username : string
+        + DisplayName : string
+        + Bio : string
+        + AvatarURL : string
+        + Karma : int64
+        + PostKarma : int64
+        + CommentKarma : int64
+        + CakeDay : time.Time
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class UserSettings <<struct>> {
+        + UserID : uuid.UUID
+        + EmailNotifications : bool
+        + ShowOnlineStatus : bool
+        + DefaultSortOrder : SortOrder
+        + Theme : string
+        + UpdatedAt : time.Time
+    }
+
+    class KarmaEvent <<struct>> {
+        + UserID : uuid.UUID
+        + Delta : int
+        + TargetType : string
+        + TargetID : uuid.UUID
+        + Timestamp : time.Time
+    }
+
+    enum SortOrder <<enum>> {
+        HOT
+        NEW
+        TOP
+        RISING
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface UserRepository <<interface>> {
+        + CreateProfile(ctx, profile) : error
+        + GetProfileByID(ctx, id) : (*UserProfile, error)
+        + GetProfileByUsername(ctx, username) : (*UserProfile, error)
+        + UpdateProfile(ctx, profile) : error
+        + DeleteProfile(ctx, id) : error
+        + UpdateKarma(ctx, userID, delta) : error
+        + GetPostHistory(ctx, userID, page) : ([]*PostSummary, error)
+        + GetCommentHistory(ctx, userID, page) : ([]*CommentSummary, error)
+    }
+
+    interface UserSettingsRepository <<interface>> {
+        + GetSettings(ctx, userID) : (*UserSettings, error)
+        + UpdateSettings(ctx, settings) : error
+    }
+
+    class PostgresUserRepo <<struct>> {
+        - db : *sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface UserService <<interface>> {
+        + GetProfile(ctx, userID) : (*UserProfile, error)
+        + GetProfileByUsername(ctx, username) : (*UserProfile, error)
+        + UpdateProfile(ctx, userID, req) : error
+        + UpdateAvatar(ctx, userID, avatarURL) : error
+        + GetSettings(ctx, userID) : (*UserSettings, error)
+        + UpdateSettings(ctx, userID, settings) : error
+        + GetPostHistory(ctx, userID, page) : ([]*PostSummary, error)
+        + GetCommentHistory(ctx, userID, page) : ([]*CommentSummary, error)
+        + DeleteAccount(ctx, userID) : error
+    }
+
+    class UserServiceImpl <<struct>> {
+        - repo : UserRepository
+        - settingsRepo : UserSettingsRepository
+        - cache : CacheClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    class RedisCacheClient <<struct>> {
+        - rdb : *redis.Client
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class KarmaConsumer <<struct>> {
+        - repo : UserRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of KarmaConsumer
+        Consumes VoteCreated events
+        from Kafka to update karma
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class UserGRPCServer <<struct>> {
+        - service : UserService
+        + pb.UnimplementedUserServiceServer
+    }
+}
+
+' ─── DTOs ───
+package "DTOs" <<Rectangle>> #E0F7FA {
+    class PostSummary <<struct>> {
+        + ID : uuid.UUID
+        + Title : string
+        + CommunityName : string
+        + Score : int
+        + CommentCount : int
+        + CreatedAt : time.Time
+    }
+
+    class CommentSummary <<struct>> {
+        + ID : uuid.UUID
+        + Body : string
+        + PostTitle : string
+        + Score : int
+        + CreatedAt : time.Time
+    }
+}
+
+' ─── Relationships ───
+UserProfile --> SortOrder
+UserSettings --> SortOrder
+
+PostgresUserRepo ..|> UserRepository : implements
+PostgresUserRepo ..|> UserSettingsRepository : implements
+RedisCacheClient ..|> CacheClient : implements
+
+UserServiceImpl ..|> UserService : implements
+UserServiceImpl --> UserRepository : uses
+UserServiceImpl --> UserSettingsRepository : uses
+UserServiceImpl --> CacheClient : uses
+
+KarmaConsumer --> UserRepository : uses
+
+UserGRPCServer --> UserService : uses
+
+UserRepository ..> UserProfile : manages
+UserRepository ..> PostSummary : returns
+UserRepository ..> CommentSummary : returns
+UserSettingsRepository ..> UserSettings : manages
+KarmaConsumer ..> KarmaEvent : processes
+
+@enduml
+@startuml CL03_Community_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-03: Community Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Community <<struct>> {
+        + ID : uuid.UUID
+        + Name : string
+        + Description : string
+        + BannerURL : string
+        + IconURL : string
+        + Visibility : Visibility
+        + MemberCount : int64
+        + CreatedBy : uuid.UUID
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class Membership <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Role : MemberRole
+        + JoinedAt : time.Time
+    }
+
+    class CommunityRule <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Title : string
+        + Description : string
+        + Position : int
+        + CreatedAt : time.Time
+    }
+
+    enum Visibility <<enum>> {
+        PUBLIC
+        RESTRICTED
+        PRIVATE
+    }
+
+    enum MemberRole <<enum>> {
+        MEMBER
+        MODERATOR
+        OWNER
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface CommunityRepository <<interface>> {
+        + Create(ctx, community) : (*Community, error)
+        + GetByID(ctx, id) : (*Community, error)
+        + GetByName(ctx, name) : (*Community, error)
+        + Update(ctx, community) : error
+        + Delete(ctx, id) : error
+        + List(ctx, page, pageSize) : ([]*Community, error)
+        + Search(ctx, query) : ([]*Community, error)
+        + IncrementMemberCount(ctx, id, delta) : error
+    }
+
+    interface MembershipRepository <<interface>> {
+        + AddMember(ctx, membership) : error
+        + RemoveMember(ctx, userID, communityID) : error
+        + GetMembership(ctx, userID, communityID) : (*Membership, error)
+        + ListMembers(ctx, communityID, page) : ([]*Membership, error)
+        + ListUserCommunities(ctx, userID, page) : ([]*Community, error)
+        + UpdateRole(ctx, userID, communityID, role) : error
+        + CountMembers(ctx, communityID) : (int64, error)
+    }
+
+    interface CommunityRuleRepository <<interface>> {
+        + Create(ctx, rule) : error
+        + ListByCommunity(ctx, communityID) : ([]*CommunityRule, error)
+        + Update(ctx, rule) : error
+        + Delete(ctx, ruleID) : error
+        + Reorder(ctx, communityID, ruleIDs) : error
+    }
+
+    class PostgresCommunityRepo <<struct>> {
+        - db : *sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface CommunityService <<interface>> {
+        + CreateCommunity(ctx, userID, req) : (*Community, error)
+        + GetCommunity(ctx, id) : (*Community, error)
+        + GetCommunityByName(ctx, name) : (*Community, error)
+        + UpdateCommunity(ctx, userID, communityID, req) : error
+        + DeleteCommunity(ctx, userID, communityID) : error
+        + ListCommunities(ctx, page, pageSize) : ([]*Community, error)
+        + JoinCommunity(ctx, userID, communityID) : error
+        + LeaveCommunity(ctx, userID, communityID) : error
+        + AssignModerator(ctx, actorID, targetUserID, communityID) : error
+        + GetUserRole(ctx, userID, communityID) : (MemberRole, error)
+        + ListUserCommunities(ctx, userID, page) : ([]*Community, error)
+    }
+
+    class CommunityServiceImpl <<struct>> {
+        - communityRepo : CommunityRepository
+        - memberRepo : MembershipRepository
+        - ruleRepo : CommunityRuleRepository
+        - cache : CacheClient
+        - producer : EventProducer
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class CommunityGRPCServer <<struct>> {
+        - service : CommunityService
+        + pb.UnimplementedCommunityServiceServer
+    }
+}
+
+' ─── Relationships ───
+Community --> Visibility
+Membership --> MemberRole
+CommunityRule --> Community : belongs to >
+
+PostgresCommunityRepo ..|> CommunityRepository : implements
+PostgresCommunityRepo ..|> MembershipRepository : implements
+PostgresCommunityRepo ..|> CommunityRuleRepository : implements
+
+CommunityServiceImpl ..|> CommunityService : implements
+CommunityServiceImpl --> CommunityRepository : uses
+CommunityServiceImpl --> MembershipRepository : uses
+CommunityServiceImpl --> CommunityRuleRepository : uses
+CommunityServiceImpl --> CacheClient : uses
+CommunityServiceImpl --> EventProducer : uses
+
+CommunityGRPCServer --> CommunityService : uses
+
+CommunityRepository ..> Community : manages
+MembershipRepository ..> Membership : manages
+CommunityRuleRepository ..> CommunityRule : manages
+
+@enduml
+@startuml CL04_Post_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-04: Post Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Post <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + AuthorUsername : string
+        + Title : string
+        + Body : string
+        + URL : string
+        + MediaURL : string
+        + PostType : PostType
+        + Score : int64
+        + UpvoteCount : int64
+        + DownvoteCount : int64
+        + CommentCount : int64
+        + IsAnonymous : bool
+        + IsPinned : bool
+        + IsRemoved : bool
+        + IsLocked : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class SavedPost <<struct>> {
+        + UserID : uuid.UUID
+        + PostID : uuid.UUID
+        + SavedAt : time.Time
+    }
+
+    enum PostType <<enum>> {
+        TEXT
+        LINK
+        MEDIA
+    }
+
+    enum SortType <<enum>> {
+        HOT
+        NEW
+        TOP
+        RISING
+    }
+
+    enum TimeFilter <<enum>> {
+        HOUR
+        DAY
+        WEEK
+        MONTH
+        YEAR
+        ALL
+    }
+
+    class FeedRequest <<struct>> {
+        + UserID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Sort : SortType
+        + TimeFilter : TimeFilter
+        + Page : int
+        + PageSize : int
+    }
+}
+
+' ─── Sharding ───
+package "Sharding" <<Rectangle>> #E0F7FA {
+
+    interface ShardRouter <<interface>> {
+        + GetShard(communityID) : (*ShardInfo, error)
+        + GetAllShards() : []*ShardInfo
+        + AddShard(shard) : error
+        + RemoveShard(shardID) : error
+    }
+
+    class ConsistentHashRouter <<struct>> {
+        - ring : *HashRing
+        - shards : map[string]*ShardInfo
+        - virtualNodes : int
+        - mu : sync.RWMutex
+    }
+
+    class HashRing <<struct>> {
+        - nodes : []uint32
+        - nodeMap : map[uint32]string
+    }
+
+    class ShardInfo <<struct>> {
+        + ID : string
+        + DSN : string
+        + IsActive : bool
+        + VirtualNodes : int
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface PostRepository <<interface>> {
+        + Create(ctx, post) : (*Post, error)
+        + GetByID(ctx, id, communityID) : (*Post, error)
+        + Update(ctx, post) : error
+        + Delete(ctx, id, communityID) : error
+        + ListByCommunity(ctx, communityID, sort, timeFilter, page) : ([]*Post, error)
+        + ListByUser(ctx, userID, page) : ([]*Post, error)
+        + UpdateScore(ctx, id, communityID, upvotes, downvotes) : error
+        + IncrementCommentCount(ctx, id, communityID, delta) : error
+        + SetPinned(ctx, id, communityID, pinned) : error
+        + SetRemoved(ctx, id, communityID, removed) : error
+        + AnonymizeByUser(ctx, userID) : error
+    }
+
+    interface SavedPostRepository <<interface>> {
+        + Save(ctx, userID, postID) : error
+        + Unsave(ctx, userID, postID) : error
+        + ListSaved(ctx, userID, page) : ([]*Post, error)
+        + IsSaved(ctx, userID, postID) : (bool, error)
+    }
+
+    class ShardedPostRepo <<struct>> {
+        - router : ShardRouter
+        - pools : map[string]*sql.DB
+    }
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface PostService <<interface>> {
+        + CreatePost(ctx, req) : (*Post, error)
+        + GetPost(ctx, id) : (*Post, error)
+        + UpdatePost(ctx, userID, postID, req) : error
+        + DeletePost(ctx, userID, postID) : error
+        + GetFeed(ctx, feedReq) : ([]*Post, error)
+        + GetHomeFeed(ctx, userID, sort, page) : ([]*Post, error)
+        + UpdateScore(ctx, postID, upvotes, downvotes) : error
+        + PinPost(ctx, modID, postID, pinned) : error
+        + RemovePost(ctx, modID, postID) : error
+        + SavePost(ctx, userID, postID) : error
+        + UnsavePost(ctx, userID, postID) : error
+        + ListSaved(ctx, userID, page) : ([]*Post, error)
+    }
+
+    class PostServiceImpl <<struct>> {
+        - repo : PostRepository
+        - savedRepo : SavedPostRepository
+        - router : ShardRouter
+        - cache : CacheClient
+        - producer : EventProducer
+        - communityClient : CommunityServiceClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+        + GetUserCommunities(ctx, userID) : ([]uuid.UUID, error)
+    }
+
+    class RankingAlgorithm <<struct>> {
+        + HotScore(upvotes, downvotes, createdAt) : float64
+        + TopScore(upvotes, downvotes) : float64
+        + RisingScore(upvotes, downvotes, createdAt, commentCount) : float64
+        + ControversyScore(upvotes, downvotes) : float64
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class VoteEventConsumer <<struct>> {
+        - repo : PostRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of VoteEventConsumer
+        Consumes VoteCreated events
+        to update post scores
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class PostGRPCServer <<struct>> {
+        - service : PostService
+        + pb.UnimplementedPostServiceServer
+    }
+}
+
+' ─── Relationships ───
+Post --> PostType
+FeedRequest --> SortType
+FeedRequest --> TimeFilter
+
+ConsistentHashRouter ..|> ShardRouter : implements
+ConsistentHashRouter --> HashRing : uses
+ConsistentHashRouter --> ShardInfo : manages
+
+ShardedPostRepo ..|> PostRepository : implements
+ShardedPostRepo ..|> SavedPostRepository : implements
+ShardedPostRepo --> ShardRouter : uses
+
+PostServiceImpl ..|> PostService : implements
+PostServiceImpl --> PostRepository : uses
+PostServiceImpl --> SavedPostRepository : uses
+PostServiceImpl --> ShardRouter : uses
+PostServiceImpl --> CacheClient : uses
+PostServiceImpl --> EventProducer : uses
+PostServiceImpl --> CommunityServiceClient : uses
+PostServiceImpl --> RankingAlgorithm : uses
+
+VoteEventConsumer --> PostRepository : uses
+
+PostGRPCServer --> PostService : uses
+
+PostRepository ..> Post : manages
+SavedPostRepository ..> SavedPost : manages
+
+@enduml
+@startuml CL05_Comment_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-05: Comment Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Comment <<struct>> {
+        + ID : uuid.UUID
+        + PostID : uuid.UUID
+        + ParentID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + AuthorUsername : string
+        + Body : string
+        + Path : string
+        + Depth : int
+        + Score : int64
+        + UpvoteCount : int64
+        + DownvoteCount : int64
+        + ReplyCount : int
+        + IsDeleted : bool
+        + IsRemoved : bool
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class CommentTree <<struct>> {
+        + Root : *CommentNode
+        + TotalCount : int
+        + HasMore : bool
+    }
+
+    class CommentNode <<struct>> {
+        + Comment : *Comment
+        + Children : []*CommentNode
+        + HasMoreChildren : bool
+        + ChildCount : int
+    }
+
+    enum CommentSortType <<enum>> {
+        BEST
+        TOP
+        NEW
+        CONTROVERSIAL
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface CommentRepository <<interface>> {
+        + Create(ctx, comment) : (*Comment, error)
+        + GetByID(ctx, postID, commentID) : (*Comment, error)
+        + Update(ctx, comment) : error
+        + SoftDelete(ctx, postID, commentID) : error
+        + GetCommentTree(ctx, postID, sort, maxDepth, page) : (*CommentTree, error)
+        + GetReplies(ctx, postID, parentPath, sort, page) : ([]*Comment, error)
+        + UpdateScore(ctx, postID, commentID, upvotes, downvotes) : error
+        + CountByPost(ctx, postID) : (int64, error)
+        + AnonymizeByUser(ctx, userID) : error
+        + MarkRemoved(ctx, postID, commentID) : error
+    }
+
+    class ScyllaCommentRepo <<struct>> {
+        - session : *gocql.Session
+        - keyspace : string
+    }
+
+    note left of ScyllaCommentRepo
+        Partition key: post_id
+        Clustering: path (materialized)
+        Wide-column model in ScyllaDB
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface CommentService <<interface>> {
+        + CreateComment(ctx, req) : (*Comment, error)
+        + GetComment(ctx, postID, commentID) : (*Comment, error)
+        + EditComment(ctx, userID, postID, commentID, body) : error
+        + DeleteComment(ctx, userID, postID, commentID) : error
+        + GetCommentTree(ctx, postID, sort, maxDepth, page) : (*CommentTree, error)
+        + GetMoreReplies(ctx, postID, parentPath, sort, page) : ([]*CommentNode, error)
+        + RemoveComment(ctx, modID, postID, commentID) : error
+    }
+
+    class CommentServiceImpl <<struct>> {
+        - repo : CommentRepository
+        - producer : EventProducer
+        - postClient : PostServiceClient
+        - communityClient : CommunityServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface PostServiceClient <<interface>> {
+        + IncrementCommentCount(ctx, postID, delta) : error
+        + GetPost(ctx, postID) : (*PostInfo, error)
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+    }
+
+    class TreeBuilder <<struct>> {
+        + BuildTree(comments []*Comment, maxDepth int) : *CommentTree
+        + FlattenTree(tree *CommentTree) : []*Comment
+    }
+
+    class PostInfo <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + IsLocked : bool
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class VoteEventConsumer <<struct>> {
+        - repo : CommentRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of VoteEventConsumer
+        Consumes VoteCreated events
+        for comment score updates
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class CommentGRPCServer <<struct>> {
+        - service : CommentService
+        + pb.UnimplementedCommentServiceServer
+    }
+}
+
+' ─── Relationships ───
+CommentTree --> CommentNode
+CommentNode --> Comment
+Comment --> CommentSortType
+
+ScyllaCommentRepo ..|> CommentRepository : implements
+
+CommentServiceImpl ..|> CommentService : implements
+CommentServiceImpl --> CommentRepository : uses
+CommentServiceImpl --> EventProducer : uses
+CommentServiceImpl --> PostServiceClient : uses
+CommentServiceImpl --> CommunityServiceClient : uses
+CommentServiceImpl --> TreeBuilder : uses
+
+VoteEventConsumer --> CommentRepository : uses
+
+CommentGRPCServer --> CommentService : uses
+
+CommentRepository ..> Comment : manages
+CommentRepository ..> CommentTree : returns
+
+@enduml
+@startuml CL06_Vote_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-06: Vote Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Vote <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Direction : VoteDirection
+        + CreatedAt : time.Time
+        + UpdatedAt : time.Time
+    }
+
+    class VoteCount <<struct>> {
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Upvotes : int64
+        + Downvotes : int64
+        + Score : int64
+    }
+
+    class VoteEvent <<struct>> {
+        + UserID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + OldDirection : VoteDirection
+        + NewDirection : VoteDirection
+        + AuthorID : uuid.UUID
+        + Timestamp : time.Time
+    }
+
+    enum TargetType <<enum>> {
+        POST
+        COMMENT
+    }
+
+    enum VoteDirection <<enum>> {
+        UP
+        DOWN
+        NONE
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface VoteRepository <<interface>> {
+        + GetVote(ctx, userID, targetID, targetType) : (*Vote, error)
+        + SetVote(ctx, vote) : error
+        + RemoveVote(ctx, userID, targetID, targetType) : error
+        + GetVotesByUser(ctx, userID, targetIDs, targetType) : (map[uuid.UUID]VoteDirection, error)
+        + PersistVote(ctx, vote) : error
+        + AnonymizeByUser(ctx, userID) : error
+    }
+
+    interface VoteCountRepository <<interface>> {
+        + GetCount(ctx, targetID, targetType) : (*VoteCount, error)
+        + GetCounts(ctx, targetIDs, targetType) : (map[uuid.UUID]*VoteCount, error)
+        + IncrementUpvote(ctx, targetID, targetType, delta) : error
+        + IncrementDownvote(ctx, targetID, targetType, delta) : error
+    }
+
+    class RedisVoteRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    class RedisVoteCountRepo <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    class PostgresVoteRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    note left of RedisVoteRepo
+        Redis db0: real-time vote state
+        Key: vote:{targetType}:{targetID}:{userID}
+        Value: UP | DOWN | NONE
+    end note
+
+    note left of PostgresVoteRepo
+        pg-platform schema: votes
+        Durable persistence for
+        vote records
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface VoteService <<interface>> {
+        + CastVote(ctx, userID, targetID, targetType, direction) : (*VoteCount, error)
+        + RemoveVote(ctx, userID, targetID, targetType) : (*VoteCount, error)
+        + GetUserVote(ctx, userID, targetID, targetType) : (VoteDirection, error)
+        + GetUserVotes(ctx, userID, targetIDs, targetType) : (map[uuid.UUID]VoteDirection, error)
+        + GetVoteCount(ctx, targetID, targetType) : (*VoteCount, error)
+        + GetVoteCounts(ctx, targetIDs, targetType) : (map[uuid.UUID]*VoteCount, error)
+    }
+
+    class VoteServiceImpl <<struct>> {
+        - voteRepo : VoteRepository
+        - countRepo : VoteCountRepository
+        - producer : EventProducer
+        - postClient : PostServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface PostServiceClient <<interface>> {
+        + GetPostAuthor(ctx, postID) : (uuid.UUID, error)
+    }
+}
+
+' ─── Kafka Producer ───
+package "Events" <<Rectangle>> #F3E5F5 {
+
+    class KafkaVoteProducer <<struct>> {
+        - producer : *kafka.Producer
+        - topic : string
+    }
+
+    note right of KafkaVoteProducer
+        Publishes VoteCreated events
+        consumed by: Post, Comment,
+        User (karma), Spam Detection
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class VoteGRPCServer <<struct>> {
+        - service : VoteService
+        + pb.UnimplementedVoteServiceServer
+    }
+}
+
+' ─── Relationships ───
+Vote --> TargetType
+Vote --> VoteDirection
+VoteCount --> TargetType
+VoteEvent --> TargetType
+VoteEvent --> VoteDirection
+
+RedisVoteRepo ..|> VoteRepository : implements
+RedisVoteCountRepo ..|> VoteCountRepository : implements
+PostgresVoteRepo ..|> VoteRepository : implements
+
+VoteServiceImpl ..|> VoteService : implements
+VoteServiceImpl --> VoteRepository : uses
+VoteServiceImpl --> VoteCountRepository : uses
+VoteServiceImpl --> EventProducer : uses
+VoteServiceImpl --> PostServiceClient : uses
+
+KafkaVoteProducer ..|> EventProducer : implements
+KafkaVoteProducer ..> VoteEvent : publishes
+
+VoteGRPCServer --> VoteService : uses
+
+VoteRepository ..> Vote : manages
+VoteCountRepository ..> VoteCount : manages
+
+@enduml
+@startuml CL07_Search_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-07: Search Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class SearchQuery <<struct>> {
+        + Query : string
+        + CommunityID : uuid.UUID
+        + SearchScope : SearchScope
+        + Sort : SearchSort
+        + Page : int
+        + PageSize : int
+        + Filters : SearchFilters
+    }
+
+    class SearchFilters <<struct>> {
+        + TimeRange : TimeRange
+        + PostType : string
+        + MinScore : int
+    }
+
+    class SearchResult <<struct>> {
+        + Items : []*SearchItem
+        + TotalHits : int64
+        + Page : int
+        + TotalPages : int
+        + QueryTimeMs : int64
+    }
+
+    class SearchItem <<struct>> {
+        + ID : uuid.UUID
+        + Type : SearchItemType
+        + Title : string
+        + Body : string
+        + AuthorUsername : string
+        + CommunityName : string
+        + Score : int64
+        + CommentCount : int
+        + CreatedAt : time.Time
+        + Highlights : map[string]string
+    }
+
+    class PostDocument <<struct>> {
+        + ID : string
+        + Title : string
+        + Body : string
+        + AuthorUsername : string
+        + CommunityID : string
+        + CommunityName : string
+        + PostType : string
+        + Score : int64
+        + CommentCount : int
+        + CreatedAt : int64
+    }
+
+    class CommunityDocument <<struct>> {
+        + ID : string
+        + Name : string
+        + Description : string
+        + MemberCount : int64
+        + CreatedAt : int64
+    }
+
+    enum SearchScope <<enum>> {
+        ALL
+        POSTS
+        COMMUNITIES
+        COMMENTS
+    }
+
+    enum SearchSort <<enum>> {
+        RELEVANCE
+        TOP
+        NEW
+    }
+
+    enum SearchItemType <<enum>> {
+        POST
+        COMMUNITY
+        COMMENT
+    }
+
+    enum TimeRange <<enum>> {
+        HOUR
+        DAY
+        WEEK
+        MONTH
+        YEAR
+        ALL
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface SearchIndex <<interface>> {
+        + Search(ctx, query) : (*SearchResult, error)
+        + Autocomplete(ctx, prefix, scope) : ([]*SearchItem, error)
+        + IndexPost(ctx, doc) : error
+        + IndexCommunity(ctx, doc) : error
+        + RemovePost(ctx, postID) : error
+        + RemoveCommunity(ctx, communityID) : error
+        + UpdatePostScore(ctx, postID, score) : error
+    }
+
+    class MeilisearchIndex <<struct>> {
+        - client : *meilisearch.Client
+        - postIndex : string
+        - communityIndex : string
+    }
+
+    note left of MeilisearchIndex
+        Meilisearch instance
+        Indexes: posts, communities
+        Ranked by relevance + recency + score
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface SearchService <<interface>> {
+        + Search(ctx, query) : (*SearchResult, error)
+        + Autocomplete(ctx, prefix, scope) : ([]*SearchItem, error)
+        + IndexPost(ctx, post) : error
+        + IndexCommunity(ctx, community) : error
+        + RemovePost(ctx, postID) : error
+        + UpdatePostScore(ctx, postID, score) : error
+    }
+
+    class SearchServiceImpl <<struct>> {
+        - index : SearchIndex
+        - cache : CacheClient
+    }
+
+    interface CacheClient <<interface>> {
+        + Get(ctx, key) : (string, error)
+        + Set(ctx, key, value, ttl) : error
+        + Delete(ctx, key) : error
+    }
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class PostEventConsumer <<struct>> {
+        - service : SearchService
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    class CommunityEventConsumer <<struct>> {
+        - service : SearchService
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of PostEventConsumer
+        Consumes: PostCreated,
+        PostUpdated, PostRemoved
+        to keep search index in sync
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class SearchGRPCServer <<struct>> {
+        - service : SearchService
+        + pb.UnimplementedSearchServiceServer
+    }
+}
+
+' ─── Relationships ───
+SearchQuery --> SearchScope
+SearchQuery --> SearchSort
+SearchQuery --> SearchFilters
+SearchFilters --> TimeRange
+SearchResult --> SearchItem
+SearchItem --> SearchItemType
+
+MeilisearchIndex ..|> SearchIndex : implements
+MeilisearchIndex ..> PostDocument : indexes
+MeilisearchIndex ..> CommunityDocument : indexes
+
+SearchServiceImpl ..|> SearchService : implements
+SearchServiceImpl --> SearchIndex : uses
+SearchServiceImpl --> CacheClient : uses
+
+PostEventConsumer --> SearchService : uses
+CommunityEventConsumer --> SearchService : uses
+
+SearchGRPCServer --> SearchService : uses
+
+SearchIndex ..> SearchResult : returns
+SearchIndex ..> SearchItem : returns
+
+@enduml
+@startuml CL08_Notification_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-08: Notification Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class Notification <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + Type : NotificationType
+        + Title : string
+        + Body : string
+        + SourceUserID : uuid.UUID
+        + SourceUsername : string
+        + TargetID : uuid.UUID
+        + TargetType : string
+        + CommunityID : uuid.UUID
+        + CommunityName : string
+        + IsRead : bool
+        + CreatedAt : time.Time
+    }
+
+    class NotificationPreference <<struct>> {
+        + UserID : uuid.UUID
+        + Replies : bool
+        + Mentions : bool
+        + ModActions : bool
+        + CommunityPosts : bool
+        + MutedCommunities : []uuid.UUID
+        + UpdatedAt : time.Time
+    }
+
+    class WebSocketConnection <<struct>> {
+        + UserID : uuid.UUID
+        + PodID : string
+        + Conn : *websocket.Conn
+        + ConnectedAt : time.Time
+        + LastPingAt : time.Time
+    }
+
+    enum NotificationType <<enum>> {
+        REPLY_POST
+        REPLY_COMMENT
+        MENTION
+        MOD_REMOVE
+        MOD_APPROVE
+        MOD_BAN
+        COMMUNITY_POST
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface NotificationRepository <<interface>> {
+        + Create(ctx, notification) : error
+        + GetByID(ctx, id) : (*Notification, error)
+        + ListByUser(ctx, userID, page) : ([]*Notification, error)
+        + ListUnread(ctx, userID, page) : ([]*Notification, error)
+        + MarkRead(ctx, notificationID) : error
+        + MarkAllRead(ctx, userID) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+        + DeleteByUser(ctx, userID) : error
+    }
+
+    interface PreferenceRepository <<interface>> {
+        + Get(ctx, userID) : (*NotificationPreference, error)
+        + Update(ctx, pref) : error
+    }
+
+    interface ConnectionRegistry <<interface>> {
+        + Register(ctx, userID, podID) : error
+        + Unregister(ctx, userID) : error
+        + GetPodForUser(ctx, userID) : (string, error)
+        + IsOnline(ctx, userID) : (bool, error)
+        + SetUnreadCount(ctx, userID, count) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+    }
+
+    class PostgresNotificationRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisConnectionRegistry <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of RedisConnectionRegistry
+        Redis db3: connection registry
+        Key: ws:conn:{userID} -> podID
+        Key: ws:unread:{userID} -> count
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface NotificationService <<interface>> {
+        + SendNotification(ctx, notification) : error
+        + GetNotifications(ctx, userID, page) : ([]*Notification, error)
+        + GetUnread(ctx, userID, page) : ([]*Notification, error)
+        + MarkRead(ctx, userID, notificationID) : error
+        + MarkAllRead(ctx, userID) : error
+        + GetUnreadCount(ctx, userID) : (int64, error)
+        + GetPreferences(ctx, userID) : (*NotificationPreference, error)
+        + UpdatePreferences(ctx, userID, pref) : error
+    }
+
+    class NotificationServiceImpl <<struct>> {
+        - repo : NotificationRepository
+        - prefRepo : PreferenceRepository
+        - registry : ConnectionRegistry
+        - wsManager : WebSocketManager
+        - emailSender : EmailSender
+    }
+
+    interface WebSocketManager <<interface>> {
+        + HandleConnection(ctx, userID, conn) : error
+        + SendToUser(ctx, userID, payload) : error
+        + BroadcastToPod(ctx, podID, userID, payload) : error
+        + DisconnectUser(ctx, userID) : error
+        + StartHeartbeat(ctx, conn) : error
+    }
+
+    class WebSocketManagerImpl <<struct>> {
+        - connections : sync.Map
+        - registry : ConnectionRegistry
+        - podID : string
+        - pubsub : *redis.PubSub
+        - heartbeatInterval : time.Duration
+    }
+
+    interface EmailSender <<interface>> {
+        + SendEmail(ctx, to, subject, body) : error
+    }
+
+    class NotificationRouter <<struct>> {
+        - registry : ConnectionRegistry
+        - wsManager : WebSocketManager
+        - repo : NotificationRepository
+        + Route(ctx, notification) : error
+    }
+
+    note right of NotificationRouter
+        Checks if user is online.
+        If yes: push via WebSocket.
+        If no: store for later delivery.
+    end note
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class EventConsumer <<struct>> {
+        - service : NotificationService
+        - prefRepo : PreferenceRepository
+        - router : NotificationRouter
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    note right of EventConsumer
+        Consumes: CommentCreated,
+        MentionDetected, PostRemoved,
+        UserBanned, PostCreated
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class NotificationGRPCServer <<struct>> {
+        - service : NotificationService
+        + pb.UnimplementedNotificationServiceServer
+    }
+
+    class WebSocketHandler <<struct>> {
+        - wsManager : WebSocketManager
+        - registry : ConnectionRegistry
+        + HandleUpgrade(w, r) : error
+    }
+
+    note right of WebSocketHandler
+        HTTP handler for WebSocket
+        upgrade at /ws/notifications
+    end note
+}
+
+' ─── Relationships ───
+Notification --> NotificationType
+WebSocketConnection --> WebSocketManagerImpl
+
+PostgresNotificationRepo ..|> NotificationRepository : implements
+PostgresNotificationRepo ..|> PreferenceRepository : implements
+RedisConnectionRegistry ..|> ConnectionRegistry : implements
+
+NotificationServiceImpl ..|> NotificationService : implements
+NotificationServiceImpl --> NotificationRepository : uses
+NotificationServiceImpl --> PreferenceRepository : uses
+NotificationServiceImpl --> ConnectionRegistry : uses
+NotificationServiceImpl --> WebSocketManager : uses
+NotificationServiceImpl --> EmailSender : uses
+
+WebSocketManagerImpl ..|> WebSocketManager : implements
+WebSocketManagerImpl --> ConnectionRegistry : uses
+
+NotificationRouter --> ConnectionRegistry : uses
+NotificationRouter --> WebSocketManager : uses
+NotificationRouter --> NotificationRepository : uses
+
+EventConsumer --> NotificationService : uses
+EventConsumer --> NotificationRouter : uses
+
+NotificationGRPCServer --> NotificationService : uses
+WebSocketHandler --> WebSocketManager : uses
+
+NotificationRepository ..> Notification : manages
+PreferenceRepository ..> NotificationPreference : manages
+
+@enduml
+@startuml CL09_Media_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-09: Media Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class MediaFile <<struct>> {
+        + ID : uuid.UUID
+        + OwnerID : uuid.UUID
+        + OriginalFilename : string
+        + ContentType : string
+        + FileSize : int64
+        + Width : int
+        + Height : int
+        + S3Key : string
+        + S3Bucket : string
+        + CDNUrl : string
+        + ThumbnailKey : string
+        + ThumbnailURL : string
+        + Status : MediaStatus
+        + CreatedAt : time.Time
+    }
+
+    class UploadRequest <<struct>> {
+        + UserID : uuid.UUID
+        + Filename : string
+        + ContentType : string
+        + FileSize : int64
+        + Purpose : UploadPurpose
+    }
+
+    class UploadResult <<struct>> {
+        + MediaID : uuid.UUID
+        + URL : string
+        + ThumbnailURL : string
+        + CDNUrl : string
+    }
+
+    class ImageDimensions <<struct>> {
+        + Width : int
+        + Height : int
+    }
+
+    enum MediaStatus <<enum>> {
+        UPLOADING
+        PROCESSING
+        READY
+        FAILED
+        DELETED
+    }
+
+    enum UploadPurpose <<enum>> {
+        POST_IMAGE
+        POST_VIDEO
+        AVATAR
+        COMMUNITY_ICON
+        COMMUNITY_BANNER
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface ObjectStorage <<interface>> {
+        + Upload(ctx, key, reader, contentType) : error
+        + Download(ctx, key) : (io.ReadCloser, error)
+        + Delete(ctx, key) : error
+        + GeneratePresignedURL(ctx, key, expiry) : (string, error)
+        + GetCDNUrl(key) : string
+    }
+
+    class S3Storage <<struct>> {
+        - client : *s3.Client
+        - bucket : string
+        - cdnDomain : string
+        - region : string
+    }
+
+    note left of S3Storage
+        AWS S3 bucket: reddit-media
+        CloudFront CDN for delivery
+        Signed URLs for private access
+        Lifecycle: Glacier after 90 days
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface MediaService <<interface>> {
+        + Upload(ctx, req, reader) : (*UploadResult, error)
+        + GetMedia(ctx, mediaID) : (*MediaFile, error)
+        + DeleteMedia(ctx, userID, mediaID) : error
+        + GeneratePresignedUploadURL(ctx, req) : (string, error)
+    }
+
+    class MediaServiceImpl <<struct>> {
+        - storage : ObjectStorage
+        - processor : ImageProcessor
+        - scanner : FileScanner
+        - validator : FileValidator
+    }
+
+    interface ImageProcessor <<interface>> {
+        + GenerateThumbnail(ctx, reader, maxWidth, maxHeight) : (io.Reader, error)
+        + GetDimensions(reader) : (*ImageDimensions, error)
+        + ResizeImage(ctx, reader, width, height) : (io.Reader, error)
+    }
+
+    interface FileScanner <<interface>> {
+        + Scan(ctx, reader) : (bool, error)
+    }
+
+    class ClamAVScanner <<struct>> {
+        - addr : string
+        - timeout : time.Duration
+    }
+
+    class FileValidator <<struct>> {
+        - maxFileSize : int64
+        - allowedTypes : map[string]bool
+        - maxImageWidth : int
+        - maxImageHeight : int
+        - maxVideoLength : time.Duration
+    }
+
+    class ThumbnailProcessor <<struct>> {
+        - maxWidth : int
+        - maxHeight : int
+        - quality : int
+    }
+
+    note right of FileValidator
+        Validates: file type (MIME),
+        file size, image dimensions,
+        video duration
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class MediaGRPCServer <<struct>> {
+        - service : MediaService
+        + pb.UnimplementedMediaServiceServer
+    }
+}
+
+' ─── Relationships ───
+MediaFile --> MediaStatus
+UploadRequest --> UploadPurpose
+
+S3Storage ..|> ObjectStorage : implements
+
+MediaServiceImpl ..|> MediaService : implements
+MediaServiceImpl --> ObjectStorage : uses
+MediaServiceImpl --> ImageProcessor : uses
+MediaServiceImpl --> FileScanner : uses
+MediaServiceImpl --> FileValidator : uses
+
+ClamAVScanner ..|> FileScanner : implements
+ThumbnailProcessor ..|> ImageProcessor : implements
+
+MediaGRPCServer --> MediaService : uses
+
+MediaService ..> MediaFile : manages
+MediaService ..> UploadResult : returns
+ImageProcessor ..> ImageDimensions : returns
+
+@enduml
+@startuml CL10_Rate_Limiting_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-10: Rate Limiting Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class RateLimitConfig <<struct>> {
+        + Endpoint : string
+        + Tier : UserTier
+        + MaxRequests : int
+        + WindowSize : time.Duration
+        + Algorithm : RateLimitAlgorithm
+    }
+
+    class RateLimitResult <<struct>> {
+        + Allowed : bool
+        + Remaining : int
+        + ResetAt : time.Time
+        + RetryAfter : time.Duration
+        + Limit : int
+    }
+
+    class RateLimitKey <<struct>> {
+        + Identifier : string
+        + Endpoint : string
+        + Tier : UserTier
+    }
+
+    class ActionLimit <<struct>> {
+        + Action : string
+        + MaxCount : int
+        + Window : time.Duration
+    }
+
+    enum UserTier <<enum>> {
+        ANONYMOUS
+        AUTHENTICATED
+        TRUSTED
+    }
+
+    enum RateLimitAlgorithm <<enum>> {
+        TOKEN_BUCKET
+        SLIDING_WINDOW
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface RateLimitStore <<interface>> {
+        + CheckAndIncrement(ctx, key, limit, window) : (*RateLimitResult, error)
+        + GetRemaining(ctx, key) : (int, error)
+        + Reset(ctx, key) : error
+        + BanTemporarily(ctx, identifier, duration) : error
+        + IsBanned(ctx, identifier) : (bool, error)
+    }
+
+    class RedisRateLimitStore <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of RedisRateLimitStore
+        Redis db1: rate limit counters
+        Token bucket: INCR + TTL
+        Sliding window: ZADD + ZCOUNT
+        Auto-expire with TTL
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface RateLimiter <<interface>> {
+        + Allow(ctx, key) : (*RateLimitResult, error)
+        + AllowAction(ctx, userID, action) : (*RateLimitResult, error)
+        + GetConfig(endpoint, tier) : *RateLimitConfig
+        + BanUser(ctx, identifier, duration) : error
+        + IsUserBanned(ctx, identifier) : (bool, error)
+    }
+
+    class TokenBucketLimiter <<struct>> {
+        - store : RateLimitStore
+        - configs : map[string]map[UserTier]*RateLimitConfig
+    }
+
+    class SlidingWindowLimiter <<struct>> {
+        - store : RateLimitStore
+        - actionLimits : map[string]*ActionLimit
+    }
+
+    class RateLimitServiceImpl <<struct>> {
+        - generalLimiter : TokenBucketLimiter
+        - actionLimiter : SlidingWindowLimiter
+        - store : RateLimitStore
+        - configLoader : ConfigLoader
+    }
+
+    interface ConfigLoader <<interface>> {
+        + LoadRateLimitConfigs() : (map[string]map[UserTier]*RateLimitConfig, error)
+        + LoadActionLimits() : (map[string]*ActionLimit, error)
+    }
+
+    note right of RateLimitServiceImpl
+        General API: Token Bucket
+          Anonymous: 10 req/min
+          Authenticated: 100 req/min
+          Trusted: 300 req/min
+        --
+        Actions: Sliding Window
+          Posts: 5/hour
+          Comments: 30/hour
+          Votes: 60/min
+          Communities: 1/day
+          Register: 3/hour per IP
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class RateLimitGRPCServer <<struct>> {
+        - service : RateLimiter
+        + pb.UnimplementedRateLimitServiceServer
+    }
+
+    note right of RateLimitGRPCServer
+        Called by Envoy external
+        auth filter before each
+        request reaches backend
+    end note
+}
+
+' ─── Relationships ───
+RateLimitConfig --> UserTier
+RateLimitConfig --> RateLimitAlgorithm
+RateLimitKey --> UserTier
+
+RedisRateLimitStore ..|> RateLimitStore : implements
+
+RateLimitServiceImpl ..|> RateLimiter : implements
+RateLimitServiceImpl --> TokenBucketLimiter : uses
+RateLimitServiceImpl --> SlidingWindowLimiter : uses
+RateLimitServiceImpl --> RateLimitStore : uses
+RateLimitServiceImpl --> ConfigLoader : uses
+
+TokenBucketLimiter --> RateLimitStore : uses
+SlidingWindowLimiter --> RateLimitStore : uses
+
+RateLimitGRPCServer --> RateLimiter : uses
+
+RateLimitStore ..> RateLimitResult : returns
+RateLimiter ..> RateLimitResult : returns
+
+@enduml
+@startuml CL11_Spam_Detection_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-11: Spam & Abuse Detection Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class ContentCheckRequest <<struct>> {
+        + ContentID : uuid.UUID
+        + AuthorID : uuid.UUID
+        + ContentType : string
+        + Title : string
+        + Body : string
+        + URLs : []string
+        + CommunityID : uuid.UUID
+    }
+
+    class ContentCheckResult <<struct>> {
+        + Allowed : bool
+        + Reason : string
+        + Action : SpamAction
+        + Confidence : float64
+        + MatchedRules : []string
+    }
+
+    class BehaviorScore <<struct>> {
+        + UserID : uuid.UUID
+        + TrustScore : float64
+        + AccountAge : time.Duration
+        + Karma : int64
+        + ReportCount : int
+        + SpamFlagCount : int
+        + LastUpdated : time.Time
+    }
+
+    class BanRecord <<struct>> {
+        + ID : uuid.UUID
+        + UserID : uuid.UUID
+        + BanType : BanType
+        + Reason : string
+        + IssuedBy : string
+        + ExpiresAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class AuditLogEntry <<struct>> {
+        + ID : uuid.UUID
+        + Action : string
+        + TargetID : uuid.UUID
+        + TargetType : string
+        + Reason : string
+        + AutomatedBy : string
+        + Timestamp : time.Time
+    }
+
+    class AutoModRule <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + Pattern : string
+        + Action : SpamAction
+        + MinAccountAge : time.Duration
+        + MinKarma : int
+        + IsActive : bool
+    }
+
+    enum SpamAction <<enum>> {
+        ALLOW
+        REMOVE
+        FLAG_FOR_REVIEW
+        SHADOW_BAN
+        TEMPORARY_BAN
+    }
+
+    enum BanType <<enum>> {
+        SHADOW_BAN
+        IP_BAN
+        ACCOUNT_BAN
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface SpamRepository <<interface>> {
+        + CreateBanRecord(ctx, record) : error
+        + GetActiveBan(ctx, userID) : (*BanRecord, error)
+        + ListBans(ctx, page) : ([]*BanRecord, error)
+        + RevokeBan(ctx, banID) : error
+        + CreateAuditLog(ctx, entry) : error
+        + ListAuditLogs(ctx, page) : ([]*AuditLogEntry, error)
+    }
+
+    interface AutoModRepository <<interface>> {
+        + CreateRule(ctx, rule) : error
+        + ListRules(ctx, communityID) : ([]*AutoModRule, error)
+        + UpdateRule(ctx, rule) : error
+        + DeleteRule(ctx, ruleID) : error
+    }
+
+    interface BehaviorStore <<interface>> {
+        + GetScore(ctx, userID) : (*BehaviorScore, error)
+        + UpdateScore(ctx, score) : error
+        + IncrementSpamFlags(ctx, userID) : error
+        + StoreHashedIP(ctx, hash, userID, ttl) : error
+        + GetUsersByIPHash(ctx, hash) : ([]uuid.UUID, error)
+    }
+
+    class PostgresSpamRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    class RedisBehaviorStore <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note left of PostgresSpamRepo
+        pg-platform schema: spam
+        Ban records, audit logs,
+        AutoMod rules
+    end note
+
+    note left of RedisBehaviorStore
+        Redis db5: behavior scoring
+        Hashed IPs with 24h TTL
+        Trust scores per user
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface SpamDetectionService <<interface>> {
+        + CheckContent(ctx, req) : (*ContentCheckResult, error)
+        + AnalyzeBehavior(ctx, userID) : (*BehaviorScore, error)
+        + ShadowBanUser(ctx, userID, reason) : error
+        + TemporaryBanIP(ctx, ipHash, duration) : error
+        + GetBehaviorScore(ctx, userID) : (*BehaviorScore, error)
+        + ReportUser(ctx, reporterID, targetID, reason) : error
+    }
+
+    class SpamDetectionServiceImpl <<struct>> {
+        - repo : SpamRepository
+        - autoModRepo : AutoModRepository
+        - behaviorStore : BehaviorStore
+        - blocklist : BlocklistChecker
+        - urlChecker : URLReputationChecker
+        - duplicateDetector : DuplicateDetector
+    }
+
+    interface BlocklistChecker <<interface>> {
+        + ContainsBannedWords(text) : (bool, []string)
+        + ReloadBlocklist(ctx) : error
+    }
+
+    interface URLReputationChecker <<interface>> {
+        + CheckURLs(ctx, urls) : (bool, []string)
+    }
+
+    interface DuplicateDetector <<interface>> {
+        + IsDuplicate(ctx, userID, contentHash) : (bool, error)
+        + RecordContent(ctx, userID, contentHash, ttl) : error
+    }
+
+    class RegexBlocklist <<struct>> {
+        - patterns : []*regexp.Regexp
+        - mu : sync.RWMutex
+    }
+
+    class RedisDuplicateDetector <<struct>> {
+        - rdb : *redis.Client
+    }
+
+    note right of SpamDetectionServiceImpl
+        Pre-publish: keyword filter,
+        URL check, duplicate detection,
+        account age restrictions
+        --
+        Post-publish: pattern detection,
+        vote manipulation analysis,
+        trust scoring
+    end note
+}
+
+' ─── Kafka Consumer ───
+package "Consumer" <<Rectangle>> #F3E5F5 {
+
+    class ContentEventConsumer <<struct>> {
+        - service : SpamDetectionService
+        - consumer : *kafka.Consumer
+        - topics : []string
+    }
+
+    class VotePatternConsumer <<struct>> {
+        - behaviorStore : BehaviorStore
+        - repo : SpamRepository
+        - consumer : *kafka.Consumer
+        - topic : string
+    }
+
+    note right of ContentEventConsumer
+        Post-publish async analysis
+        Consumes: PostCreated,
+        CommentCreated events
+    end note
+
+    note right of VotePatternConsumer
+        Detects vote manipulation
+        Cluster analysis on timing
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class SpamGRPCServer <<struct>> {
+        - service : SpamDetectionService
+        + pb.UnimplementedSpamDetectionServiceServer
+    }
+}
+
+' ─── Relationships ───
+ContentCheckResult --> SpamAction
+BanRecord --> BanType
+AutoModRule --> SpamAction
+
+PostgresSpamRepo ..|> SpamRepository : implements
+PostgresSpamRepo ..|> AutoModRepository : implements
+RedisBehaviorStore ..|> BehaviorStore : implements
+
+SpamDetectionServiceImpl ..|> SpamDetectionService : implements
+SpamDetectionServiceImpl --> SpamRepository : uses
+SpamDetectionServiceImpl --> AutoModRepository : uses
+SpamDetectionServiceImpl --> BehaviorStore : uses
+SpamDetectionServiceImpl --> BlocklistChecker : uses
+SpamDetectionServiceImpl --> URLReputationChecker : uses
+SpamDetectionServiceImpl --> DuplicateDetector : uses
+
+RegexBlocklist ..|> BlocklistChecker : implements
+RedisDuplicateDetector ..|> DuplicateDetector : implements
+
+ContentEventConsumer --> SpamDetectionService : uses
+VotePatternConsumer --> BehaviorStore : uses
+VotePatternConsumer --> SpamRepository : uses
+
+SpamGRPCServer --> SpamDetectionService : uses
+
+SpamRepository ..> BanRecord : manages
+SpamRepository ..> AuditLogEntry : manages
+AutoModRepository ..> AutoModRule : manages
+BehaviorStore ..> BehaviorScore : manages
+
+@enduml
+@startuml CL12_Moderation_Service
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam packageFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam shadowing false
+skinparam linetype ortho
+
+title CL-12: Moderation Service — Class Diagram
+
+' ─── Models ───
+package "Models" <<Rectangle>> #F0F4FF {
+
+    class ModAction <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + ModeratorID : uuid.UUID
+        + ModeratorUsername : string
+        + ActionType : ModActionType
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + TargetUsername : string
+        + Reason : string
+        + Details : string
+        + CreatedAt : time.Time
+    }
+
+    class CommunityBan <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + UserID : uuid.UUID
+        + Username : string
+        + BannedBy : uuid.UUID
+        + Reason : string
+        + Duration : time.Duration
+        + IsPermanent : bool
+        + ExpiresAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class Report <<struct>> {
+        + ID : uuid.UUID
+        + CommunityID : uuid.UUID
+        + ReporterID : uuid.UUID
+        + TargetID : uuid.UUID
+        + TargetType : TargetType
+        + Reason : ReportReason
+        + Description : string
+        + Status : ReportStatus
+        + ReviewedBy : uuid.UUID
+        + ReviewedAt : time.Time
+        + CreatedAt : time.Time
+    }
+
+    class ModQueueItem <<struct>> {
+        + Report : *Report
+        + TargetContent : string
+        + TargetAuthor : string
+        + CommunityName : string
+        + ReportCount : int
+    }
+
+    enum ModActionType <<enum>> {
+        REMOVE_POST
+        APPROVE_POST
+        REMOVE_COMMENT
+        APPROVE_COMMENT
+        BAN_USER
+        UNBAN_USER
+        MUTE_USER
+        PIN_POST
+        UNPIN_POST
+        LOCK_POST
+        UNLOCK_POST
+        FLAIR_POST
+    }
+
+    enum TargetType <<enum>> {
+        POST
+        COMMENT
+        USER
+    }
+
+    enum ReportReason <<enum>> {
+        SPAM
+        HARASSMENT
+        HATE_SPEECH
+        MISINFORMATION
+        NSFW
+        SELF_HARM
+        COMMUNITY_RULE
+        OTHER
+    }
+
+    enum ReportStatus <<enum>> {
+        PENDING
+        REVIEWED
+        ACTIONED
+        DISMISSED
+    }
+}
+
+' ─── Repository ───
+package "Repository" <<Rectangle>> #FFF8E1 {
+
+    interface ModActionRepository <<interface>> {
+        + Create(ctx, action) : error
+        + ListByCommunity(ctx, communityID, page) : ([]*ModAction, error)
+        + ListByModerator(ctx, modID, page) : ([]*ModAction, error)
+        + GetByID(ctx, id) : (*ModAction, error)
+    }
+
+    interface BanRepository <<interface>> {
+        + CreateBan(ctx, ban) : error
+        + RevokeBan(ctx, communityID, userID) : error
+        + GetActiveBan(ctx, communityID, userID) : (*CommunityBan, error)
+        + ListBans(ctx, communityID, page) : ([]*CommunityBan, error)
+        + IsUserBanned(ctx, communityID, userID) : (bool, error)
+        + CleanupExpired(ctx) : (int, error)
+    }
+
+    interface ReportRepository <<interface>> {
+        + Create(ctx, report) : error
+        + GetByID(ctx, id) : (*Report, error)
+        + ListByCommunity(ctx, communityID, status, page) : ([]*Report, error)
+        + UpdateStatus(ctx, reportID, status, reviewedBy) : error
+        + GetModQueue(ctx, communityID, page) : ([]*ModQueueItem, error)
+        + CountPending(ctx, communityID) : (int64, error)
+    }
+
+    class PostgresModRepo <<struct>> {
+        - db : *sql.DB
+    }
+
+    note left of PostgresModRepo
+        pg-platform schema: moderation
+        Mod logs, bans, reports
+    end note
+}
+
+' ─── Service ───
+package "Service" <<Rectangle>> #E8F5E9 {
+
+    interface ModerationService <<interface>> {
+        + RemovePost(ctx, modID, communityID, postID, reason) : error
+        + ApprovePost(ctx, modID, communityID, postID) : error
+        + RemoveComment(ctx, modID, communityID, postID, commentID, reason) : error
+        + ApproveComment(ctx, modID, communityID, postID, commentID) : error
+        + BanUser(ctx, modID, communityID, userID, reason, duration) : error
+        + UnbanUser(ctx, modID, communityID, userID) : error
+        + PinPost(ctx, modID, communityID, postID) : error
+        + UnpinPost(ctx, modID, communityID, postID) : error
+        + LockPost(ctx, modID, communityID, postID) : error
+        + UnlockPost(ctx, modID, communityID, postID) : error
+        + ReportContent(ctx, reporterID, req) : error
+        + GetModQueue(ctx, modID, communityID, page) : ([]*ModQueueItem, error)
+        + ReviewReport(ctx, modID, reportID, status) : error
+        + GetModLog(ctx, communityID, page) : ([]*ModAction, error)
+        + IsUserBanned(ctx, communityID, userID) : (bool, error)
+    }
+
+    class ModerationServiceImpl <<struct>> {
+        - actionRepo : ModActionRepository
+        - banRepo : BanRepository
+        - reportRepo : ReportRepository
+        - producer : EventProducer
+        - communityClient : CommunityServiceClient
+        - postClient : PostServiceClient
+        - commentClient : CommentServiceClient
+    }
+
+    interface EventProducer <<interface>> {
+        + Publish(ctx, topic, event) : error
+    }
+
+    interface CommunityServiceClient <<interface>> {
+        + GetUserRole(ctx, userID, communityID) : (string, error)
+    }
+
+    interface PostServiceClient <<interface>> {
+        + SetRemoved(ctx, postID, removed) : error
+        + SetPinned(ctx, postID, pinned) : error
+        + SetLocked(ctx, postID, locked) : error
+    }
+
+    interface CommentServiceClient <<interface>> {
+        + MarkRemoved(ctx, postID, commentID) : error
+    }
+
+    note right of ModerationServiceImpl
+        All actions are logged
+        in the mod log for
+        transparency. Publishes
+        events to Kafka for
+        notification + search.
+    end note
+}
+
+' ─── Handler ───
+package "Handler" <<Rectangle>> #FFEBEE {
+
+    class ModerationGRPCServer <<struct>> {
+        - service : ModerationService
+        + pb.UnimplementedModerationServiceServer
+    }
+}
+
+' ─── Relationships ───
+ModAction --> ModActionType
+ModAction --> TargetType
+Report --> TargetType
+Report --> ReportReason
+Report --> ReportStatus
+ModQueueItem --> Report
+
+PostgresModRepo ..|> ModActionRepository : implements
+PostgresModRepo ..|> BanRepository : implements
+PostgresModRepo ..|> ReportRepository : implements
+
+ModerationServiceImpl ..|> ModerationService : implements
+ModerationServiceImpl --> ModActionRepository : uses
+ModerationServiceImpl --> BanRepository : uses
+ModerationServiceImpl --> ReportRepository : uses
+ModerationServiceImpl --> EventProducer : uses
+ModerationServiceImpl --> CommunityServiceClient : uses
+ModerationServiceImpl --> PostServiceClient : uses
+ModerationServiceImpl --> CommentServiceClient : uses
+
+ModerationGRPCServer --> ModerationService : uses
+
+ModActionRepository ..> ModAction : manages
+BanRepository ..> CommunityBan : manages
+ReportRepository ..> Report : manages
+ReportRepository ..> ModQueueItem : returns
+
+@enduml
