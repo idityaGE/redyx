@@ -45,4 +45,9 @@ Thumbs.db
 # NOTE: gen/ is NOT ignored — generated proto code is committed per architecture decision
 # NOTE: deploy/envoy/proto.pb is NOT ignored — Envoy descriptor is committed
 
+# Web frontend
+web/node_modules/
+web/dist/
+web/.astro/
+
 .opencode
