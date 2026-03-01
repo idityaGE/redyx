@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 1 of 7 (Foundation + Frontend Shell)
-Plan: 0 of 3 in current phase
-Status: Planned — ready to execute
-Last activity: 2026-03-02 — Phase 1 planned: 3 plans in 2 waves (proto+buf ∥ frontend shell → platform libs+docker+envoy)
+Plan: 2 of 3 in current phase
+Status: In Progress — executing phase 1
+Last activity: 2026-03-02 — Completed 01-02: Frontend shell with responsive layout, terminal theme, Svelte islands
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 9%
 
 ## Performance Metrics
 
@@ -44,6 +44,10 @@ Recent decisions affecting current work:
 - [Roadmap]: ScyllaDB comment schema deferred to Phase 4 — design before coding, schema is irreversible
 - [Roadmap]: Home feed cross-shard aggregation is in Phase 3 — hardest feature, needs research spike during planning
 - [Roadmap]: Rate limiting placed in Phase 2 with auth (Envoy-level enforcement)
+- [01-02]: TailwindCSS v4 CSS-first config with @theme directive, not tailwind.config.js
+- [01-02]: JetBrains Mono via Bunny Fonts CDN (privacy-friendly)
+- [01-02]: Dark mode default, inline script in head prevents flash
+- [01-02]: Svelte 5 runes ($state, $derived) for all interactive components
 
 ### Context from Init
 
@@ -66,8 +70,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 1 planned — 3 plans, 2 waves
-Resume file: .planning/phases/01-foundation-frontend-shell/01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md (Frontend Shell)
+Resume file: .planning/phases/01-foundation-frontend-shell/01-03-PLAN.md
 
 ---
-*Last updated: 2026-03-02 — Phase 1 planned*
+*Last updated: 2026-03-02 — Completed 01-02 frontend shell*
