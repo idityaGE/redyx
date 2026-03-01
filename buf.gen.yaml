@@ -5,6 +5,14 @@ managed:
   override:
     - file_option: go_package_prefix
       value: github.com/redyx/redyx/gen
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+      path: google/api/annotations.proto
+      value: google.golang.org/genproto/googleapis/api/annotations;annotations
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+      path: google/api/http.proto
+      value: google.golang.org/genproto/googleapis/api/annotations;annotations
 plugins:
   - remote: buf.build/protocolbuffers/go
     out: gen
