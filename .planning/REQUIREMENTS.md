@@ -172,13 +172,91 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | — |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| AUTH-06 | Phase 2 | Pending |
+| AUTH-07 | Phase 2 | Pending |
+| AUTH-08 | Phase 2 | Pending |
+| USER-01 | Phase 2 | Pending |
+| USER-02 | Phase 2 | Pending |
+| USER-03 | Phase 2 | Pending |
+| USER-04 | Phase 2 | Pending |
+| USER-05 | Phase 2 | Pending |
+| COMM-01 | Phase 2 | Pending |
+| COMM-02 | Phase 2 | Pending |
+| COMM-03 | Phase 2 | Pending |
+| COMM-04 | Phase 2 | Pending |
+| COMM-05 | Phase 2 | Pending |
+| COMM-06 | Phase 2 | Pending |
+| COMM-07 | Phase 2 | Pending |
+| POST-01 | Phase 3 | Pending |
+| POST-02 | Phase 3 | Pending |
+| POST-03 | Phase 3 | Pending |
+| POST-04 | Phase 3 | Pending |
+| POST-05 | Phase 3 | Pending |
+| POST-06 | Phase 3 | Pending |
+| POST-07 | Phase 3 | Pending |
+| POST-08 | Phase 3 | Pending |
+| POST-09 | Phase 3 | Pending |
+| POST-10 | Phase 3 | Pending |
+| CMNT-01 | Phase 4 | Pending |
+| CMNT-02 | Phase 4 | Pending |
+| CMNT-03 | Phase 4 | Pending |
+| CMNT-04 | Phase 4 | Pending |
+| CMNT-05 | Phase 4 | Pending |
+| CMNT-06 | Phase 4 | Pending |
+| VOTE-01 | Phase 3 | Pending |
+| VOTE-02 | Phase 3 | Pending |
+| VOTE-03 | Phase 3 | Pending |
+| VOTE-04 | Phase 3 | Pending |
+| VOTE-05 | Phase 3 | Pending |
+| SRCH-01 | Phase 5 | Pending |
+| SRCH-02 | Phase 5 | Pending |
+| SRCH-03 | Phase 5 | Pending |
+| SRCH-04 | Phase 5 | Pending |
+| NOTF-01 | Phase 5 | Pending |
+| NOTF-02 | Phase 5 | Pending |
+| NOTF-03 | Phase 5 | Pending |
+| NOTF-04 | Phase 5 | Pending |
+| NOTF-05 | Phase 5 | Pending |
+| NOTF-06 | Phase 5 | Pending |
+| MDIA-01 | Phase 5 | Pending |
+| MDIA-02 | Phase 5 | Pending |
+| MDIA-03 | Phase 5 | Pending |
+| MDIA-04 | Phase 5 | Pending |
+| MOD-01 | Phase 6 | Pending |
+| MOD-02 | Phase 6 | Pending |
+| MOD-03 | Phase 6 | Pending |
+| MOD-04 | Phase 6 | Pending |
+| MOD-05 | Phase 6 | Pending |
+| MOD-06 | Phase 6 | Pending |
+| SPAM-01 | Phase 6 | Pending |
+| SPAM-02 | Phase 6 | Pending |
+| SPAM-03 | Phase 6 | Pending |
+| SPAM-04 | Phase 6 | Pending |
+| RATE-01 | Phase 2 | Pending |
+| RATE-02 | Phase 2 | Pending |
+| RATE-03 | Phase 2 | Pending |
+| RATE-04 | Phase 2 | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 7 | Pending |
+| INFRA-03 | Phase 7 | Pending |
+| INFRA-04 | Phase 7 | Pending |
+| INFRA-05 | Phase 7 | Pending |
+| INFRA-06 | Phase 7 | Pending |
+| FEND-01 | Phase 1 | Pending |
+| FEND-02 | Phase 1 | Pending |
+| FEND-03 | Phase 1 | Pending |
+| FEND-04 | Phase 7 | Pending |
 
 **Coverage:**
-- v1.0 requirements: 68 total
-- Mapped to phases: 0
-- Unmapped: 68
+- v1.0 requirements: 79 total
+- Mapped to phases: 79
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-02*
-*Last updated: 2026-03-02 after initial definition*
+*Last updated: 2026-03-02 after roadmap revision (progressive frontend)*
