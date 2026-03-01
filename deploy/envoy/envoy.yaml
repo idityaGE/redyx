@@ -1,0 +1,73 @@
+admin:
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }
+
+static_resources:
+  listeners:
+  - name: main
+    address:
+      socket_address: { address: 0.0.0.0, port_value: 8080 }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend
+              domains: ["*"]
+              response_headers_to_add:
+              - header:
+                  key: access-control-allow-origin
+                  value: "*"
+              - header:
+                  key: access-control-allow-methods
+                  value: "GET, POST, PUT, DELETE, OPTIONS"
+              - header:
+                  key: access-control-allow-headers
+                  value: "content-type, authorization"
+              routes:
+              # Routes match on incoming REST paths (match_incoming_request_route: true)
+              - match: { prefix: "/api/v1/" }
+                route:
+                  cluster: skeleton-service
+                  timeout: 30s
+          http_filters:
+          - name: envoy.filters.http.grpc_json_transcoder
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+              proto_descriptor: "/etc/envoy/proto.pb"
+              services:
+                - redyx.health.v1.HealthService
+              # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
+              match_incoming_request_route: true
+              print_options:
+                add_whitespace: true
+                always_print_primitive_fields: true
+                always_print_enums_as_ints: false
+                # camelCase JSON output — proto3 canonical (Pitfall 1)
+                preserve_proto_field_names: false
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  - name: skeleton-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    # CRITICAL: gRPC requires HTTP/2 upstream (Pitfall 5)
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: skeleton-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: skeleton-service, port_value: 50051 }

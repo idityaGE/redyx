@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: skeleton
+      POSTGRES_USER: redyx
+      POSTGRES_PASSWORD: dev
+    ports: ["5432:5432"]
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U redyx -d skeleton"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --save 60 1
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  skeleton-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: skeleton
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/skeleton?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GRPC_PORT: "50051"
+    ports: ["50051:50051"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  envoy:
+    image: envoyproxy/envoy:v1.37.0
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./deploy/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./deploy/envoy/proto.pb:/etc/envoy/proto.pb:ro
+    depends_on:
+      - skeleton-service
+
+volumes:
+  pg-data:
