@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 1 of 7 (Foundation + Frontend Shell)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-02 — Roadmap revised: frontend built progressively alongside each backend phase
+Plan: 0 of 3 in current phase
+Status: Planned — ready to execute
+Last activity: 2026-03-02 — Phase 1 planned: 3 plans in 2 waves (proto+buf ∥ frontend shell → platform libs+docker+envoy)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -66,8 +66,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-foundation-frontend-shell/01-CONTEXT.md
+Stopped at: Phase 1 planned — 3 plans, 2 waves
+Resume file: .planning/phases/01-foundation-frontend-shell/01-01-PLAN.md
 
 ---
-*Last updated: 2026-03-02 — Phase 1 context gathered*
+*Last updated: 2026-03-02 — Phase 1 planned*
