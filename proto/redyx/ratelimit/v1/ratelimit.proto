@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package redyx.ratelimit.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// RateLimitService provides rate limit checking for the API gateway.
+service RateLimitService {
+  // CheckRateLimit checks whether a request is allowed under rate limits.
+  rpc CheckRateLimit(CheckRateLimitRequest) returns (CheckRateLimitResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/ratelimit/check"
+      body: "*"
+    };
+  }
+}
+
+// UserTier determines the rate limit tier for the user.
+enum UserTier {
+  USER_TIER_UNSPECIFIED = 0;
+  USER_TIER_ANONYMOUS = 1;
+  USER_TIER_AUTHENTICATED = 2;
+  USER_TIER_TRUSTED = 3;
+}
+
+// CheckRateLimit
+
+message CheckRateLimitRequest {
+  // User identifier (user ID or IP for anonymous).
+  string identifier = 1;
+  UserTier tier = 2;
+  // Action being rate limited (e.g., "post", "comment", "vote", "request").
+  string action = 3;
+}
+
+message CheckRateLimitResponse {
+  // Whether the request is allowed.
+  bool allowed = 1;
+  // Remaining requests in the current window.
+  int32 remaining = 2;
+  // Total requests allowed in the window.
+  int32 limit = 3;
+  // When the current window resets.
+  google.protobuf.Timestamp reset_at = 4;
+  // Seconds until the client should retry (only set when not allowed).
+  int32 retry_after_seconds = 5;
+}

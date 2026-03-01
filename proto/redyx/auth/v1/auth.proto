@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package redyx.auth.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// AuthService handles user authentication and authorization.
+service AuthService {
+  // Register creates a new user account with email, username, and password.
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register"
+      body: "*"
+    };
+  }
+
+  // Login authenticates a user with email and password.
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
+
+  // RefreshToken issues a new access token using a valid refresh token.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/refresh"
+      body: "*"
+    };
+  }
+
+  // Logout invalidates the user's refresh token.
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/logout"
+      body: "*"
+    };
+  }
+
+  // VerifyOTP verifies a 6-digit email OTP code.
+  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/verify-otp"
+      body: "*"
+    };
+  }
+
+  // ResetPassword initiates or completes a password reset flow.
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/reset-password"
+      body: "*"
+    };
+  }
+
+  // GoogleOAuth authenticates or registers a user via Google OAuth.
+  rpc GoogleOAuth(GoogleOAuthRequest) returns (GoogleOAuthResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/google"
+      body: "*"
+    };
+  }
+}
+
+// Register
+
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+  // Whether OTP verification is required before login.
+  bool requires_verification = 2;
+}
+
+// Login
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  // Access token expiration time.
+  google.protobuf.Timestamp expires_at = 3;
+  string user_id = 4;
+}
+
+// Refresh Token
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+// Logout
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+// OTP Verification
+
+message VerifyOTPRequest {
+  string email = 1;
+  // 6-digit OTP code.
+  string code = 2;
+}
+
+message VerifyOTPResponse {
+  bool verified = 1;
+  // Tokens issued upon successful verification.
+  string access_token = 2;
+  string refresh_token = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+// Password Reset
+
+message ResetPasswordRequest {
+  // Email for initiating reset (step 1).
+  string email = 1;
+  // Reset token from email link (step 2).
+  string token = 2;
+  // New password (step 2).
+  string new_password = 3;
+}
+
+message ResetPasswordResponse {
+  // Whether the reset was initiated (step 1) or completed (step 2).
+  bool completed = 1;
+}
+
+// Google OAuth
+
+message GoogleOAuthRequest {
+  // OAuth authorization code from Google.
+  string code = 1;
+  // Desired username (only for new registrations).
+  string username = 2;
+}
+
+message GoogleOAuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string user_id = 4;
+  // Whether this is a new account (user needs to set username).
+  bool is_new_user = 5;
+}

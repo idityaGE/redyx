@@ -1,0 +1,185 @@
+syntax = "proto3";
+
+package redyx.moderation.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// ModerationService provides content moderation tools for community moderators.
+service ModerationService {
+  // RemoveContent hides a post or comment from regular users (moderator only).
+  rpc RemoveContent(RemoveContentRequest) returns (RemoveContentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/remove"
+      body: "*"
+    };
+  }
+
+  // BanUser bans a user from a community (moderator only).
+  rpc BanUser(BanUserRequest) returns (BanUserResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/ban"
+      body: "*"
+    };
+  }
+
+  // UnbanUser removes a ban from a user in a community (moderator only).
+  rpc UnbanUser(UnbanUserRequest) returns (UnbanUserResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/unban"
+      body: "*"
+    };
+  }
+
+  // PinPost pins a post to the top of a community feed (max 2 pins).
+  rpc PinPost(PinPostRequest) returns (PinPostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/pin"
+      body: "*"
+    };
+  }
+
+  // UnpinPost removes a post from the pinned position.
+  rpc UnpinPost(UnpinPostRequest) returns (UnpinPostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/unpin"
+      body: "*"
+    };
+  }
+
+  // GetModLog returns paginated moderation action history.
+  rpc GetModLog(GetModLogRequest) returns (GetModLogResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{community_name}/moderation/log"
+    };
+  }
+
+  // ListReportQueue returns reported content awaiting review.
+  rpc ListReportQueue(ListReportQueueRequest) returns (ListReportQueueResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{community_name}/moderation/reports"
+    };
+  }
+}
+
+// ContentType identifies whether moderation targets a post or comment.
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_POST = 1;
+  CONTENT_TYPE_COMMENT = 2;
+}
+
+// RemoveContent
+
+message RemoveContentRequest {
+  string community_name = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+  string reason = 4;
+}
+
+message RemoveContentResponse {}
+
+// BanUser
+
+message BanUserRequest {
+  string community_name = 1;
+  string user_id = 2;
+  string reason = 3;
+  // Duration in seconds. 0 = permanent ban.
+  int64 duration_seconds = 4;
+}
+
+message BanUserResponse {}
+
+// UnbanUser
+
+message UnbanUserRequest {
+  string community_name = 1;
+  string user_id = 2;
+}
+
+message UnbanUserResponse {}
+
+// PinPost
+
+message PinPostRequest {
+  string community_name = 1;
+  string post_id = 2;
+}
+
+message PinPostResponse {}
+
+// UnpinPost
+
+message UnpinPostRequest {
+  string community_name = 1;
+  string post_id = 2;
+}
+
+message UnpinPostResponse {}
+
+// GetModLog
+
+// ModAction represents a single moderation action in the log.
+enum ModAction {
+  MOD_ACTION_UNSPECIFIED = 0;
+  MOD_ACTION_REMOVE_POST = 1;
+  MOD_ACTION_REMOVE_COMMENT = 2;
+  MOD_ACTION_BAN_USER = 3;
+  MOD_ACTION_UNBAN_USER = 4;
+  MOD_ACTION_PIN_POST = 5;
+  MOD_ACTION_UNPIN_POST = 6;
+}
+
+// ModLogEntry represents a single entry in the moderation log.
+message ModLogEntry {
+  string entry_id = 1;
+  ModAction action = 2;
+  // Moderator who performed the action.
+  string moderator_id = 3;
+  string moderator_username = 4;
+  // Target of the action (user ID, post ID, or comment ID).
+  string target_id = 5;
+  string target_type = 6;
+  string reason = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message GetModLogRequest {
+  string community_name = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+  // Optional filter by action type.
+  ModAction action_filter = 3;
+}
+
+message GetModLogResponse {
+  repeated ModLogEntry entries = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ListReportQueue
+
+// Report represents a user-submitted report on content.
+message Report {
+  string report_id = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+  // User who submitted the report.
+  string reporter_id = 4;
+  string reason = 5;
+  // Number of reports on this content.
+  int32 report_count = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ListReportQueueRequest {
+  string community_name = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListReportQueueResponse {
+  repeated Report reports = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}

@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package redyx.user.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// UserService manages user profiles and account operations.
+service UserService {
+  // GetProfile returns a user's public profile.
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{username}"
+    };
+  }
+
+  // UpdateProfile updates the authenticated user's profile.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/users/me"
+      body: "*"
+    };
+  }
+
+  // DeleteAccount permanently deletes the authenticated user's account.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/users/me"
+    };
+  }
+
+  // GetUserPosts returns paginated posts by a specific user.
+  rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{username}/posts"
+    };
+  }
+
+  // GetUserComments returns paginated comments by a specific user.
+  rpc GetUserComments(GetUserCommentsRequest) returns (GetUserCommentsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{username}/comments"
+    };
+  }
+}
+
+// User represents a public user profile.
+message User {
+  string user_id = 1;
+  string username = 2;
+  string display_name = 3;
+  string bio = 4;
+  string avatar_url = 5;
+  int32 karma = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// GetProfile
+
+message GetProfileRequest {
+  string username = 1;
+}
+
+message GetProfileResponse {
+  User user = 1;
+}
+
+// UpdateProfile
+
+message UpdateProfileRequest {
+  // Fields to update. Only non-empty fields are applied.
+  string display_name = 1;
+  string bio = 2;
+  string avatar_url = 3;
+}
+
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+// DeleteAccount
+
+message DeleteAccountRequest {
+  // Password confirmation for account deletion.
+  string password = 1;
+}
+
+message DeleteAccountResponse {}
+
+// GetUserPosts
+
+message GetUserPostsRequest {
+  string username = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+// PostSummary is a lightweight post representation for listings.
+message PostSummary {
+  string post_id = 1;
+  string title = 2;
+  string community_name = 3;
+  int32 vote_score = 4;
+  int32 comment_count = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message GetUserPostsResponse {
+  repeated PostSummary posts = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// GetUserComments
+
+message GetUserCommentsRequest {
+  string username = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+// CommentSummary is a lightweight comment representation for listings.
+message CommentSummary {
+  string comment_id = 1;
+  string post_id = 2;
+  string post_title = 3;
+  string community_name = 4;
+  string body = 5;
+  int32 vote_score = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message GetUserCommentsResponse {
+  repeated CommentSummary comments = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}

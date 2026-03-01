@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package redyx.notification.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// NotificationService manages user notifications and preferences.
+service NotificationService {
+  // ListNotifications returns paginated notifications for the authenticated user.
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/notifications"
+    };
+  }
+
+  // MarkRead marks a single notification as read.
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/notifications/{notification_id}/read"
+      body: "*"
+    };
+  }
+
+  // MarkAllRead marks all notifications as read for the authenticated user.
+  rpc MarkAllRead(MarkAllReadRequest) returns (MarkAllReadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/notifications/read-all"
+      body: "*"
+    };
+  }
+
+  // GetPreferences returns notification preferences for the authenticated user.
+  rpc GetPreferences(GetPreferencesRequest) returns (GetPreferencesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/notifications/preferences"
+    };
+  }
+
+  // UpdatePreferences updates notification preferences.
+  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/notifications/preferences"
+      body: "*"
+    };
+  }
+}
+
+// NotificationType categorizes notifications.
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_POST_REPLY = 1;
+  NOTIFICATION_TYPE_COMMENT_REPLY = 2;
+  NOTIFICATION_TYPE_MENTION = 3;
+}
+
+// Notification represents a single notification.
+message Notification {
+  string notification_id = 1;
+  NotificationType type = 2;
+  // User who triggered the notification.
+  string actor_id = 3;
+  string actor_username = 4;
+  // Target resource ID (post or comment).
+  string target_id = 5;
+  // Target resource type (post or comment).
+  string target_type = 6;
+  // Related post ID for context navigation.
+  string post_id = 7;
+  // Related community name.
+  string community_name = 8;
+  // Human-readable notification text.
+  string message = 9;
+  bool is_read = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// ListNotifications
+
+message ListNotificationsRequest {
+  redyx.common.v1.PaginationRequest pagination = 1;
+  // Filter by read status. If unset, returns all.
+  bool unread_only = 2;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+  // Total unread notification count.
+  int32 unread_count = 3;
+}
+
+// MarkRead
+
+message MarkReadRequest {
+  string notification_id = 1;
+}
+
+message MarkReadResponse {}
+
+// MarkAllRead
+
+message MarkAllReadRequest {}
+
+message MarkAllReadResponse {
+  // Number of notifications marked as read.
+  int32 marked_count = 1;
+}
+
+// GetPreferences
+
+message GetPreferencesRequest {}
+
+// NotificationPreferences holds per-user notification settings.
+message NotificationPreferences {
+  // Whether to receive post reply notifications.
+  bool post_replies = 1;
+  // Whether to receive comment reply notifications.
+  bool comment_replies = 2;
+  // Whether to receive mention notifications.
+  bool mentions = 3;
+  // Community names where notifications are muted.
+  repeated string muted_communities = 4;
+}
+
+message GetPreferencesResponse {
+  NotificationPreferences preferences = 1;
+}
+
+// UpdatePreferences
+
+message UpdatePreferencesRequest {
+  NotificationPreferences preferences = 1;
+}
+
+message UpdatePreferencesResponse {
+  NotificationPreferences preferences = 1;
+}

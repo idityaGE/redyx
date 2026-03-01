@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package redyx.vote.v1;
+
+import "google/api/annotations.proto";
+
+// VoteService handles upvoting, downvoting, and removing votes on posts and comments.
+service VoteService {
+  // Vote casts, changes, or removes a vote on a post or comment.
+  rpc Vote(VoteRequest) returns (VoteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/votes"
+      body: "*"
+    };
+  }
+
+  // GetVoteState returns the current user's vote on a specific item.
+  rpc GetVoteState(GetVoteStateRequest) returns (GetVoteStateResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/votes/{target_type}/{target_id}"
+    };
+  }
+}
+
+// TargetType identifies whether the vote target is a post or comment.
+enum TargetType {
+  TARGET_TYPE_UNSPECIFIED = 0;
+  TARGET_TYPE_POST = 1;
+  TARGET_TYPE_COMMENT = 2;
+}
+
+// VoteDirection represents the vote action.
+enum VoteDirection {
+  VOTE_DIRECTION_UNSPECIFIED = 0;
+  VOTE_DIRECTION_UP = 1;
+  VOTE_DIRECTION_DOWN = 2;
+  // Remove existing vote.
+  VOTE_DIRECTION_NONE = 3;
+}
+
+// Vote
+
+message VoteRequest {
+  string target_id = 1;
+  TargetType target_type = 2;
+  VoteDirection direction = 3;
+}
+
+message VoteResponse {
+  // Updated net score after the vote.
+  int32 new_score = 1;
+}
+
+// GetVoteState
+
+message GetVoteStateRequest {
+  string target_id = 1;
+  TargetType target_type = 2;
+}
+
+message GetVoteStateResponse {
+  // Current vote direction (-1 = down, 0 = none, 1 = up).
+  VoteDirection direction = 1;
+}

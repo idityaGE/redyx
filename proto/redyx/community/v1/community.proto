@@ -1,0 +1,215 @@
+syntax = "proto3";
+
+package redyx.community.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// CommunityService manages communities, memberships, and moderator assignments.
+service CommunityService {
+  // CreateCommunity creates a new community.
+  rpc CreateCommunity(CreateCommunityRequest) returns (CreateCommunityResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities"
+      body: "*"
+    };
+  }
+
+  // GetCommunity returns a community's details.
+  rpc GetCommunity(GetCommunityRequest) returns (GetCommunityResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{name}"
+    };
+  }
+
+  // UpdateCommunity updates a community's settings (owner/moderator only).
+  rpc UpdateCommunity(UpdateCommunityRequest) returns (UpdateCommunityResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/communities/{name}"
+      body: "*"
+    };
+  }
+
+  // ListCommunities returns a paginated list of communities.
+  rpc ListCommunities(ListCommunitiesRequest) returns (ListCommunitiesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities"
+    };
+  }
+
+  // JoinCommunity adds the authenticated user to a community.
+  rpc JoinCommunity(JoinCommunityRequest) returns (JoinCommunityResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{name}/members"
+      body: "*"
+    };
+  }
+
+  // LeaveCommunity removes the authenticated user from a community.
+  rpc LeaveCommunity(LeaveCommunityRequest) returns (LeaveCommunityResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/communities/{name}/members"
+    };
+  }
+
+  // ListMembers returns paginated members of a community.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{name}/members"
+    };
+  }
+
+  // AssignModerator grants moderator role to a user (owner only).
+  rpc AssignModerator(AssignModeratorRequest) returns (AssignModeratorResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{name}/moderators"
+      body: "*"
+    };
+  }
+
+  // RevokeModerator removes moderator role from a user (owner only).
+  rpc RevokeModerator(RevokeModeratorRequest) returns (RevokeModeratorResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/communities/{name}/moderators/{user_id}"
+    };
+  }
+}
+
+// Visibility controls who can view and interact with a community.
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PUBLIC = 1;
+  VISIBILITY_RESTRICTED = 2;
+  VISIBILITY_PRIVATE = 3;
+}
+
+// CommunityRule represents a single community rule.
+message CommunityRule {
+  string title = 1;
+  string description = 2;
+}
+
+// Community represents a community with full details.
+message Community {
+  string community_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated CommunityRule rules = 4;
+  string banner_url = 5;
+  string icon_url = 6;
+  Visibility visibility = 7;
+  int32 member_count = 8;
+  string owner_id = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// CreateCommunity
+
+message CreateCommunityRequest {
+  // Unique community name (alphanumeric + underscores, 3-21 chars).
+  string name = 1;
+  string description = 2;
+  Visibility visibility = 3;
+}
+
+message CreateCommunityResponse {
+  Community community = 1;
+}
+
+// GetCommunity
+
+message GetCommunityRequest {
+  string name = 1;
+}
+
+message GetCommunityResponse {
+  Community community = 1;
+  // Whether the authenticated user is a member.
+  bool is_member = 2;
+  // Whether the authenticated user is a moderator.
+  bool is_moderator = 3;
+}
+
+// UpdateCommunity
+
+message UpdateCommunityRequest {
+  string name = 1;
+  string description = 2;
+  repeated CommunityRule rules = 3;
+  string banner_url = 4;
+  string icon_url = 5;
+  Visibility visibility = 6;
+}
+
+message UpdateCommunityResponse {
+  Community community = 1;
+}
+
+// ListCommunities
+
+message ListCommunitiesRequest {
+  redyx.common.v1.PaginationRequest pagination = 1;
+  // Optional search query to filter communities by name.
+  string query = 2;
+}
+
+message ListCommunitiesResponse {
+  repeated Community communities = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// JoinCommunity
+
+message JoinCommunityRequest {
+  string name = 1;
+}
+
+message JoinCommunityResponse {}
+
+// LeaveCommunity
+
+message LeaveCommunityRequest {
+  string name = 1;
+}
+
+message LeaveCommunityResponse {}
+
+// ListMembers
+
+message ListMembersRequest {
+  string name = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+// Member represents a community member.
+message Member {
+  string user_id = 1;
+  string username = 2;
+  // Role in the community: member, moderator, or owner.
+  string role = 3;
+  google.protobuf.Timestamp joined_at = 4;
+}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// AssignModerator
+
+message AssignModeratorRequest {
+  string name = 1;
+  string user_id = 2;
+}
+
+message AssignModeratorResponse {}
+
+// RevokeModerator
+
+message RevokeModeratorRequest {
+  string name = 1;
+  string user_id = 2;
+}
+
+message RevokeModeratorResponse {}

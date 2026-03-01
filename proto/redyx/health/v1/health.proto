@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package redyx.health.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// HealthService provides health checking for services.
+service HealthService {
+  // Check returns the health status of a service or the overall system.
+  rpc Check(CheckRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/health"
+    };
+  }
+}
+
+message CheckRequest {
+  // Optional service name. If empty, returns overall system health.
+  string service = 1;
+}
+
+message CheckResponse {
+  // ServingStatus indicates the health of the service.
+  enum ServingStatus {
+    SERVING_STATUS_UNSPECIFIED = 0;
+    SERVING_STATUS_SERVING = 1;
+    SERVING_STATUS_NOT_SERVING = 2;
+  }
+
+  // Current serving status.
+  ServingStatus status = 1;
+  // Service version string.
+  string version = 2;
+  // Time since the service started.
+  google.protobuf.Timestamp uptime = 3;
+}

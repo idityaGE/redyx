@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package redyx.spam.v1;
+
+import "google/api/annotations.proto";
+// SpamService provides content spam detection and reporting.
+service SpamService {
+  // CheckContent evaluates content for spam before publishing.
+  rpc CheckContent(CheckContentRequest) returns (CheckContentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/spam/check"
+      body: "*"
+    };
+  }
+
+  // ReportSpam allows users to report content as spam.
+  rpc ReportSpam(ReportSpamRequest) returns (ReportSpamResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/spam/report"
+      body: "*"
+    };
+  }
+}
+
+// SpamCheckResult indicates the spam assessment outcome.
+enum SpamCheckResult {
+  SPAM_CHECK_RESULT_UNSPECIFIED = 0;
+  SPAM_CHECK_RESULT_CLEAN = 1;
+  SPAM_CHECK_RESULT_SUSPICIOUS = 2;
+  SPAM_CHECK_RESULT_SPAM = 3;
+}
+
+// CheckContent
+
+message CheckContentRequest {
+  // User ID of the content author.
+  string user_id = 1;
+  // Content type being checked (post_title, post_body, comment, url).
+  string content_type = 2;
+  // The text content to check.
+  string content = 3;
+  // URLs found in the content.
+  repeated string urls = 4;
+}
+
+message CheckContentResponse {
+  SpamCheckResult result = 1;
+  // Reasons why content was flagged (if suspicious or spam).
+  repeated string reasons = 2;
+  // Content hash for duplicate detection.
+  string content_hash = 3;
+  // Whether this content is a duplicate.
+  bool is_duplicate = 4;
+}
+
+// ReportSpam
+
+message ReportSpamRequest {
+  // ID of the content being reported (post or comment).
+  string content_id = 1;
+  // Type of content being reported.
+  string content_type = 2;
+  // User reporting the spam.
+  string reporter_id = 3;
+  // Optional reason for the report.
+  string reason = 4;
+}
+
+message ReportSpamResponse {
+  // Server-assigned report ID.
+  string report_id = 1;
+}

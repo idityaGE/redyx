@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package redyx.comment.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// CommentService manages comments on posts.
+service CommentService {
+  // CreateComment creates a new comment on a post.
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/posts/{post_id}/comments"
+      body: "*"
+    };
+  }
+
+  // GetComment returns a single comment by ID.
+  rpc GetComment(GetCommentRequest) returns (GetCommentResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/comments/{comment_id}"
+    };
+  }
+
+  // UpdateComment updates an existing comment (author only).
+  rpc UpdateComment(UpdateCommentRequest) returns (UpdateCommentResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/comments/{comment_id}"
+      body: "*"
+    };
+  }
+
+  // DeleteComment soft-deletes a comment (author or moderator).
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/comments/{comment_id}"
+    };
+  }
+
+  // ListComments returns top-level comments for a post.
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/posts/{post_id}/comments"
+    };
+  }
+
+  // ListReplies returns replies to a specific comment.
+  rpc ListReplies(ListRepliesRequest) returns (ListRepliesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/comments/{comment_id}/replies"
+    };
+  }
+}
+
+// CommentSortOrder for comment sorting within a post.
+enum CommentSortOrder {
+  COMMENT_SORT_ORDER_UNSPECIFIED = 0;
+  COMMENT_SORT_ORDER_BEST = 1;
+  COMMENT_SORT_ORDER_TOP = 2;
+  COMMENT_SORT_ORDER_NEW = 3;
+  COMMENT_SORT_ORDER_CONTROVERSIAL = 4;
+}
+
+// Comment represents a full comment.
+message Comment {
+  string comment_id = 1;
+  string post_id = 2;
+  // Parent comment ID for replies. Empty for top-level comments.
+  string parent_id = 3;
+  string author_id = 4;
+  string author_username = 5;
+  // Markdown comment body (max 10K chars).
+  string body = 6;
+  int32 vote_score = 7;
+  int32 reply_count = 8;
+  // Materialized path for tree ordering (e.g., "001.002.003").
+  string path = 9;
+  int32 depth = 10;
+  bool is_edited = 11;
+  bool is_deleted = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp edited_at = 14;
+}
+
+// CreateComment
+
+message CreateCommentRequest {
+  string post_id = 1;
+  // Parent comment ID for replies. Empty for top-level comments.
+  string parent_id = 2;
+  // Markdown body (max 10K chars).
+  string body = 3;
+}
+
+message CreateCommentResponse {
+  Comment comment = 1;
+}
+
+// GetComment
+
+message GetCommentRequest {
+  string comment_id = 1;
+}
+
+message GetCommentResponse {
+  Comment comment = 1;
+  // Current user's vote state on this comment (-1, 0, 1).
+  int32 user_vote = 2;
+}
+
+// UpdateComment
+
+message UpdateCommentRequest {
+  string comment_id = 1;
+  string body = 2;
+}
+
+message UpdateCommentResponse {
+  Comment comment = 1;
+}
+
+// DeleteComment
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+}
+
+message DeleteCommentResponse {}
+
+// ListComments (top-level comments for a post)
+
+message ListCommentsRequest {
+  string post_id = 1;
+  CommentSortOrder sort = 2;
+  redyx.common.v1.PaginationRequest pagination = 3;
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ListReplies (replies to a specific comment)
+
+message ListRepliesRequest {
+  string comment_id = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListRepliesResponse {
+  repeated Comment replies = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}

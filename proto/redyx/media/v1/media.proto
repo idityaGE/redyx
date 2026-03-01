@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package redyx.media.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// MediaService handles file uploads and media management.
+service MediaService {
+  // InitUpload creates a pre-signed URL for uploading a file.
+  rpc InitUpload(InitUploadRequest) returns (InitUploadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/media/upload"
+      body: "*"
+    };
+  }
+
+  // CompleteUpload confirms an upload is complete and triggers processing.
+  rpc CompleteUpload(CompleteUploadRequest) returns (CompleteUploadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/media/{media_id}/complete"
+      body: "*"
+    };
+  }
+
+  // GetMedia returns metadata for an uploaded media item.
+  rpc GetMedia(GetMediaRequest) returns (GetMediaResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/media/{media_id}"
+    };
+  }
+}
+
+// MediaType identifies the type of uploaded media.
+enum MediaType {
+  MEDIA_TYPE_UNSPECIFIED = 0;
+  MEDIA_TYPE_IMAGE = 1;
+  MEDIA_TYPE_VIDEO = 2;
+  MEDIA_TYPE_GIF = 3;
+}
+
+// MediaStatus tracks the processing state of uploaded media.
+enum MediaStatus {
+  MEDIA_STATUS_UNSPECIFIED = 0;
+  MEDIA_STATUS_PENDING = 1;
+  MEDIA_STATUS_PROCESSING = 2;
+  MEDIA_STATUS_READY = 3;
+  MEDIA_STATUS_FAILED = 4;
+}
+
+// InitUpload
+
+message InitUploadRequest {
+  // Original filename.
+  string filename = 1;
+  // MIME content type (e.g., image/jpeg, video/mp4).
+  string content_type = 2;
+  // File size in bytes for validation.
+  int64 size_bytes = 3;
+  MediaType media_type = 4;
+}
+
+message InitUploadResponse {
+  // Server-assigned media ID.
+  string media_id = 1;
+  // Pre-signed URL for client to upload to.
+  string upload_url = 2;
+  // Expiration time for the upload URL.
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+// CompleteUpload
+
+message CompleteUploadRequest {
+  string media_id = 1;
+}
+
+message CompleteUploadResponse {
+  // Public URL for the uploaded media.
+  string url = 1;
+  // Thumbnail URL (for images).
+  string thumbnail_url = 2;
+  MediaStatus status = 3;
+}
+
+// GetMedia
+
+message GetMediaRequest {
+  string media_id = 1;
+}
+
+message GetMediaResponse {
+  string media_id = 1;
+  string url = 2;
+  string thumbnail_url = 3;
+  MediaType media_type = 4;
+  MediaStatus status = 5;
+  string content_type = 6;
+  int64 size_bytes = 7;
+  google.protobuf.Timestamp created_at = 8;
+}

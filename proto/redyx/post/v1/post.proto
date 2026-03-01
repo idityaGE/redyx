@@ -1,0 +1,224 @@
+syntax = "proto3";
+
+package redyx.post.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// PostService manages posts and feeds.
+service PostService {
+  // CreatePost creates a new post in a community.
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/posts"
+      body: "*"
+    };
+  }
+
+  // GetPost returns a single post by ID.
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/posts/{post_id}"
+    };
+  }
+
+  // UpdatePost updates an existing post (author only).
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/posts/{post_id}"
+      body: "*"
+    };
+  }
+
+  // DeletePost soft-deletes a post (author or moderator).
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/posts/{post_id}"
+    };
+  }
+
+  // ListPosts returns paginated posts for a community feed.
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{community_name}/posts"
+    };
+  }
+
+  // ListHomeFeed returns the authenticated user's home feed.
+  rpc ListHomeFeed(ListHomeFeedRequest) returns (ListHomeFeedResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/feed"
+    };
+  }
+
+  // SavePost saves/bookmarks a post for the authenticated user.
+  rpc SavePost(SavePostRequest) returns (SavePostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/posts/{post_id}/save"
+      body: "*"
+    };
+  }
+
+  // ListSavedPosts returns the authenticated user's saved posts.
+  rpc ListSavedPosts(ListSavedPostsRequest) returns (ListSavedPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/saved"
+    };
+  }
+}
+
+// PostType distinguishes between text, link, and media posts.
+enum PostType {
+  POST_TYPE_UNSPECIFIED = 0;
+  POST_TYPE_TEXT = 1;
+  POST_TYPE_LINK = 2;
+  POST_TYPE_MEDIA = 3;
+}
+
+// SortOrder for feed sorting.
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_HOT = 1;
+  SORT_ORDER_NEW = 2;
+  SORT_ORDER_TOP = 3;
+  SORT_ORDER_RISING = 4;
+}
+
+// TimeRange for top-sorted feeds.
+enum TimeRange {
+  TIME_RANGE_UNSPECIFIED = 0;
+  TIME_RANGE_HOUR = 1;
+  TIME_RANGE_DAY = 2;
+  TIME_RANGE_WEEK = 3;
+  TIME_RANGE_MONTH = 4;
+  TIME_RANGE_YEAR = 5;
+  TIME_RANGE_ALL = 6;
+}
+
+// Post represents a full post with all fields.
+message Post {
+  string post_id = 1;
+  string title = 2;
+  string body = 3;
+  string url = 4;
+  PostType post_type = 5;
+  string author_id = 6;
+  string author_username = 7;
+  string community_id = 8;
+  string community_name = 9;
+  int32 vote_score = 10;
+  int32 comment_count = 11;
+  bool is_edited = 12;
+  bool is_deleted = 13;
+  bool is_pinned = 14;
+  bool is_anonymous = 15;
+  // Media attachment URLs for media posts.
+  repeated string media_urls = 16;
+  string thumbnail_url = 17;
+  google.protobuf.Timestamp created_at = 18;
+  google.protobuf.Timestamp edited_at = 19;
+}
+
+// CreatePost
+
+message CreatePostRequest {
+  string community_name = 1;
+  string title = 2;
+  // Body for text posts (markdown, max 40K chars).
+  string body = 3;
+  // URL for link posts.
+  string url = 4;
+  PostType post_type = 5;
+  // Media IDs for media posts (from Media service uploads).
+  repeated string media_ids = 6;
+  // Whether to post anonymously.
+  bool is_anonymous = 7;
+}
+
+message CreatePostResponse {
+  Post post = 1;
+}
+
+// GetPost
+
+message GetPostRequest {
+  string post_id = 1;
+}
+
+message GetPostResponse {
+  Post post = 1;
+  // Current user's vote state on this post (-1, 0, 1).
+  int32 user_vote = 2;
+  // Whether the current user has saved this post.
+  bool is_saved = 3;
+}
+
+// UpdatePost
+
+message UpdatePostRequest {
+  string post_id = 1;
+  string title = 2;
+  string body = 3;
+  string url = 4;
+}
+
+message UpdatePostResponse {
+  Post post = 1;
+}
+
+// DeletePost
+
+message DeletePostRequest {
+  string post_id = 1;
+}
+
+message DeletePostResponse {}
+
+// ListPosts (community feed)
+
+message ListPostsRequest {
+  string community_name = 1;
+  SortOrder sort = 2;
+  TimeRange time_range = 3;
+  redyx.common.v1.PaginationRequest pagination = 4;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ListHomeFeed
+
+message ListHomeFeedRequest {
+  SortOrder sort = 1;
+  TimeRange time_range = 2;
+  redyx.common.v1.PaginationRequest pagination = 3;
+}
+
+message ListHomeFeedResponse {
+  repeated Post posts = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// SavePost
+
+message SavePostRequest {
+  string post_id = 1;
+  // True to save, false to unsave.
+  bool save = 2;
+}
+
+message SavePostResponse {}
+
+// ListSavedPosts
+
+message ListSavedPostsRequest {
+  redyx.common.v1.PaginationRequest pagination = 1;
+}
+
+message ListSavedPostsResponse {
+  repeated Post posts = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}

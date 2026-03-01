@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package redyx.search.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "redyx/common/v1/common.proto";
+
+// SearchService provides post search and community autocomplete.
+service SearchService {
+  // SearchPosts searches posts by title and body text.
+  rpc SearchPosts(SearchPostsRequest) returns (SearchPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/search/posts"
+    };
+  }
+
+  // AutocompleteCommunities provides prefix-based community name suggestions.
+  rpc AutocompleteCommunities(AutocompleteCommunitiesRequest) returns (AutocompleteCommunitiesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/search/communities"
+    };
+  }
+}
+
+// SearchPosts
+
+message SearchPostsRequest {
+  // Full-text search query.
+  string query = 1;
+  // Optional community name to scope search.
+  string community_name = 2;
+  redyx.common.v1.PaginationRequest pagination = 3;
+}
+
+// SearchResult represents a post matching the search query.
+message SearchResult {
+  string post_id = 1;
+  string title = 2;
+  // Highlighted snippet from the post body.
+  string snippet = 3;
+  string author_username = 4;
+  string community_name = 5;
+  int32 vote_score = 6;
+  int32 comment_count = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message SearchPostsResponse {
+  repeated SearchResult results = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// AutocompleteCommunities
+
+message AutocompleteCommunitiesRequest {
+  // Prefix query (minimum 2 chars).
+  string query = 1;
+  // Maximum number of suggestions (default 10).
+  int32 limit = 2;
+}
+
+// CommunitySuggestion represents a community autocomplete result.
+message CommunitySuggestion {
+  string name = 1;
+  string icon_url = 2;
+  int32 member_count = 3;
+}
+
+message AutocompleteCommunitiesResponse {
+  repeated CommunitySuggestion suggestions = 1;
+}
