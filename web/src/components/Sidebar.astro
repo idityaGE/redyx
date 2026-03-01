@@ -1,0 +1,56 @@
+---
+const shortcuts = [
+  { icon: '~', label: 'Home', href: '/' },
+  { icon: '\u2605', label: 'Popular', href: '/popular' },
+  { icon: '\u25C9', label: 'All', href: '/all' },
+  { icon: '\u22A1', label: 'Saved', href: '/saved' },
+];
+
+const communities = [
+  'r/programming',
+  'r/typescript',
+  'r/svelte',
+  'r/linux',
+  'r/privacy',
+  'r/selfhosted',
+  'r/terminal',
+  'r/rust',
+];
+---
+<nav class="py-2 px-2 text-sm font-mono h-full">
+  <!-- Shortcuts -->
+  <div class="mb-2">
+    {shortcuts.map(({ icon, label, href }) => (
+      <a
+        href={href}
+        class="flex items-center gap-2 px-2 py-0.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg rounded transition-colors"
+      >
+        <span class="w-4 text-center text-terminal-dim">{icon}</span>
+        <span>{label}</span>
+      </a>
+    ))}
+  </div>
+
+  <!-- Divider -->
+  <div class="px-2 text-terminal-border text-xs select-none mb-2">
+    ────────────────
+  </div>
+
+  <!-- Communities -->
+  <div>
+    <div class="px-2 text-terminal-dim text-xs mb-1 uppercase tracking-wide">
+      Your Communities
+    </div>
+    {communities.map((name, i) => (
+      <a
+        href={`/community/${name.slice(2)}`}
+        class="flex items-center px-2 py-0.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg rounded transition-colors"
+      >
+        <span class="text-terminal-dim text-xs mr-1 w-5 shrink-0">
+          {i < communities.length - 1 ? '\u251C\u2500\u2500' : '\u2514\u2500\u2500'}
+        </span>
+        <span class="truncate">{name}</span>
+      </a>
+    ))}
+  </div>
+</nav>
