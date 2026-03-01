@@ -9,25 +9,25 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 ## Current Position
 
-Phase: 1 of 7 (Foundation + Frontend Shell)
-Plan: 3 of 3 in current phase
-Status: In Progress — executing phase 1
-Last activity: 2026-03-02 — Completed 01-01: Proto definitions + build pipeline (14 protos, buf v2, Makefile)
+Phase: 1 of 7 (Foundation + Frontend Shell) — COMPLETE
+Plan: 3 of 3 in current phase — all plans completed
+Status: Phase 1 Complete — ready for Phase 2 planning
+Last activity: 2026-03-02 — Completed 01-03: Platform libs + Docker Compose + Envoy transcoding
 
-Progress: [██░░░░░░░░] 9%
+Progress: [██░░░░░░░░] 14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~13 min
-- Total execution time: ~0.4 hours
+- Total plans completed: 3
+- Average duration: ~12 min
+- Total execution time: ~0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-frontend-shell | 2/3 | ~26 min | ~13 min |
+| 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 
 *Updated after each plan completion*
 
@@ -51,6 +51,11 @@ Recent decisions affecting current work:
 - [01-01]: buf.gen.yaml uses per-file go_package override for googleapis to resolve import path
 - [01-01]: Generated Go code committed to gen/ (not gitignored) per architecture decision
 - [01-01]: Health proto renamed to CheckRequest/CheckResponse for buf STANDARD lint compliance
+- [01-03]: Envoy match_incoming_request_route: true for REST path routing (Pitfall 2 prevention)
+- [01-03]: preserve_proto_field_names: false — camelCase JSON everywhere (Pitfall 1)
+- [01-03]: Platform libs in internal/platform/ with grpcserver bootstrap, config, database, redis, middleware, errors, pagination
+- [01-03]: Middleware chain order: Recovery → Logging → ErrorMapping (outermost catches panics)
+- [01-03]: Error mapping interceptor sanitizes internal errors — never leaks raw messages to clients
 
 ### Context from Init
 
@@ -73,8 +78,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 01-01-PLAN.md (Proto Definitions + Build Pipeline)
-Resume file: .planning/phases/01-foundation-frontend-shell/01-03-PLAN.md
+Stopped at: Completed 01-03-PLAN.md (Platform Libs + Docker Compose + Envoy) — Phase 1 COMPLETE
+Resume file: None — Phase 2 planning next
 
 ---
-*Last updated: 2026-03-02 — Completed 01-01 proto definitions*
+*Last updated: 2026-03-02 — Phase 1 complete (3/3 plans)*

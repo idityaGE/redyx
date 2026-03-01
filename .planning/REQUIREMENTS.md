@@ -114,7 +114,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Infrastructure (INFRA)
 
-- [ ] **INFRA-01**: Docker Compose configuration for local development with all services and data stores
+- [x] **INFRA-01**: Docker Compose configuration for local development with all services and data stores
 - [ ] **INFRA-02**: Kubernetes deployment with HPA, readiness/liveness probes, namespace isolation
 - [ ] **INFRA-03**: Prometheus metrics collection from every Go service via /metrics endpoint
 - [ ] **INFRA-04**: Grafana dashboards per service and global overview dashboard
@@ -241,7 +241,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RATE-02 | Phase 2 | Pending |
 | RATE-03 | Phase 2 | Pending |
 | RATE-04 | Phase 2 | Pending |
-| INFRA-01 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 7 | Pending |
 | INFRA-03 | Phase 7 | Pending |
 | INFRA-04 | Phase 7 | Pending |
