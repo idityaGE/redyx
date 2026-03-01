@@ -124,7 +124,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Frontend (FEND)
 
 - [x] **FEND-01**: Astro SSR frontend with Svelte interactive islands for dynamic components
-- [ ] **FEND-02**: Envoy API gateway with REST-to-gRPC transcoding via proto descriptor set
+- [x] **FEND-02**: Envoy API gateway with REST-to-gRPC transcoding via proto descriptor set
 - [x] **FEND-03**: Responsive layout for desktop, tablet, and mobile
 - [ ] **FEND-04**: Page load under 2 seconds on fast 4G connection
 
@@ -248,7 +248,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-05 | Phase 7 | Pending |
 | INFRA-06 | Phase 7 | Pending |
 | FEND-01 | Phase 1 | Complete |
-| FEND-02 | Phase 1 | Pending |
+| FEND-02 | Phase 1 | Complete |
 | FEND-03 | Phase 1 | Complete |
 | FEND-04 | Phase 7 | Pending |
 

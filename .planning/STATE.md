@@ -10,24 +10,24 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 1 of 7 (Foundation + Frontend Shell)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In Progress — executing phase 1
-Last activity: 2026-03-02 — Completed 01-02: Frontend shell with responsive layout, terminal theme, Svelte islands
+Last activity: 2026-03-02 — Completed 01-01: Proto definitions + build pipeline (14 protos, buf v2, Makefile)
 
 Progress: [██░░░░░░░░] 9%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: ~13 min
+- Total execution time: ~0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation-frontend-shell | 2/3 | ~26 min | ~13 min |
 
 *Updated after each plan completion*
 
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - [01-02]: JetBrains Mono via Bunny Fonts CDN (privacy-friendly)
 - [01-02]: Dark mode default, inline script in head prevents flash
 - [01-02]: Svelte 5 runes ($state, $derived) for all interactive components
+- [01-01]: buf.gen.yaml uses per-file go_package override for googleapis to resolve import path
+- [01-01]: Generated Go code committed to gen/ (not gitignored) per architecture decision
+- [01-01]: Health proto renamed to CheckRequest/CheckResponse for buf STANDARD lint compliance
 
 ### Context from Init
 
@@ -70,8 +73,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 01-02-PLAN.md (Frontend Shell)
+Stopped at: Completed 01-01-PLAN.md (Proto Definitions + Build Pipeline)
 Resume file: .planning/phases/01-foundation-frontend-shell/01-03-PLAN.md
 
 ---
-*Last updated: 2026-03-02 — Completed 01-02 frontend shell*
+*Last updated: 2026-03-02 — Completed 01-01 proto definitions*
