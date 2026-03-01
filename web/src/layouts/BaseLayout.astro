@@ -2,6 +2,8 @@
 import Header from '../components/Header.astro';
 import Sidebar from '../components/Sidebar.astro';
 import Footer from '../components/Footer.astro';
+import MobileNav from '../components/MobileNav.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
 import '../../tailwind.css';
 
 interface Props {
@@ -16,6 +18,14 @@ const { title } = Astro.props;
   <title>{title} | redyx</title>
   <link rel="preconnect" href="https://fonts.bunny.net" />
   <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400,500,600,700" rel="stylesheet" />
+  <!-- Prevent flash of wrong theme -->
+  <script is:inline>
+    if (localStorage.getItem('theme') !== 'light') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
 </head>
 <body class="bg-terminal text-terminal-fg font-mono min-h-screen flex flex-col">
   <Header />
@@ -25,10 +35,18 @@ const { title } = Astro.props;
       <Sidebar />
     </aside>
     <!-- Main content area -->
-    <main class="flex-1 overflow-y-auto p-4 pb-14 lg:pb-4">
+    <main class="flex-1 overflow-y-auto p-4 pb-16 lg:pb-4">
       <slot />
     </main>
   </div>
   <Footer />
+  <!-- Mobile bottom nav: visible on small screens only -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+    <MobileNav client:visible />
+  </div>
+  <!-- Theme toggle: visible on desktop, hidden on mobile -->
+  <div class="hidden lg:block fixed bottom-4 right-4 z-50">
+    <ThemeToggle client:load />
+  </div>
 </body>
 </html>
