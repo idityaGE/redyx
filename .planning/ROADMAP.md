@@ -32,11 +32,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Envoy transcodes a REST JSON request to gRPC and returns a correct JSON response for at least one test RPC
   4. Docker Compose brings up all infrastructure services (PostgreSQL, Redis, Envoy) and the skeleton service connects to them
   5. Astro SSR project with Svelte integration is initialized, builds, and serves a layout shell (header, sidebar, content area, footer) that is responsive across desktop, tablet, and mobile viewports
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Proto definitions, buf config, Makefile, Go code generation + Envoy descriptor
+- [ ] 01-02-PLAN.md — Astro SSR + Svelte frontend project with responsive terminal-aesthetic layout shell
+- [ ] 01-03-PLAN.md — Shared Go platform libraries, skeleton gRPC service, Docker Compose, Envoy transcoding
 
 ### Phase 2: Auth + User + Community (Full Stack)
 **Goal**: Users can create accounts, log in, manage profiles, and create/join communities — with working frontend pages for all auth flows, profile views, and community management
