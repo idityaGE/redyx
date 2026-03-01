@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package redyx.common.v1;
+
+// PaginationRequest provides cursor-based pagination parameters.
+message PaginationRequest {
+  // Opaque cursor for the next page. Empty for first page.
+  string cursor = 1;
+  // Maximum number of items to return. Default is 25, max is 100.
+  int32 limit = 2;
+}
+
+// PaginationResponse provides pagination metadata in responses.
+message PaginationResponse {
+  // Opaque cursor for the next page. Empty if no more pages.
+  string next_cursor = 1;
+  // Whether there are more pages available.
+  bool has_more = 2;
+  // Total count of items (may be approximate for large sets).
+  int32 total_count = 3;
+}

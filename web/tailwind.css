@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "./src/styles/terminal.css";
+
+@theme {
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+
+  --color-accent-50: #fff7ed;
+  --color-accent-100: #ffedd5;
+  --color-accent-200: #fed7aa;
+  --color-accent-300: #fdba74;
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+  --color-accent-700: #c2410c;
+  --color-accent-800: #9a3412;
+  --color-accent-900: #7c2d12;
+
+  --color-terminal-bg: #0a0a0a;
+  --color-terminal-fg: #d4d4d4;
+  --color-terminal-border: #262626;
+  --color-terminal-dim: #737373;
+  --color-terminal-surface: #171717;
+}
