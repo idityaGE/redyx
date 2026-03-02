@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CommunityDetail from '../../components/CommunityDetail.svelte';
+
+const { name } = Astro.params;
+---
+<BaseLayout title={`r/${name}`}>
+  <CommunityDetail client:load name={name!} />
+</BaseLayout>
