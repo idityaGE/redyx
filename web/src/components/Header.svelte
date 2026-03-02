@@ -53,10 +53,10 @@
       <span class="text-terminal-dim">[...]</span>
     {:else if authed && user}
       <!-- Authenticated: show u/username, click opens dropdown -->
-      <div class="relative">
+      <div class="relative user-dropdown">
         <button
           class="text-terminal-fg hover:text-accent-500 transition-colors cursor-pointer"
-          onclick={() => { showDropdown = !showDropdown; }}
+          onclick={(e) => { e.stopPropagation(); showDropdown = !showDropdown; }}
         >
           u/{user.username}
         </button>
