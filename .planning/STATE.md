@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-02T20:03:13Z"
+last_updated: "2026-03-02T20:11:16Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 13
-  completed_plans: 5
+  completed_plans: 9
 ---
 
 # State: Redyx
@@ -23,25 +23,25 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 2 of 7 (Auth + User + Community) — Executing
-Plan: 5 of 10 complete in current phase
-Status: Plan 02-05 complete — Docker Compose + Envoy wired for Phase 2 services
-Last activity: 2026-03-03 — Completed 02-05-PLAN.md (Docker + Envoy routing)
+Plan: 9 of 10 complete in current phase
+Status: Plan 02-09 complete — Community frontend pages with browse, create, detail, settings
+Last activity: 2026-03-03 — Completed 02-09-PLAN.md (Community frontend pages)
 
-Progress: [████░░░░░░] 38%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: ~9 min
-- Total execution time: ~0.7 hours
+- Total plans completed: 9
+- Average duration: ~7 min
+- Total execution time: ~1.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
-| 02-auth-user-community | 5/10 | ~7 min | ~1.5 min |
+| 02-auth-user-community | 9/10 | ~17 min | ~1.9 min |
 
 *Updated after each plan completion*
 
@@ -75,7 +75,13 @@ Recent decisions affecting current work:
 - [02-01]: Token bucket via Lua script for atomic Redis operations — no race conditions
 - [02-05]: Redis DB isolation per service: auth=1, user=2, community=3 (skeleton=0)
 - [02-05]: Envoy specific routes before catch-all for first-match routing
-- [02-05]: CORS expose-headers includes retry-after for frontend rate-limit visibility
+  - [02-05]: CORS expose-headers includes retry-after for frontend rate-limit visibility
+- [02-07]: Auth page pattern: Astro shell + Svelte form with client:load using AuthForm wrapper
+- [02-07]: URL query params for cross-page state passing (email, OAuth code, reset token)
+- [02-07]: Field-level inline errors in terminal style: "> error: message" in red
+- [02-08]: Profile avatar uses Unicode box-drawing chars for authentic terminal frame
+- [02-08]: $effect() for prop-to-state sync pattern in Svelte 5 editable components
+- [02-08]: Type-to-confirm pattern for destructive actions (account deletion)
 
 ### Context from Init
 
@@ -98,8 +104,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-05-PLAN.md
+Stopped at: Completed 02-08-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Plan 02-05 complete*
+*Last updated: 2026-03-03 — Plan 02-08 complete*

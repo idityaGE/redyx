@@ -20,11 +20,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### User Profiles (USER)
 
-- [ ] **USER-01**: User has public profile showing username, karma, and cake day
-- [ ] **USER-02**: Profile displays paginated post and comment history
-- [ ] **USER-03**: Karma calculated from total upvotes received on posts and comments
-- [ ] **USER-04**: User can update display name, bio (500 chars), and avatar
-- [ ] **USER-05**: User can delete account, wiping all PII and replacing content with [deleted]
+- [x] **USER-01**: User has public profile showing username, karma, and cake day
+- [x] **USER-02**: Profile displays paginated post and comment history
+- [x] **USER-03**: Karma calculated from total upvotes received on posts and comments
+- [x] **USER-04**: User can update display name, bio (500 chars), and avatar
+- [x] **USER-05**: User can delete account, wiping all PII and replacing content with [deleted]
 
 ### Communities (COMM)
 
@@ -180,11 +180,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-06 | Phase 2 | Pending |
 | AUTH-07 | Phase 2 | Pending |
 | AUTH-08 | Phase 2 | Complete |
-| USER-01 | Phase 2 | Pending |
-| USER-02 | Phase 2 | Pending |
-| USER-03 | Phase 2 | Pending |
-| USER-04 | Phase 2 | Pending |
-| USER-05 | Phase 2 | Pending |
+| USER-01 | Phase 2 | Complete |
+| USER-02 | Phase 2 | Complete |
+| USER-03 | Phase 2 | Complete |
+| USER-04 | Phase 2 | Complete |
+| USER-05 | Phase 2 | Complete |
 | COMM-01 | Phase 2 | Pending |
 | COMM-02 | Phase 2 | Pending |
 | COMM-03 | Phase 2 | Pending |
