@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-02T19:48:28Z"
+last_updated: "2026-03-02T20:03:13Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 13
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # State: Redyx
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 2 of 7 (Auth + User + Community) — Executing
-Plan: 1 of 10 complete in current phase
-Status: Plan 02-01 complete — platform infrastructure ready
-Last activity: 2026-03-03 — Completed 02-01-PLAN.md (platform infra)
+Plan: 5 of 10 complete in current phase
+Status: Plan 02-05 complete — Docker Compose + Envoy wired for Phase 2 services
+Last activity: 2026-03-03 — Completed 02-05-PLAN.md (Docker + Envoy routing)
 
-Progress: [███░░░░░░░] 31%
+Progress: [████░░░░░░] 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: ~10 min
+- Total plans completed: 5
+- Average duration: ~9 min
 - Total execution time: ~0.7 hours
 
 **By Phase:**
@@ -41,7 +41,7 @@ Progress: [███░░░░░░░] 31%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
-| 02-auth-user-community | 1/10 | ~5 min | ~5 min |
+| 02-auth-user-community | 5/10 | ~7 min | ~1.5 min |
 
 *Updated after each plan completion*
 
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [02-01]: Fail-open rate limiting — Redis errors allow requests through to preserve availability
 - [02-01]: Public methods still attempt optional JWT extraction for rate limit tier differentiation
 - [02-01]: Token bucket via Lua script for atomic Redis operations — no race conditions
+- [02-05]: Redis DB isolation per service: auth=1, user=2, community=3 (skeleton=0)
+- [02-05]: Envoy specific routes before catch-all for first-match routing
+- [02-05]: CORS expose-headers includes retry-after for frontend rate-limit visibility
 
 ### Context from Init
 
@@ -95,8 +98,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-01-PLAN.md
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Plan 02-01 complete*
+*Last updated: 2026-03-03 — Plan 02-05 complete*

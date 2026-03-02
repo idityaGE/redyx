@@ -57,7 +57,7 @@ Plans:
 - [ ] 02-02-PLAN.md — Auth gRPC service: Register, Login, OTP, OAuth, JWT, Refresh, Logout, Reset
 - [ ] 02-03-PLAN.md — User gRPC service: GetProfile, UpdateProfile, DeleteAccount, stub post/comment history
 - [ ] 02-04-PLAN.md — Community gRPC service: CRUD, membership, moderator roles, Redis cache
-- [ ] 02-05-PLAN.md — Docker Compose + Envoy: add 3 services, route config, transcoder registration
+- [x] 02-05-PLAN.md — Docker Compose + Envoy: add 3 services, route config, transcoder registration ✓
 - [ ] 02-06-PLAN.md — Frontend foundation: API client, auth store, Header/Sidebar Svelte conversion
 - [ ] 02-07-PLAN.md — Frontend auth pages: register, login, verify, choose-username, reset-password
 - [ ] 02-08-PLAN.md — Frontend profile page: status line, tabs, inline editing, account deletion
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
-| 2. Auth + User + Community (Full Stack) | 1/10 | In Progress | - |
+| 2. Auth + User + Community (Full Stack) | 5/10 | In Progress | - |
 | 3. Posts + Voting + Feeds (Full Stack) | 0/? | Not started | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
