@@ -1,12 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getUser, isAuthenticated, isLoading, subscribe } from '../lib/auth';
+  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
+  import { api } from '../lib/api';
 
   let authed = $state(isAuthenticated());
   let loading = $state(isLoading());
+  let currentUser = $state(getUser());
 
-  // Placeholder for joined communities — will be populated from API or local state
-  let joinedCommunities = $state<string[]>([]);
+  type Community = {
+    communityId: string;
+    name: string;
+    ownerId: string;
+  };
+
+  let myCommunities = $state<string[]>([]);
 
   const shortcuts = [
     { icon: '~', label: 'Home', href: '/' },
@@ -15,11 +22,46 @@
     { icon: '\u22A1', label: 'Saved', href: '/saved' },
   ];
 
+  async function fetchMyCommunities() {
+    const user = getUser();
+    if (!user) {
+      myCommunities = [];
+      return;
+    }
+    try {
+      const data = await api<{ communities: Community[] }>('/communities?pagination.limit=100');
+      // Filter communities where the current user is the owner
+      // (a proper "my communities" endpoint would also include joined ones)
+      myCommunities = (data.communities ?? [])
+        .filter(c => c.ownerId === user.userId)
+        .map(c => c.name);
+    } catch {
+      myCommunities = [];
+    }
+  }
+
   onMount(() => {
+    initialize();
+
     const unsub = subscribe(() => {
+      const wasAuthed = authed;
       authed = isAuthenticated();
       loading = isLoading();
+      currentUser = getUser();
+
+      // Fetch communities when auth state changes to logged-in
+      if (authed && !wasAuthed) {
+        fetchMyCommunities();
+      }
+      if (!authed) {
+        myCommunities = [];
+      }
     });
+
+    // If already authed on mount, fetch immediately
+    if (isAuthenticated()) {
+      fetchMyCommunities();
+    }
 
     return unsub;
   });
@@ -51,18 +93,18 @@
         My Communities
       </div>
 
-      {#if joinedCommunities.length === 0}
+      {#if myCommunities.length === 0}
         <div class="px-2 py-1 text-terminal-dim text-xs italic">
           join communities to see them here
         </div>
       {:else}
-        {#each joinedCommunities as name, i}
+        {#each myCommunities as name, i}
           <a
             href="/community/{name}"
             class="flex items-center px-2 py-0.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg rounded transition-colors"
           >
             <span class="text-terminal-dim text-xs mr-1 w-5 shrink-0">
-              {i < joinedCommunities.length - 1 ? '\u251C\u2500\u2500' : '\u2514\u2500\u2500'}
+              {i < myCommunities.length - 1 ? '\u251C\u2500\u2500' : '\u2514\u2500\u2500'}
             </span>
             <span class="truncate">r/{name}</span>
           </a>

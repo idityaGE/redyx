@@ -34,7 +34,8 @@ function decodeJwtPayload(token: string): { uid?: string; username?: string } {
 
 // Internal state
 let user: AuthUser | null = null;
-let loading = true;
+// Start loading only if there's a stored refresh token (avoids [...]  flash for anonymous users)
+let loading = (typeof window !== 'undefined' && localStorage.getItem('refreshToken') !== null);
 
 // Pub/sub for reactivity
 type Subscriber = () => void;
