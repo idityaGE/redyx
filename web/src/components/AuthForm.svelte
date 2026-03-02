@@ -23,7 +23,7 @@
       </div>
 
       <!-- Form content -->
-      <form class="p-4 space-y-3" onsubmit={onsubmit}>
+      <form class="p-4 space-y-3" novalidate onsubmit={onsubmit}>
         {@render children()}
 
         <!-- Error display -->

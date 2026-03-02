@@ -76,7 +76,6 @@
       maxlength="6"
       autocomplete="one-time-code"
       inputmode="numeric"
-      pattern="[0-9]{6}"
       class="w-full bg-terminal-bg border border-terminal-border px-2 py-1 text-xs font-mono text-terminal-fg outline-none focus:border-accent-500 transition-colors tracking-[0.3em] text-center"
       placeholder="000000"
     />
