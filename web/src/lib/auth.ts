@@ -98,16 +98,16 @@ export async function initialize(): Promise<void> {
     // Decode username from the new access token (route is /users/{username}, not /users/{uuid})
     const claims = decodeJwtPayload(data.accessToken);
     if (claims.username) {
-      // Fetch user profile
-      const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+      // Fetch user profile (response is { user: { ... } } per GetProfileResponse proto)
+      const res = await api<{ user: { userId: string; username: string; email?: string; avatarUrl?: string } }>(
         `/users/${claims.username}`
       );
 
       user = {
-        userId: profile.userId,
-        username: profile.username,
-        email: profile.email,
-        avatarUrl: profile.avatarUrl,
+        userId: res.user.userId,
+        username: res.user.username,
+        email: res.user.email,
+        avatarUrl: res.user.avatarUrl,
       };
     }
   } catch {
@@ -140,16 +140,16 @@ export async function login(email: string, password: string): Promise<void> {
   const username = claims.username;
 
   if (username) {
-    // Fetch user profile
-    const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+    // Fetch user profile (response is { user: { ... } } per GetProfileResponse proto)
+    const res = await api<{ user: { userId: string; username: string; email?: string; avatarUrl?: string } }>(
       `/users/${username}`
     );
 
     user = {
-      userId: profile.userId,
-      username: profile.username,
-      email: profile.email,
-      avatarUrl: profile.avatarUrl,
+      userId: res.user.userId,
+      username: res.user.username,
+      email: res.user.email,
+      avatarUrl: res.user.avatarUrl,
     };
   } else {
     // Fallback: use data from login response
@@ -181,16 +181,16 @@ export async function loginWithTokens(
 
   if (resolvedUsername) {
     try {
-      // Fetch user profile by username
-      const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+      // Fetch user profile by username (response is { user: { ... } } per GetProfileResponse proto)
+      const res = await api<{ user: { userId: string; username: string; email?: string; avatarUrl?: string } }>(
         `/users/${resolvedUsername}`
       );
 
       user = {
-        userId: profile.userId,
-        username: profile.username,
-        email: profile.email,
-        avatarUrl: profile.avatarUrl,
+        userId: res.user.userId,
+        username: res.user.username,
+        email: res.user.email,
+        avatarUrl: res.user.avatarUrl,
       };
     } catch {
       // Profile fetch failed — still logged in with tokens, use JWT claims
