@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
-  import { getUser, isAuthenticated, isLoading, subscribe } from '../lib/auth';
+  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
 
   interface Props {
     name: string;
@@ -259,21 +259,25 @@
   }
 
   onMount(() => {
+    // Ensure auth is initialized before checking
+    initialize();
+
     const unsub = subscribe(() => {
       authed = isAuthenticated();
       authLoading = isLoading();
       currentUser = getUser();
     });
 
-    // Check auth
-    if (!isLoading() && !isAuthenticated()) {
-      window.location.href = '/login';
-      return unsub;
-    }
-
     fetchCommunity();
 
     return unsub;
+  });
+
+  // Redirect to login only AFTER auth loading completes
+  $effect(() => {
+    if (!authLoading && !authed) {
+      window.location.href = '/login';
+    }
   });
 </script>
 

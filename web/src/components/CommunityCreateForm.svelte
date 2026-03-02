@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
-  import { isAuthenticated, isLoading, subscribe } from '../lib/auth';
+  import { isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
 
   type CommunityRule = {
     title: string;
@@ -120,20 +120,18 @@
   }
 
   onMount(() => {
+    // Ensure auth is initialized before checking
+    initialize();
+
     const unsub = subscribe(() => {
       authed = isAuthenticated();
       authLoading = isLoading();
     });
 
-    // Redirect if not authenticated
-    if (!isLoading() && !isAuthenticated()) {
-      window.location.href = '/login';
-    }
-
     return unsub;
   });
 
-  // Watch for auth changes — redirect if logged out
+  // Watch for auth changes — only redirect AFTER loading completes
   $effect(() => {
     if (!authLoading && !authed) {
       window.location.href = '/login';

@@ -52,7 +52,8 @@
     error = null;
 
     try {
-      let path = `/communities?pagination.limit=25&sort=${sortBy}`;
+      // Note: sort is client-side only — the proto ListCommunitiesRequest has only pagination + query
+      let path = `/communities?pagination.limit=25`;
       if (cursor && direction === 'next') {
         path += `&pagination.cursor=${encodeURIComponent(cursor)}`;
       } else if (cursor && direction === 'prev') {
