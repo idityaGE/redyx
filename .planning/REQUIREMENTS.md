@@ -13,10 +13,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AUTH-02**: User receives 6-digit OTP via email to verify account (5min TTL, stored in Redis)
 - [ ] **AUTH-03**: User can register via Google OAuth and choose a username
 - [ ] **AUTH-04**: User can log in with email/password or Google OAuth
-- [ ] **AUTH-05**: System issues JWT access token (15min) and refresh token (7 days)
+- [x] **AUTH-05**: System issues JWT access token (15min) and refresh token (7 days)
 - [ ] **AUTH-06**: User can log out, invalidating the refresh token
 - [ ] **AUTH-07**: User can reset password via email link with token
-- [ ] **AUTH-08**: Email and auth method are never exposed to other users through any API endpoint
+- [x] **AUTH-08**: Email and auth method are never exposed to other users through any API endpoint
 
 ### User Profiles (USER)
 
@@ -100,10 +100,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Rate Limiting (RATE)
 
-- [ ] **RATE-01**: API gateway enforces per-user request rate limits via Redis token bucket
-- [ ] **RATE-02**: Tiered limits: anonymous (10 req/min), authenticated (100 req/min), trusted (300 req/min)
-- [ ] **RATE-03**: Action-specific limits: 5 posts/hour, 30 comments/hour, 60 votes/min, 1 community/day
-- [ ] **RATE-04**: Exceeding limit returns HTTP 429 with Retry-After header
+- [x] **RATE-01**: API gateway enforces per-user request rate limits via Redis token bucket
+- [x] **RATE-02**: Tiered limits: anonymous (10 req/min), authenticated (100 req/min), trusted (300 req/min)
+- [x] **RATE-03**: Action-specific limits: 5 posts/hour, 30 comments/hour, 60 votes/min, 1 community/day
+- [x] **RATE-04**: Exceeding limit returns HTTP 429 with Retry-After header
 
 ### Spam Detection (SPAM)
 
@@ -176,10 +176,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
 | AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Complete |
 | AUTH-06 | Phase 2 | Pending |
 | AUTH-07 | Phase 2 | Pending |
-| AUTH-08 | Phase 2 | Pending |
+| AUTH-08 | Phase 2 | Complete |
 | USER-01 | Phase 2 | Pending |
 | USER-02 | Phase 2 | Pending |
 | USER-03 | Phase 2 | Pending |
@@ -237,10 +237,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPAM-02 | Phase 6 | Pending |
 | SPAM-03 | Phase 6 | Pending |
 | SPAM-04 | Phase 6 | Pending |
-| RATE-01 | Phase 2 | Pending |
-| RATE-02 | Phase 2 | Pending |
-| RATE-03 | Phase 2 | Pending |
-| RATE-04 | Phase 2 | Pending |
+| RATE-01 | Phase 2 | Complete |
+| RATE-02 | Phase 2 | Complete |
+| RATE-03 | Phase 2 | Complete |
+| RATE-04 | Phase 2 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 7 | Pending |
 | INFRA-03 | Phase 7 | Pending |

@@ -53,7 +53,7 @@ Plans:
 **Plans**: 10 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Platform infrastructure: auth interceptor, rate limiter, config, DB migrations, Docker init
+- [x] 02-01-PLAN.md — Platform infrastructure: auth interceptor, rate limiter, config, DB migrations, Docker init ✓
 - [ ] 02-02-PLAN.md — Auth gRPC service: Register, Login, OTP, OAuth, JWT, Refresh, Logout, Reset
 - [ ] 02-03-PLAN.md — User gRPC service: GetProfile, UpdateProfile, DeleteAccount, stub post/comment history
 - [ ] 02-04-PLAN.md — Community gRPC service: CRUD, membership, moderator roles, Redis cache
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
-| 2. Auth + User + Community (Full Stack) | 0/10 | Planned | - |
+| 2. Auth + User + Community (Full Stack) | 1/10 | In Progress | - |
 | 3. Posts + Voting + Feeds (Full Stack) | 0/? | Not started | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
