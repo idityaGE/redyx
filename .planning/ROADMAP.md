@@ -61,7 +61,7 @@ Plans:
 - [ ] 02-06-PLAN.md — Frontend foundation: API client, auth store, Header/Sidebar Svelte conversion
 - [x] 02-07-PLAN.md — Frontend auth pages: register, login, verify, choose-username, reset-password ✓
 - [x] 02-08-PLAN.md — Frontend profile page: status line, tabs, inline editing, account deletion ✓
-- [ ] 02-09-PLAN.md — Frontend community pages: browse, create, detail with sidebar, settings
+- [x] 02-09-PLAN.md — Frontend community pages: browse, create, detail with sidebar, settings ✓
 - [ ] 02-10-PLAN.md — End-to-end verification: API curl tests + human verification checkpoint
 
 ### Phase 3: Posts + Voting + Feeds (Full Stack)
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
-| 2. Auth + User + Community (Full Stack) | 8/10 | In Progress | - |
+| 2. Auth + User + Community (Full Stack) | 9/10 | In Progress | - |
 | 3. Posts + Voting + Feeds (Full Stack) | 0/? | Not started | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |

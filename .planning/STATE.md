@@ -82,6 +82,9 @@ Recent decisions affecting current work:
 - [02-08]: Profile avatar uses Unicode box-drawing chars for authentic terminal frame
 - [02-08]: $effect() for prop-to-state sync pattern in Svelte 5 editable components
 - [02-08]: Type-to-confirm pattern for destructive actions (account deletion)
+- [02-09]: Two-step community creation: POST creates, PATCH adds rules (proto constraint)
+- [02-09]: Independent save per settings section, not one big form
+- [02-09]: ls -la style table format for community browse page
 
 ### Context from Init
 
@@ -104,8 +107,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-08-PLAN.md
+Stopped at: Completed 02-09-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Plan 02-08 complete*
+*Last updated: 2026-03-03 — Plan 02-09 complete*

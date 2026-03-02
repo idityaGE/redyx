@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication (AUTH)
 
-- [ ] **AUTH-01**: User can register with email, username, and password (argon2id hashed)
-- [ ] **AUTH-02**: User receives 6-digit OTP via email to verify account (5min TTL, stored in Redis)
-- [ ] **AUTH-03**: User can register via Google OAuth and choose a username
+- [x] **AUTH-01**: User can register with email, username, and password (argon2id hashed)
+- [x] **AUTH-02**: User receives 6-digit OTP via email to verify account (5min TTL, stored in Redis)
+- [x] **AUTH-03**: User can register via Google OAuth and choose a username
 - [x] **AUTH-04**: User can log in with email/password or Google OAuth
 - [x] **AUTH-05**: System issues JWT access token (15min) and refresh token (7 days)
 - [ ] **AUTH-06**: User can log out, invalidating the refresh token
-- [ ] **AUTH-07**: User can reset password via email link with token
+- [x] **AUTH-07**: User can reset password via email link with token
 - [x] **AUTH-08**: Email and auth method are never exposed to other users through any API endpoint
 
 ### User Profiles (USER)
@@ -172,13 +172,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Complete |
 | AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 2 | Pending |
+| AUTH-07 | Phase 2 | Complete |
 | AUTH-08 | Phase 2 | Complete |
 | USER-01 | Phase 2 | Complete |
 | USER-02 | Phase 2 | Complete |
