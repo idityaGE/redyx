@@ -71,13 +71,14 @@ func main() {
 	limiter := ratelimit.New(rdb)
 
 	// Create gRPC server with full interceptor chain:
-	// Recovery → Logging → RateLimit → AuthInterceptor → ErrorMapping
+	// Recovery → Logging → AuthInterceptor → RateLimit → ErrorMapping
+	// Auth runs before RateLimit so rate limiter can differentiate anonymous vs authenticated tiers
 	srv := grpcserver.New(cfg.GRPCPort, logger,
 		grpcserver.WithUnaryInterceptors(
 			middleware.Recovery(logger),
 			middleware.Logging(logger),
-			ratelimit.UnaryInterceptor(limiter, cfg.RateLimitEnabled),
 			platformauth.UnaryInterceptor(jwtValidator),
+			ratelimit.UnaryInterceptor(limiter, cfg.RateLimitEnabled),
 			middleware.ErrorMapping(),
 		),
 	)

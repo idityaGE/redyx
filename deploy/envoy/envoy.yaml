@@ -43,7 +43,7 @@ static_resources:
                 route:
                   cluster: user-service
                   timeout: 30s
-              - match: { prefix: "/api/v1/communities/" }
+              - match: { prefix: "/api/v1/communities" }
                 route:
                   cluster: community-service
                   timeout: 30s

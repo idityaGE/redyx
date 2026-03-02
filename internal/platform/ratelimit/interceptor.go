@@ -3,6 +3,7 @@ package ratelimit
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -74,10 +75,14 @@ func UnaryInterceptor(limiter *Limiter, enabled bool) grpc.UnaryServerIntercepto
 	}
 }
 
-// clientIP extracts the client IP address from gRPC peer info.
+// clientIP extracts the client IP address (without port) from gRPC peer info.
 func clientIP(ctx context.Context) string {
 	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
-		return p.Addr.String()
+		host, _, err := net.SplitHostPort(p.Addr.String())
+		if err != nil {
+			return p.Addr.String()
+		}
+		return host
 	}
 	return "unknown"
 }
