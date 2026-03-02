@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProfileHeader from '../../components/ProfileHeader.svelte';
+import ProfileTabs from '../../components/ProfileTabs.svelte';
+
+const { username } = Astro.params;
+---
+<BaseLayout title={`u/${username}`}>
+  <div class="max-w-3xl mx-auto">
+    <ProfileHeader username={username!} client:load />
+    <ProfileTabs username={username!} client:load />
+  </div>
+</BaseLayout>
