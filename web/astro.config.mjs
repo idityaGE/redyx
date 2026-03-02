@@ -9,5 +9,13 @@ export default defineConfig({
   integrations: [svelte()],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        '/api/v1': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
   },
 });
