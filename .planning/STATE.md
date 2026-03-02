@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-02T20:42:01Z"
+last_updated: "2026-03-03"
 progress:
-  total_phases: 2
-  completed_phases: 1
+  total_phases: 7
+  completed_phases: 2
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 13
 ---
 
 # State: Redyx
@@ -18,30 +18,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 2: Auth + User + Community (Full Stack)
+**Current focus:** Phase 2 complete. Ready for Phase 3: Posts + Voting + Feeds (Full Stack)
 
 ## Current Position
 
-Phase: 2 of 7 (Auth + User + Community) — Executing
-Plan: 10 of 10 complete in current phase (Task 2 awaiting human verification)
-Status: Plan 02-10 E2E verification — Task 1 complete, Task 2 checkpoint pending
-Last activity: 2026-03-03 — Executing 02-10-PLAN.md (E2E integration verification)
+Phase: 2 of 7 — Complete ✓
+Plan: 10 of 10 complete in Phase 2
+Status: Phase 2 fully verified and approved by user
+Last activity: 2026-03-03 — Completed 02-10-PLAN.md (E2E integration verification)
 
 Progress: [████████░░] 77%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 13
 - Average duration: ~8 min
-- Total execution time: ~1.4 hours
+- Total execution time: ~2.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
-| 02-auth-user-community | 10/10 | ~42 min | ~4.2 min |
+| 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 
 *Updated after each plan completion*
 
@@ -75,7 +75,7 @@ Recent decisions affecting current work:
 - [02-01]: Token bucket via Lua script for atomic Redis operations — no race conditions
 - [02-05]: Redis DB isolation per service: auth=1, user=2, community=3 (skeleton=0)
 - [02-05]: Envoy specific routes before catch-all for first-match routing
-  - [02-05]: CORS expose-headers includes retry-after for frontend rate-limit visibility
+- [02-05]: CORS expose-headers includes retry-after for frontend rate-limit visibility
 - [02-07]: Auth page pattern: Astro shell + Svelte form with client:load using AuthForm wrapper
 - [02-07]: URL query params for cross-page state passing (email, OAuth code, reset token)
 - [02-07]: Field-level inline errors in terminal style: "> error: message" in red
@@ -87,6 +87,10 @@ Recent decisions affecting current work:
 - [02-09]: ls -la style table format for community browse page
 - [02-10]: Auth interceptor before rate limiter in middleware chain for correct tier differentiation
 - [02-10]: Envoy community route uses /api/v1/communities (no trailing slash) for bare path matching
+- [02-10]: Refresh token persisted in localStorage — acceptable for dev, revisit for production
+- [02-10]: Profile fetch uses JWT-decoded username (route is /users/{username}, not /users/{uuid})
+- [02-10]: No dedicated "my communities" RPC — sidebar filters ListCommunities by ownerId client-side
+- [02-10]: Logout uses pub/sub instead of page reload for instant [anonymous] UI update
 
 ### Context from Init
 
@@ -97,20 +101,19 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
 - Home feed aggregation strategy not yet decided (fan-out-on-write vs fan-out-on-read) — needs Phase 3 research
 - ScyllaDB migration tooling gap — no standard tool, needs custom version tracking
-- Envoy rate limiting integration approach (local vs external) — needs Phase 2 implementation research
 - Post shard count (2 vs 4 for v1) — affects consistent hash ring, decide during Phase 3 planning
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: 02-10-PLAN.md Task 2 checkpoint (human-verify frontend pages)
+Stopped at: Completed Phase 2 — all 10 plans executed and verified
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Plan 02-10 Task 1 complete, Task 2 awaiting verification*
+*Last updated: 2026-03-03 — Phase 2 complete, ready for Phase 3*

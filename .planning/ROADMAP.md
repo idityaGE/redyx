@@ -13,7 +13,7 @@ Redyx is built in 7 phases following strict dependency order, with frontend page
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation + Frontend Shell** - Proto definitions, shared platform libraries, Envoy gateway, Docker Compose, Astro+Svelte project init with responsive layout shell ✓ (2026-03-02)
-- [ ] **Phase 2: Auth + User + Community (Full Stack)** - Identity services + registration/login/profile/community frontend pages
+- [x] **Phase 2: Auth + User + Community (Full Stack)** - Identity services + registration/login/profile/community frontend pages ✓ (2026-03-03)
 - [ ] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components
 - [ ] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI
 - [ ] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend
@@ -54,11 +54,11 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Platform infrastructure: auth interceptor, rate limiter, config, DB migrations, Docker init ✓
-- [ ] 02-02-PLAN.md — Auth gRPC service: Register, Login, OTP, OAuth, JWT, Refresh, Logout, Reset
-- [ ] 02-03-PLAN.md — User gRPC service: GetProfile, UpdateProfile, DeleteAccount, stub post/comment history
-- [ ] 02-04-PLAN.md — Community gRPC service: CRUD, membership, moderator roles, Redis cache
+- [x] 02-02-PLAN.md — Auth gRPC service: Register, Login, OTP, OAuth, JWT, Refresh, Logout, Reset ✓
+- [x] 02-03-PLAN.md — User gRPC service: GetProfile, UpdateProfile, DeleteAccount, stub post/comment history ✓
+- [x] 02-04-PLAN.md — Community gRPC service: CRUD, membership, moderator roles, Redis cache ✓
 - [x] 02-05-PLAN.md — Docker Compose + Envoy: add 3 services, route config, transcoder registration ✓
-- [ ] 02-06-PLAN.md — Frontend foundation: API client, auth store, Header/Sidebar Svelte conversion
+- [x] 02-06-PLAN.md — Frontend foundation: API client, auth store, Header/Sidebar Svelte conversion ✓
 - [x] 02-07-PLAN.md — Frontend auth pages: register, login, verify, choose-username, reset-password ✓
 - [x] 02-08-PLAN.md — Frontend profile page: status line, tabs, inline editing, account deletion ✓
 - [x] 02-09-PLAN.md — Frontend community pages: browse, create, detail with sidebar, settings ✓
@@ -154,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
-| 2. Auth + User + Community (Full Stack) | 9/10 | In Progress | - |
+| 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
 | 3. Posts + Voting + Feeds (Full Stack) | 0/? | Not started | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
