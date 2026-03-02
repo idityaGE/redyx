@@ -1,7 +1,6 @@
 ---
 import Header from '../components/Header.svelte';
 import Sidebar from '../components/Sidebar.svelte';
-import Footer from '../components/Footer.astro';
 import MobileNav from '../components/MobileNav.svelte';
 import ThemeToggle from '../components/ThemeToggle.svelte';
 import '../../tailwind.css';
@@ -41,14 +40,16 @@ const { title } = Astro.props;
       <slot />
     </main>
   </div>
-  <Footer />
+  <footer class="h-8 flex items-center justify-between px-3 border-t border-terminal-border bg-terminal-surface text-xs font-mono shrink-0 hidden md:flex">
+    <span class="text-terminal-dim">redyx v0.1.0</span>
+    <div class="flex items-center gap-3">
+      <ThemeToggle client:load />
+      <span class="text-terminal-dim">[connected]</span>
+    </div>
+  </footer>
   <!-- Mobile bottom nav: visible on small screens only -->
   <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50">
     <MobileNav client:visible />
-  </div>
-  <!-- Theme toggle: visible on desktop, hidden on mobile -->
-  <div class="hidden lg:block fixed bottom-4 right-4 z-50">
-    <ThemeToggle client:load />
   </div>
 </body>
 </html>

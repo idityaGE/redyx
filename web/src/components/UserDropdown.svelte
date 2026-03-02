@@ -18,7 +18,8 @@
   async function handleLogout() {
     await logout();
     onclose();
-    window.location.href = '/';
+    // No full page reload — auth store notifies subscribers,
+    // Header switches to [anonymous] instantly via pub/sub
   }
 </script>
 
@@ -32,6 +33,13 @@
     onclick={onclose}
   >
     <span class="text-accent-500">&gt;</span> profile
+  </a>
+  <a
+    href="/communities"
+    class="flex items-center gap-2 px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg transition-colors"
+    onclick={onclose}
+  >
+    <span class="text-accent-500">&gt;</span> communities
   </a>
   <a
     href="/user/{username}"
