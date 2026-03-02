@@ -50,12 +50,19 @@ Plans:
   4. User can create a community, set visibility (public/restricted/private), assign moderators, and other users can join/leave
   5. API requests are rate-limited per user tier (anonymous/authenticated/trusted) with action-specific limits enforced, returning 429 with Retry-After when exceeded
   6. Frontend pages exist for: registration, login, OAuth callback, OTP verification, password reset, user profile (view/edit), community creation, community settings, and community detail (member list, rules, description)
-**Plans**: TBD
+**Plans**: 10 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md — Platform infrastructure: auth interceptor, rate limiter, config, DB migrations, Docker init
+- [ ] 02-02-PLAN.md — Auth gRPC service: Register, Login, OTP, OAuth, JWT, Refresh, Logout, Reset
+- [ ] 02-03-PLAN.md — User gRPC service: GetProfile, UpdateProfile, DeleteAccount, stub post/comment history
+- [ ] 02-04-PLAN.md — Community gRPC service: CRUD, membership, moderator roles, Redis cache
+- [ ] 02-05-PLAN.md — Docker Compose + Envoy: add 3 services, route config, transcoder registration
+- [ ] 02-06-PLAN.md — Frontend foundation: API client, auth store, Header/Sidebar Svelte conversion
+- [ ] 02-07-PLAN.md — Frontend auth pages: register, login, verify, choose-username, reset-password
+- [ ] 02-08-PLAN.md — Frontend profile page: status line, tabs, inline editing, account deletion
+- [ ] 02-09-PLAN.md — Frontend community pages: browse, create, detail with sidebar, settings
+- [ ] 02-10-PLAN.md — End-to-end verification: API curl tests + human verification checkpoint
 
 ### Phase 3: Posts + Voting + Feeds (Full Stack)
 **Goal**: Users can create posts, vote on content, and browse community and home feeds — with frontend pages for post creation, feed browsing, voting interactions, and post detail views
@@ -147,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
-| 2. Auth + User + Community (Full Stack) | 0/? | Not started | - |
+| 2. Auth + User + Community (Full Stack) | 0/10 | Planned | - |
 | 3. Posts + Voting + Feeds (Full Stack) | 0/? | Not started | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
