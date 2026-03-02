@@ -42,6 +42,60 @@ services:
       redis:
         condition: service_healthy
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: auth
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/auth?sslmode=disable
+      REDIS_URL: redis://redis:6379/1
+      GRPC_PORT: "50052"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+    ports: ["50052:50052"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: user
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/user_profiles?sslmode=disable
+      REDIS_URL: redis://redis:6379/2
+      GRPC_PORT: "50053"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+    ports: ["50053:50053"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  community-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: community
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/community?sslmode=disable
+      REDIS_URL: redis://redis:6379/3
+      GRPC_PORT: "50054"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+    ports: ["50054:50054"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   envoy:
     image: envoyproxy/envoy:v1.37.0
     ports:
@@ -52,6 +106,9 @@ services:
       - ./deploy/envoy/proto.pb:/etc/envoy/proto.pb:ro
     depends_on:
       - skeleton-service
+      - auth-service
+      - user-service
+      - community-service
 
 volumes:
   pg-data:
