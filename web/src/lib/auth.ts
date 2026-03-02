@@ -7,7 +7,7 @@
  * Svelte components use subscribe() for reactivity.
  */
 
-import { api, setAccessToken, setRefreshToken, ApiError } from './api';
+import { api, setAccessToken, setRefreshToken, getRefreshToken, ApiError } from './api';
 
 export type AuthUser = {
   userId: string;
@@ -15,6 +15,22 @@ export type AuthUser = {
   email?: string;
   avatarUrl?: string;
 };
+
+/**
+ * Decode the payload of a JWT without verification (client-side only).
+ * Used to extract userId/username from access tokens when the API response
+ * doesn't include them (e.g., VerifyOTPResponse has no user_id field).
+ */
+function decodeJwtPayload(token: string): { uid?: string; username?: string } {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return {};
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload;
+  } catch {
+    return {};
+  }
+}
 
 // Internal state
 let user: AuthUser | null = null;
@@ -61,26 +77,39 @@ export async function initialize(): Promise<void> {
   if (!loading) return; // already initialized
 
   try {
-    // Try refreshing the session — server may have a valid refresh cookie
-    const data = await api<{ accessToken: string; refreshToken: string; userId: string }>('/auth/refresh', {
+    const storedRefresh = getRefreshToken();
+    if (!storedRefresh) {
+      // No refresh token stored — user is anonymous, skip API call
+      user = null;
+      loading = false;
+      notify();
+      return;
+    }
+
+    // Try refreshing the session using the stored refresh token
+    const data = await api<{ accessToken: string; refreshToken: string }>('/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: JSON.stringify({ refreshToken: storedRefresh }),
     });
 
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
 
-    // Fetch user profile
-    const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
-      `/users/${data.userId}`
-    );
+    // Decode userId from the new access token
+    const claims = decodeJwtPayload(data.accessToken);
+    if (claims.uid) {
+      // Fetch user profile
+      const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+        `/users/${claims.uid}`
+      );
 
-    user = {
-      userId: profile.userId,
-      username: profile.username,
-      email: profile.email,
-      avatarUrl: profile.avatarUrl,
-    };
+      user = {
+        userId: profile.userId,
+        username: profile.username,
+        email: profile.email,
+        avatarUrl: profile.avatarUrl,
+      };
+    }
   } catch {
     // Not authenticated — that's fine, anonymous access is allowed
     user = null;
@@ -128,22 +157,40 @@ export async function login(email: string, password: string): Promise<void> {
 export async function loginWithTokens(
   accessTokenValue: string,
   refreshTokenValue: string,
-  userId: string
+  userId?: string
 ): Promise<void> {
   setAccessToken(accessTokenValue);
   setRefreshToken(refreshTokenValue);
 
-  // Fetch user profile
-  const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
-    `/users/${userId}`
-  );
+  // If userId not provided (e.g., VerifyOTPResponse has no user_id), decode from JWT
+  let resolvedUserId = userId;
+  if (!resolvedUserId) {
+    const claims = decodeJwtPayload(accessTokenValue);
+    resolvedUserId = claims.uid;
+  }
 
-  user = {
-    userId: profile.userId,
-    username: profile.username,
-    email: profile.email,
-    avatarUrl: profile.avatarUrl,
-  };
+  if (resolvedUserId) {
+    try {
+      // Fetch user profile
+      const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+        `/users/${resolvedUserId}`
+      );
+
+      user = {
+        userId: profile.userId,
+        username: profile.username,
+        email: profile.email,
+        avatarUrl: profile.avatarUrl,
+      };
+    } catch {
+      // Profile fetch failed — still logged in with tokens, use JWT claims
+      const claims = decodeJwtPayload(accessTokenValue);
+      user = {
+        userId: resolvedUserId,
+        username: claims.username ?? 'user',
+      };
+    }
+  }
 
   loading = false;
   notify();

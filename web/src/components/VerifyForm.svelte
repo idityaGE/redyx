@@ -36,14 +36,13 @@
         accessToken: string;
         refreshToken: string;
         expiresAt: string;
-        userId: string;
       }>('/auth/verify-otp', {
         method: 'POST',
         body: JSON.stringify({ email, code }),
       });
 
       if (data.verified && data.accessToken) {
-        await loginWithTokens(data.accessToken, data.refreshToken, data.userId);
+        await loginWithTokens(data.accessToken, data.refreshToken);
         window.location.href = '/';
       }
     } catch (err) {
