@@ -7,9 +7,10 @@
 
 const API_BASE = '/api/v1';
 
-// Module-level token storage — in-memory only
+// Access token: in-memory only (short-lived, 15 min)
+// Refresh token: persisted in localStorage (long-lived, 7 days) to survive page reloads
 let accessToken: string | null = null;
-let refreshToken: string | null = null;
+let refreshToken: string | null = (typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null);
 
 // Singleton refresh promise for deduplication
 let refreshPromise: Promise<boolean> | null = null;
@@ -35,9 +36,16 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-/** Store refresh token in memory */
+/** Store refresh token in memory AND localStorage (survives page reloads) */
 export function setRefreshToken(token: string | null): void {
   refreshToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('refreshToken', token);
+    } else {
+      localStorage.removeItem('refreshToken');
+    }
+  }
 }
 
 /** Retrieve current refresh token */
@@ -61,17 +69,19 @@ async function refreshAccessToken(): Promise<boolean> {
 
     if (!res.ok) {
       accessToken = null;
-      refreshToken = null;
+      setRefreshToken(null);
       return false;
     }
 
     const data = await res.json();
     accessToken = data.accessToken ?? null;
-    refreshToken = data.refreshToken ?? refreshToken;
+    if (data.refreshToken) {
+      setRefreshToken(data.refreshToken);
+    }
     return true;
   } catch {
     accessToken = null;
-    refreshToken = null;
+    setRefreshToken(null);
     return false;
   }
 }

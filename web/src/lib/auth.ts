@@ -7,7 +7,7 @@
  * Svelte components use subscribe() for reactivity.
  */
 
-import { api, setAccessToken, setRefreshToken, getRefreshToken, ApiError } from './api';
+import { api, setAccessToken, setRefreshToken, getRefreshToken } from './api';
 
 export type AuthUser = {
   userId: string;
@@ -95,12 +95,12 @@ export async function initialize(): Promise<void> {
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
 
-    // Decode userId from the new access token
+    // Decode username from the new access token (route is /users/{username}, not /users/{uuid})
     const claims = decodeJwtPayload(data.accessToken);
-    if (claims.uid) {
+    if (claims.username) {
       // Fetch user profile
       const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
-        `/users/${claims.uid}`
+        `/users/${claims.username}`
       );
 
       user = {
@@ -135,17 +135,29 @@ export async function login(email: string, password: string): Promise<void> {
   setAccessToken(data.accessToken);
   setRefreshToken(data.refreshToken);
 
-  // Fetch user profile
-  const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
-    `/users/${data.userId}`
-  );
+  // Decode JWT for username (route is /users/{username}, not /users/{uuid})
+  const claims = decodeJwtPayload(data.accessToken);
+  const username = claims.username;
 
-  user = {
-    userId: profile.userId,
-    username: profile.username,
-    email: profile.email,
-    avatarUrl: profile.avatarUrl,
-  };
+  if (username) {
+    // Fetch user profile
+    const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
+      `/users/${username}`
+    );
+
+    user = {
+      userId: profile.userId,
+      username: profile.username,
+      email: profile.email,
+      avatarUrl: profile.avatarUrl,
+    };
+  } else {
+    // Fallback: use data from login response
+    user = {
+      userId: data.userId,
+      username: 'user',
+    };
+  }
 
   loading = false;
   notify();
@@ -162,18 +174,16 @@ export async function loginWithTokens(
   setAccessToken(accessTokenValue);
   setRefreshToken(refreshTokenValue);
 
-  // If userId not provided (e.g., VerifyOTPResponse has no user_id), decode from JWT
-  let resolvedUserId = userId;
-  if (!resolvedUserId) {
-    const claims = decodeJwtPayload(accessTokenValue);
-    resolvedUserId = claims.uid;
-  }
+  // Decode JWT for username (route is /users/{username}, not /users/{uuid})
+  const claims = decodeJwtPayload(accessTokenValue);
+  const resolvedUsername = claims.username;
+  const resolvedUserId = userId ?? claims.uid;
 
-  if (resolvedUserId) {
+  if (resolvedUsername) {
     try {
-      // Fetch user profile
+      // Fetch user profile by username
       const profile = await api<{ userId: string; username: string; email?: string; avatarUrl?: string }>(
-        `/users/${resolvedUserId}`
+        `/users/${resolvedUsername}`
       );
 
       user = {
@@ -184,12 +194,17 @@ export async function loginWithTokens(
       };
     } catch {
       // Profile fetch failed — still logged in with tokens, use JWT claims
-      const claims = decodeJwtPayload(accessTokenValue);
       user = {
-        userId: resolvedUserId,
-        username: claims.username ?? 'user',
+        userId: resolvedUserId ?? '',
+        username: resolvedUsername,
       };
     }
+  } else if (resolvedUserId) {
+    // No username in JWT (shouldn't happen) — fallback
+    user = {
+      userId: resolvedUserId,
+      username: 'user',
+    };
   }
 
   loading = false;
