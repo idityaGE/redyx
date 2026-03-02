@@ -29,8 +29,25 @@ static_resources:
               - header:
                   key: access-control-allow-headers
                   value: "content-type, authorization"
+              - header:
+                  key: access-control-expose-headers
+                  value: "grpc-status, grpc-message, retry-after"
               routes:
               # Routes match on incoming REST paths (match_incoming_request_route: true)
+              # Specific routes BEFORE catch-all (Envoy uses first-match)
+              - match: { prefix: "/api/v1/auth/" }
+                route:
+                  cluster: auth-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/users/" }
+                route:
+                  cluster: user-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/communities/" }
+                route:
+                  cluster: community-service
+                  timeout: 30s
+              # Catch-all for remaining /api/v1/ routes (health, etc.)
               - match: { prefix: "/api/v1/" }
                 route:
                   cluster: skeleton-service
@@ -42,6 +59,10 @@ static_resources:
               proto_descriptor: "/etc/envoy/proto.pb"
               services:
                 - redyx.health.v1.HealthService
+                - redyx.auth.v1.AuthService
+                - redyx.user.v1.UserService
+                - redyx.community.v1.CommunityService
+                - redyx.ratelimit.v1.RateLimitService
               # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
               match_incoming_request_route: true
               print_options:
@@ -71,3 +92,51 @@ static_resources:
         - endpoint:
             address:
               socket_address: { address: skeleton-service, port_value: 50051 }
+
+  - name: auth-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: auth-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: auth-service, port_value: 50052 }
+
+  - name: user-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: user-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: user-service, port_value: 50053 }
+
+  - name: community-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: community-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: community-service, port_value: 50054 }
