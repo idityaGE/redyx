@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUTH-03**: User can register via Google OAuth and choose a username
 - [x] **AUTH-04**: User can log in with email/password or Google OAuth
 - [x] **AUTH-05**: System issues JWT access token (15min) and refresh token (7 days)
-- [ ] **AUTH-06**: User can log out, invalidating the refresh token
+- [x] **AUTH-06**: User can log out, invalidating the refresh token
 - [x] **AUTH-07**: User can reset password via email link with token
 - [x] **AUTH-08**: Email and auth method are never exposed to other users through any API endpoint
 
@@ -28,13 +28,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Communities (COMM)
 
-- [ ] **COMM-01**: User can create community with unique, immutable name (alphanumeric + underscores, 3-21 chars)
-- [ ] **COMM-02**: Community has description (markdown), rules (ordered list), banner, and icon
-- [ ] **COMM-03**: Community visibility: public, restricted (view-only for non-approved), or private (invite-only)
-- [ ] **COMM-04**: User can join and leave communities (updates member count)
-- [ ] **COMM-05**: Creator is automatically assigned owner and moderator roles
-- [ ] **COMM-06**: Owner can assign and revoke moderator roles
-- [ ] **COMM-07**: Community metadata cached in Redis (1hr TTL, invalidate on update)
+- [x] **COMM-01**: User can create community with unique, immutable name (alphanumeric + underscores, 3-21 chars)
+- [x] **COMM-02**: Community has description (markdown), rules (ordered list), banner, and icon
+- [x] **COMM-03**: Community visibility: public, restricted (view-only for non-approved), or private (invite-only)
+- [x] **COMM-04**: User can join and leave communities (updates member count)
+- [x] **COMM-05**: Creator is automatically assigned owner and moderator roles
+- [x] **COMM-06**: Owner can assign and revoke moderator roles
+- [x] **COMM-07**: Community metadata cached in Redis (1hr TTL, invalidate on update)
 
 ### Posts & Feeds (POST)
 
@@ -177,7 +177,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Complete |
-| AUTH-06 | Phase 2 | Pending |
+| AUTH-06 | Phase 2 | Complete |
 | AUTH-07 | Phase 2 | Complete |
 | AUTH-08 | Phase 2 | Complete |
 | USER-01 | Phase 2 | Complete |
@@ -185,13 +185,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | USER-03 | Phase 2 | Complete |
 | USER-04 | Phase 2 | Complete |
 | USER-05 | Phase 2 | Complete |
-| COMM-01 | Phase 2 | Pending |
-| COMM-02 | Phase 2 | Pending |
-| COMM-03 | Phase 2 | Pending |
-| COMM-04 | Phase 2 | Pending |
-| COMM-05 | Phase 2 | Pending |
-| COMM-06 | Phase 2 | Pending |
-| COMM-07 | Phase 2 | Pending |
+| COMM-01 | Phase 2 | Complete |
+| COMM-02 | Phase 2 | Complete |
+| COMM-03 | Phase 2 | Complete |
+| COMM-04 | Phase 2 | Complete |
+| COMM-05 | Phase 2 | Complete |
+| COMM-06 | Phase 2 | Complete |
+| COMM-07 | Phase 2 | Complete |
 | POST-01 | Phase 3 | Pending |
 | POST-02 | Phase 3 | Pending |
 | POST-03 | Phase 3 | Pending |

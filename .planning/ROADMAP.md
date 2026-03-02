@@ -62,7 +62,7 @@ Plans:
 - [x] 02-07-PLAN.md — Frontend auth pages: register, login, verify, choose-username, reset-password ✓
 - [x] 02-08-PLAN.md — Frontend profile page: status line, tabs, inline editing, account deletion ✓
 - [x] 02-09-PLAN.md — Frontend community pages: browse, create, detail with sidebar, settings ✓
-- [ ] 02-10-PLAN.md — End-to-end verification: API curl tests + human verification checkpoint
+- [x] 02-10-PLAN.md — End-to-end verification: API curl tests + human verification checkpoint ✓
 
 ### Phase 3: Posts + Voting + Feeds (Full Stack)
 **Goal**: Users can create posts, vote on content, and browse community and home feeds — with frontend pages for post creation, feed browsing, voting interactions, and post detail views

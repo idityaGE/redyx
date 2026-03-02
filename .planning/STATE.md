@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-02T20:11:16Z"
+last_updated: "2026-03-02T20:42:01Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # State: Redyx
@@ -23,25 +23,25 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 2 of 7 (Auth + User + Community) — Executing
-Plan: 9 of 10 complete in current phase
-Status: Plan 02-09 complete — Community frontend pages with browse, create, detail, settings
-Last activity: 2026-03-03 — Completed 02-09-PLAN.md (Community frontend pages)
+Plan: 10 of 10 complete in current phase (Task 2 awaiting human verification)
+Status: Plan 02-10 E2E verification — Task 1 complete, Task 2 checkpoint pending
+Last activity: 2026-03-03 — Executing 02-10-PLAN.md (E2E integration verification)
 
-Progress: [███████░░░] 69%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: ~7 min
-- Total execution time: ~1.0 hours
+- Total plans completed: 10
+- Average duration: ~8 min
+- Total execution time: ~1.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
-| 02-auth-user-community | 9/10 | ~17 min | ~1.9 min |
+| 02-auth-user-community | 10/10 | ~42 min | ~4.2 min |
 
 *Updated after each plan completion*
 
@@ -68,7 +68,7 @@ Recent decisions affecting current work:
 - [01-03]: Envoy match_incoming_request_route: true for REST path routing (Pitfall 2 prevention)
 - [01-03]: preserve_proto_field_names: false — camelCase JSON everywhere (Pitfall 1)
 - [01-03]: Platform libs in internal/platform/ with grpcserver bootstrap, config, database, redis, middleware, errors, pagination
-- [01-03]: Middleware chain order: Recovery → Logging → ErrorMapping (outermost catches panics)
+- [01-03]: Middleware chain order: Recovery → Logging → Auth → RateLimit → ErrorMapping (outermost catches panics)
 - [01-03]: Error mapping interceptor sanitizes internal errors — never leaks raw messages to clients
 - [02-01]: Fail-open rate limiting — Redis errors allow requests through to preserve availability
 - [02-01]: Public methods still attempt optional JWT extraction for rate limit tier differentiation
@@ -85,6 +85,8 @@ Recent decisions affecting current work:
 - [02-09]: Two-step community creation: POST creates, PATCH adds rules (proto constraint)
 - [02-09]: Independent save per settings section, not one big form
 - [02-09]: ls -la style table format for community browse page
+- [02-10]: Auth interceptor before rate limiter in middleware chain for correct tier differentiation
+- [02-10]: Envoy community route uses /api/v1/communities (no trailing slash) for bare path matching
 
 ### Context from Init
 
@@ -107,8 +109,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-09-PLAN.md
+Stopped at: 02-10-PLAN.md Task 2 checkpoint (human-verify frontend pages)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Plan 02-09 complete*
+*Last updated: 2026-03-03 — Plan 02-10 Task 1 complete, Task 2 awaiting verification*
