@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package redyx.common.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// VoteEvent is published to Kafka when a vote is cast, changed, or removed.
+// Consumed by post-service (score updates) and user-service (karma updates).
+message VoteEvent {
+  string event_id = 1;
+  string user_id = 2;
+  string target_id = 3;
+  string target_type = 4;  // "post" or "comment"
+  string author_id = 5;
+  int32 score_delta = 6;
+  string community_id = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+}

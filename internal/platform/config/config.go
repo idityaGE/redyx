@@ -31,6 +31,12 @@ type Config struct {
 
 	// Rate limit fields
 	RateLimitEnabled bool
+
+	// Kafka fields (Phase 3)
+	KafkaBrokers string
+
+	// Post shard fields (Phase 3)
+	PostShardDSNs []string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -61,6 +67,13 @@ func Load(serviceName string) *Config {
 
 		// Rate limit
 		RateLimitEnabled: envBool("RATE_LIMIT_ENABLED", true),
+
+		// Kafka
+		KafkaBrokers: envStr("KAFKA_BROKERS", "kafka:9092"),
+
+		// Post shards
+		PostShardDSNs: envStringSlice("POST_SHARD_DSNS",
+			"postgres://redyx:dev@postgres:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgres:5432/posts_shard_1?sslmode=disable"),
 	}
 
 	logger.Info("loaded config",
@@ -71,6 +84,8 @@ func Load(serviceName string) *Config {
 		zap.Duration("jwt_access_ttl", cfg.JWTAccessTTL),
 		zap.Duration("jwt_refresh_ttl", cfg.JWTRefreshTTL),
 		zap.Bool("rate_limit_enabled", cfg.RateLimitEnabled),
+		zap.String("kafka_brokers", cfg.KafkaBrokers),
+		zap.Int("post_shard_count", len(cfg.PostShardDSNs)),
 	)
 
 	return cfg
@@ -102,6 +117,22 @@ func envBool(key string, fallback bool) bool {
 		}
 	}
 	return fallback
+}
+
+func envStringSlice(key, fallback string) []string {
+	raw := envStr(key, fallback)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			result = append(result, p)
+		}
+	}
+	return result
 }
 
 func envDuration(key string, fallback time.Duration) time.Duration {
