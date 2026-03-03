@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostDetail from '../../components/PostDetail.svelte';
+const { id } = Astro.params;
+---
+<BaseLayout title="Post">
+  <PostDetail postId={id!} client:load />
+</BaseLayout>
