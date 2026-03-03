@@ -75,12 +75,16 @@ Plans:
   4. User can edit/delete own posts, post anonymously as [anonymous], and save posts to a private bookmarks list
   5. Posts are stored on shards determined by consistent hashing of community_id, and the system handles cross-shard queries for home feed aggregation
   6. Frontend pages exist for: post creation form (text/link/media tabs), community feed with sort controls, home feed, post detail view, user's saved posts list — with optimistic vote UI updates (score changes instantly on click)
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — Post service backend: shard router, schemas, VoteEvent proto, all PostService RPCs
+- [ ] 03-02-PLAN.md — Vote service backend: Redis Lua vote state, Kafka producer, karma consumer
+- [ ] 03-03-PLAN.md — Docker/Envoy wiring: Kafka broker, post-service + vote-service containers, Envoy routes, Kafka consumers
+- [ ] 03-04-PLAN.md — Frontend shared components: VoteButtons, FeedRow, FeedList, SortBar, PostBody
+- [ ] 03-05-PLAN.md — Frontend pages: home feed, community feed, post submit, post detail
+- [ ] 03-06-PLAN.md — Frontend saved posts: /saved page, profile Saved tab, sidebar link
+- [ ] 03-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
 
 ### Phase 4: Comments (Full Stack)
 **Goal**: Users can have threaded discussions on posts — with a frontend comment tree component supporting nested replies, sorting, and lazy-loading of deep threads
