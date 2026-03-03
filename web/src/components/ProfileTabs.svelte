@@ -10,7 +10,7 @@
 
   let { username }: Props = $props();
 
-  type Tab = 'posts' | 'comments' | 'about';
+  type Tab = 'posts' | 'comments' | 'saved' | 'about';
 
   let activeTab = $state<Tab>('posts');
   let isOwnProfile = $state(false);
@@ -25,6 +25,11 @@
   let commentsLoading = $state(false);
   let commentsError = $state<string | null>(null);
 
+  // Saved state
+  let savedPosts = $state<any[]>([]);
+  let savedLoading = $state(false);
+  let savedError = $state<string | null>(null);
+
   // About state
   interface AboutData {
     displayName: string;
@@ -34,11 +39,12 @@
   let aboutData = $state<AboutData | null>(null);
   let aboutLoading = $state(false);
 
-  const tabs: { id: Tab; label: string }[] = [
+  const tabs = $derived<{ id: Tab; label: string }[]>([
     { id: 'posts', label: 'Posts' },
     { id: 'comments', label: 'Comments' },
+    ...(isOwnProfile ? [{ id: 'saved' as Tab, label: 'Saved' }] : []),
     { id: 'about', label: 'About' },
-  ];
+  ]);
 
   onMount(() => {
     checkOwnProfile();
@@ -66,6 +72,8 @@
       await fetchPosts();
     } else if (activeTab === 'comments') {
       await fetchComments();
+    } else if (activeTab === 'saved') {
+      await fetchSaved();
     } else if (activeTab === 'about') {
       await fetchAbout();
     }
@@ -104,6 +112,24 @@
       }
     } finally {
       commentsLoading = false;
+    }
+  }
+
+  async function fetchSaved() {
+    if (savedPosts.length > 0) return;
+    savedLoading = true;
+    savedError = null;
+    try {
+      const data = await api<{ posts: any[] }>('/saved?pagination.limit=25');
+      savedPosts = data.posts ?? [];
+    } catch (e) {
+      if (e instanceof ApiError) {
+        savedError = e.message;
+      } else {
+        savedError = 'failed to load saved posts';
+      }
+    } finally {
+      savedLoading = false;
     }
   }
 
@@ -190,6 +216,35 @@
             <div class="text-terminal-dim mt-0.5">
               on <a href="/post/{comment.postId}" class="text-accent-600 hover:text-accent-500">{comment.postTitle ?? 'post'}</a>
             </div>
+          </div>
+        {/each}
+      {/if}
+
+    {:else if activeTab === 'saved'}
+      {#if savedLoading}
+        <div class="text-terminal-dim text-xs animate-pulse">[loading saved posts...]</div>
+      {:else if savedError}
+        <div class="text-xs">
+          <span class="text-red-500">&gt; error:</span>
+          <span class="text-red-400"> {savedError}</span>
+        </div>
+      {:else if savedPosts.length === 0}
+        <div class="text-terminal-dim text-xs">
+          <span class="text-terminal-dim">&gt;</span> no saved posts
+        </div>
+      {:else}
+        {#each savedPosts as post}
+          <div class="py-1 text-xs border-b border-terminal-border last:border-0">
+            <a href="/post/{post.postId ?? post.id}" class="text-terminal-fg hover:text-accent-500 transition-colors">
+              {post.title}
+            </a>
+            {#if post.communityName}
+              <div class="text-terminal-dim mt-0.5">
+                <a href="/community/{post.communityName}" class="text-accent-600 hover:text-accent-500">
+                  r/{post.communityName}
+                </a>
+              </div>
+            {/if}
           </div>
         {/each}
       {/if}
