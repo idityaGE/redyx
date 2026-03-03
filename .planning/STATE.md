@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # State: Redyx
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 3 of 7 — In Progress
-Plan: 3 of 7 complete in Phase 3
+Plan: 4 of 7 complete in Phase 3
 Status: Executing Phase 3 plans
-Last activity: 2026-03-03 — Completed 03-04-PLAN.md (Frontend feed components)
+Last activity: 2026-03-03 — Completed 03-03-PLAN.md (Infrastructure wiring)
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: ~9 min
-- Total execution time: ~3.0 hours
+- Total execution time: ~3.1 hours
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ Progress: [████████░░] 76%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 3/7 | ~26 min | ~9 min |
+| 03-posts-voting-feeds | 4/7 | ~31 min | ~8 min |
 
 *Updated after each plan completion*
 
@@ -103,6 +103,10 @@ Recent decisions affecting current work:
 - [03-02]: Redis-only vote service (no PostgreSQL) — Kafka provides durability
 - [03-02]: Redis SADD deduplication for karma consumer — 24h TTL on processed set
 - [03-02]: 6-partition Kafka topic for votes — explicit creation on startup prevents wrong defaults
+- [03-03]: ScoreConsumer reads Redis SCARD for idempotent set-based score derivation (not delta-based)
+- [03-03]: Kafka KRaft mode (bitnami/kafka:3.7) — no Zookeeper dependency
+- [03-03]: Regex route for /api/v1/communities/{name}/posts before community catch-all
+- [03-03]: Karma consumer as goroutine in user-service (not a separate container)
 - [03-04]: Component-local $state for vote state (not global store) — each post card owns its own vote state
 - [03-04]: marked + DOMPurify for client-side markdown rendering (user content changes, preview needs client rendering)
 - [03-04]: IntersectionObserver with 200px rootMargin for infinite scroll trigger
@@ -128,8 +132,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-04-PLAN.md (Frontend feed components)
+Stopped at: Completed 03-03-PLAN.md (Infrastructure wiring)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-3 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-4 of 7 complete*
