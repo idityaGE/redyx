@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # State: Redyx
@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 3 of 7 — In Progress
-Plan: 4 of 7 complete in Phase 3
+Plan: 5 of 7 complete in Phase 3
 Status: Executing Phase 3 plans
-Last activity: 2026-03-03 — Completed 03-03-PLAN.md (Infrastructure wiring)
+Last activity: 2026-03-03 — Completed 03-06-PLAN.md (Saved posts frontend integration)
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: ~9 min
 - Total execution time: ~3.1 hours
 
@@ -42,7 +42,7 @@ Progress: [████████░░] 80%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 4/7 | ~31 min | ~8 min |
+| 03-posts-voting-feeds | 5/7 | ~33 min | ~7 min |
 
 *Updated after each plan completion*
 
@@ -111,6 +111,9 @@ Recent decisions affecting current work:
 - [03-04]: marked + DOMPurify for client-side markdown rendering (user content changes, preview needs client rendering)
 - [03-04]: IntersectionObserver with 200px rootMargin for infinite scroll trigger
 - [03-04]: $effect() for sort/timeRange reactive reset in FeedList
+- [03-06]: Saved tab only on own profile via $derived tabs with isOwnProfile conditional
+- [03-06]: Auth guard redirects to /login?redirect=/saved for unauthenticated users
+- [03-06]: Optimistic unsave removes post immediately, restores on API failure
 
 ### Context from Init
 
@@ -132,8 +135,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-03-PLAN.md (Infrastructure wiring)
+Stopped at: Completed 03-06-PLAN.md (Saved posts frontend integration)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-4 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-4,6 of 7 complete*

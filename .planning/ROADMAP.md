@@ -83,7 +83,7 @@ Plans:
 - [x] 03-03-PLAN.md — Docker/Envoy wiring: Kafka broker, post-service + vote-service containers, Envoy routes, Kafka consumers ✓
 - [x] 03-04-PLAN.md — Frontend shared components: VoteButtons, FeedRow, FeedList, SortBar, PostBody ✓
 - [ ] 03-05-PLAN.md — Frontend pages: home feed, community feed, post submit, post detail
-- [ ] 03-06-PLAN.md — Frontend saved posts: /saved page, profile Saved tab, sidebar link
+- [x] 03-06-PLAN.md — Frontend saved posts: /saved page, profile Saved tab, sidebar link ✓
 - [ ] 03-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
 
 ### Phase 4: Comments (Full Stack)
@@ -159,7 +159,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
-| 3. Posts + Voting + Feeds (Full Stack) | 3/7 | In Progress | - |
+| 3. Posts + Voting + Feeds (Full Stack) | 5/7 | In Progress | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
