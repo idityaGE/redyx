@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
   import CommunitySidebar from './CommunitySidebar.svelte';
+  import CommunityFeed from './CommunityFeed.svelte';
 
   interface Props {
     name: string;
@@ -115,14 +116,8 @@
         <div class="text-accent-500 text-sm">~ /community/{community.name}</div>
       </div>
 
-      <!-- Posts feed placeholder -->
-      <div class="border border-terminal-border bg-terminal-surface p-4">
-        <div class="text-xs text-terminal-dim font-mono text-center py-8">
-          <div class="mb-2">┌─────────────────────────────────┐</div>
-          <div class="mb-2">│  posts feed — coming in phase 3  │</div>
-          <div>└─────────────────────────────────┘</div>
-        </div>
-      </div>
+      <!-- Posts feed -->
+      <CommunityFeed communityName={community.name} />
     </div>
 
     <!-- Right sidebar -->

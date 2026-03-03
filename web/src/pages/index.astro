@@ -1,51 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const feedItems = [
-  { id: 1, score: 142, title: 'Show: I built a terminal-based Reddit client in Rust', community: 'r/programming', user: 'u/rustacean42', time: '2h', comments: 87 },
-  { id: 2, score: 89, title: 'PostgreSQL 17 released with major JSON improvements', community: 'r/selfhosted', user: 'u/pgfan', time: '4h', comments: 34 },
-  { id: 3, score: 256, title: 'Why monospace fonts are objectively superior for reading', community: 'r/terminal', user: 'u/fontlover', time: '6h', comments: 193 },
-  { id: 4, score: 42, title: 'TailwindCSS v4 CSS-first config: a complete migration guide', community: 'r/typescript', user: 'u/csswhiz', time: '8h', comments: 12 },
-  { id: 5, score: 517, title: 'Linux 7.0 kernel drops legacy driver support', community: 'r/linux', user: 'u/penguindev', time: '10h', comments: 342 },
-  { id: 6, score: 23, title: 'Svelte 5 runes API: my experience after 3 months', community: 'r/svelte', user: 'u/sveltedev', time: '12h', comments: 8 },
-  { id: 7, score: 78, title: 'Self-hosting guide: replacing every cloud service', community: 'r/privacy', user: 'u/privacynut', time: '14h', comments: 56 },
-  { id: 8, score: 31, title: 'Memory safety without garbage collection: a comparison', community: 'r/rust', user: 'u/borrowck', time: '16h', comments: 19 },
-];
+import HomeFeed from '../components/HomeFeed.svelte';
 ---
 <BaseLayout title="Home">
-  <div class="box-terminal mb-4">
-    <div class="text-accent-500 text-sm mb-2">~ welcome to redyx</div>
-    <div class="text-terminal-dim text-xs">
-      a terminal-aesthetic community platform &middot; information-dense &middot; privacy-first
-    </div>
-  </div>
-
-  <div class="space-y-0">
-    {feedItems.map((item) => (
-      <div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group">
-        <!-- Vote column -->
-        <div class="flex flex-col items-center w-10 shrink-0 text-terminal-dim">
-          <button class="hover:text-accent-500 transition-colors leading-none">&blacktriangle;</button>
-          <span class="text-terminal-fg text-xs font-medium">{item.score}</span>
-          <button class="hover:text-accent-500 transition-colors leading-none">&blacktriangledown;</button>
-        </div>
-
-        <!-- Content -->
-        <div class="flex-1 min-w-0">
-          <a href={`/post/${item.id}`} class="text-terminal-fg group-hover:text-accent-500 transition-colors truncate block text-sm">
-            {item.title}
-          </a>
-          <div class="text-terminal-dim mt-0.5">
-            <span class="text-accent-600">{item.community}</span>
-            <span class="mx-1">&middot;</span>
-            <span>{item.user}</span>
-            <span class="mx-1">&middot;</span>
-            <span>{item.time}</span>
-            <span class="mx-1">&middot;</span>
-            <span>{item.comments} comments</span>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
+  <HomeFeed client:load />
 </BaseLayout>
