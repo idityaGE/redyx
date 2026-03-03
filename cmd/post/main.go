@@ -76,6 +76,13 @@ func main() {
 		defer voteRdb.Close()
 	}
 
+	// Connect to community database for name→UUID resolution
+	communityPool, err := pgxpool.New(context.Background(), cfg.CommunityDatabaseURL)
+	if err != nil {
+		logger.Fatal("failed to connect to community database", zap.Error(err))
+	}
+	defer communityPool.Close()
+
 	// Create post cache
 	cache := post.NewCache(rdb, voteRdb)
 
@@ -98,7 +105,7 @@ func main() {
 	)
 
 	// Create and register post service
-	postServer := post.NewServer(shardRouter, cache, logger)
+	postServer := post.NewServer(shardRouter, cache, communityPool, logger)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 
 	// Start background hot score refresh goroutine

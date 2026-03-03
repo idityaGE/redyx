@@ -28,18 +28,39 @@ import (
 // Server implements the PostServiceServer gRPC interface.
 type Server struct {
 	postv1.UnimplementedPostServiceServer
-	shards *ShardRouter
-	cache  *Cache
-	logger *zap.Logger
+	shards      *ShardRouter
+	cache       *Cache
+	communityDB *pgxpool.Pool
+	logger      *zap.Logger
 }
 
 // NewServer creates a new post gRPC server.
-func NewServer(shards *ShardRouter, cache *Cache, logger *zap.Logger) *Server {
+func NewServer(shards *ShardRouter, cache *Cache, communityDB *pgxpool.Pool, logger *zap.Logger) *Server {
 	return &Server{
-		shards: shards,
-		cache:  cache,
-		logger: logger,
+		shards:      shards,
+		cache:       cache,
+		communityDB: communityDB,
+		logger:      logger,
 	}
+}
+
+// resolveCommunity looks up a community by name and returns its UUID.
+func (s *Server) resolveCommunity(ctx context.Context, name string) (string, error) {
+	if s.communityDB == nil {
+		return "", fmt.Errorf("community database not configured")
+	}
+	var id string
+	err := s.communityDB.QueryRow(ctx,
+		`SELECT id FROM communities WHERE name = $1`,
+		name,
+	).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "", fmt.Errorf("community %q: %w", name, perrors.ErrNotFound)
+		}
+		return "", fmt.Errorf("resolve community: %w", err)
+	}
+	return id, nil
 }
 
 // CreatePost creates a new post in a community shard.
@@ -82,21 +103,19 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 		return nil, fmt.Errorf("unknown post type: %w", perrors.ErrInvalidInput)
 	}
 
-	// Resolve community: look up community by name from all shard pools
-	// For v1, the post-service does a direct lookup in the community database.
-	// In production, this would be a gRPC call to community-service with caching.
+	// Resolve community name → UUID from community database
 	communityName := req.GetCommunityName()
 	if communityName == "" {
 		return nil, fmt.Errorf("community name is required: %w", perrors.ErrInvalidInput)
 	}
 
-	// For now, we use a simple approach: the community_id and community_name
-	// are provided/resolved at the API layer. We'll use community_name as
-	// the shard key and generate a deterministic community_id from it.
-	// In a real system, we'd call community-service to resolve name→id.
-	communityID := communityName // Use name as routing key for shard selection
+	communityID, err := s.resolveCommunity(ctx, communityName)
+	if err != nil {
+		return nil, err
+	}
 
-	pool, _ := s.shards.GetPool(communityID)
+	// Use community name as shard routing key (all posts for a community on same shard)
+	pool, _ := s.shards.GetPool(communityName)
 
 	// Compute initial hot score
 	now := time.Now()
@@ -109,7 +128,7 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 
 	var postID string
 	var createdAt time.Time
-	err := pool.QueryRow(ctx,
+	err = pool.QueryRow(ctx,
 		`INSERT INTO posts (title, body, url, post_type, author_id, author_username,
 		                    community_id, community_name, hot_score, is_anonymous, created_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -829,34 +848,31 @@ func (s *Server) getUserCommunityIDs(ctx context.Context, userID string) ([]stri
 		return ids, nil
 	}
 
-	// For v1, query community database directly.
-	// In production, this would be a gRPC call to community-service.
-	// We query each shard for community_name in posts to find distinct communities.
-	// This is a simplification — the real approach would call community-service.
-
-	// Actually, we need the community-service DB. For now, return all known communities
-	// from posts across all shards as a fallback.
-	communitySet := make(map[string]bool)
-	for _, pool := range s.shards.AllPools() {
-		rows, err := pool.Query(ctx,
-			`SELECT DISTINCT community_name FROM posts WHERE author_id = $1 AND is_deleted = false`,
-			userID,
-		)
-		if err != nil {
-			continue
-		}
-		for rows.Next() {
-			var name string
-			if err := rows.Scan(&name); err == nil {
-				communitySet[name] = true
-			}
-		}
-		rows.Close()
+	// Query community database for user's joined communities by name
+	if s.communityDB == nil {
+		return nil, fmt.Errorf("community database not configured")
 	}
 
-	result := make([]string, 0, len(communitySet))
-	for name := range communitySet {
-		result = append(result, name)
+	rows, err := s.communityDB.Query(ctx,
+		`SELECT c.name FROM community_members cm
+		 JOIN communities c ON c.id = cm.community_id
+		 WHERE cm.user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query user communities: %w", err)
+	}
+	defer rows.Close()
+
+	var result []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			result = append(result, name)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan user communities: %w", err)
 	}
 
 	// Cache for 5min
