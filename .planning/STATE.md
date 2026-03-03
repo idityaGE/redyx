@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # State: Redyx
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 3 of 7 — In Progress
-Plan: 5 of 7 complete in Phase 3
+Plan: 6 of 7 complete in Phase 3
 Status: Executing Phase 3 plans
-Last activity: 2026-03-03 — Completed 03-06-PLAN.md (Saved posts frontend integration)
+Last activity: 2026-03-03 — Completed 03-05-PLAN.md (Frontend pages for posts and feeds)
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: ~9 min
-- Total execution time: ~3.1 hours
+- Total execution time: ~3.2 hours
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ Progress: [█████████░] 85%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 5/7 | ~33 min | ~7 min |
+| 03-posts-voting-feeds | 6/7 | ~39 min | ~7 min |
 
 *Updated after each plan completion*
 
@@ -111,6 +111,10 @@ Recent decisions affecting current work:
 - [03-04]: marked + DOMPurify for client-side markdown rendering (user content changes, preview needs client rendering)
 - [03-04]: IntersectionObserver with 200px rootMargin for infinite scroll trigger
 - [03-04]: $effect() for sort/timeRange reactive reset in FeedList
+- [03-05]: HomeFeed and CommunityFeed compose SortBar+FeedList with local $state sort management
+- [03-05]: Post submit uses tab bar (Text/Link/Media) with Write/Preview sub-tabs for markdown body
+- [03-05]: PostDetail inline edit mode toggles form fields in-place (not separate page)
+- [03-05]: Delete uses inline yes/no confirmation pattern (not browser confirm dialog)
 - [03-06]: Saved tab only on own profile via $derived tabs with isOwnProfile conditional
 - [03-06]: Auth guard redirects to /login?redirect=/saved for unauthenticated users
 - [03-06]: Optimistic unsave removes post immediately, restores on API failure
@@ -135,8 +139,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-06-PLAN.md (Saved posts frontend integration)
+Stopped at: Completed 03-05-PLAN.md (Frontend pages for posts and feeds)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-4,6 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-6 of 7 complete*
