@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { getUser, subscribe } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { getUser, subscribe } from '../../lib/auth';
   import ProfileEditor from './ProfileEditor.svelte';
 
   interface Props {

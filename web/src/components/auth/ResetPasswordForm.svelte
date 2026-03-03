@@ -1,6 +1,6 @@
 <script lang="ts">
   import AuthForm from './AuthForm.svelte';
-  import { api, ApiError } from '../lib/api';
+  import { api, ApiError } from '../../lib/api';
 
   let email = $state('');
   let error = $state<string | null>(null);

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { api, ApiError } from '../lib/api';
-  import { logout } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { logout } from '../../lib/auth';
 
   interface Props {
     displayName: string;

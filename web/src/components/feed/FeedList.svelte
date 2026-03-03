@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { api } from '../lib/api';
-  import { whenReady } from '../lib/auth';
+  import { api } from '../../lib/api';
+  import { whenReady } from '../../lib/auth';
   import FeedRow from './FeedRow.svelte';
 
   type Post = {

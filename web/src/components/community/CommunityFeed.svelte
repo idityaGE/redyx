@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { isAuthenticated, subscribe } from '../lib/auth';
-  import SortBar from './SortBar.svelte';
-  import FeedList from './FeedList.svelte';
+  import { isAuthenticated, subscribe } from '../../lib/auth';
+  import SortBar from '../feed/SortBar.svelte';
+  import FeedList from '../feed/FeedList.svelte';
 
   interface Props {
     communityName: string;

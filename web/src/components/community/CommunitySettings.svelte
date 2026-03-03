@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
 
   interface Props {
     name: string;

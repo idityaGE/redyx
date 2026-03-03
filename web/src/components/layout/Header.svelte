@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
+  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
   import UserDropdown from './UserDropdown.svelte';
 
   let user = $state(getUser());

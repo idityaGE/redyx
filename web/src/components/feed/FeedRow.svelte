@@ -1,6 +1,6 @@
 <script lang="ts">
-  import VoteButtons from './VoteButtons.svelte';
-  import { relativeTime } from '../lib/time';
+  import VoteButtons from '../post/VoteButtons.svelte';
+  import { relativeTime } from '../../lib/time';
 
   type Post = {
     postId: string;

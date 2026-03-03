@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { isAuthenticated, subscribe } from '../lib/auth';
+  import { isAuthenticated, subscribe } from '../../lib/auth';
   import SortBar from './SortBar.svelte';
   import FeedList from './FeedList.svelte';
 

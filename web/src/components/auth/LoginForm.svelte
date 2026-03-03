@@ -1,7 +1,7 @@
 <script lang="ts">
   import AuthForm from './AuthForm.svelte';
-  import { login } from '../lib/auth';
-  import { ApiError } from '../lib/api';
+  import { login } from '../../lib/auth';
+  import { ApiError } from '../../lib/api';
 
   let email = $state('');
   let password = $state('');

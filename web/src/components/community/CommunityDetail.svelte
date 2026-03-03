@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { whenReady } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { whenReady } from '../../lib/auth';
   import CommunitySidebar from './CommunitySidebar.svelte';
   import CommunityFeed from './CommunityFeed.svelte';
 

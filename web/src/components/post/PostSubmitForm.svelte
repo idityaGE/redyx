@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { isAuthenticated, whenReady } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { isAuthenticated, whenReady } from '../../lib/auth';
   import PostBody from './PostBody.svelte';
 
   interface Props {

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { getUser, isAuthenticated, whenReady, subscribe } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { getUser, isAuthenticated, whenReady, subscribe } from '../../lib/auth';
   import VoteButtons from './VoteButtons.svelte';
   import PostBody from './PostBody.svelte';
-  import { relativeTime } from '../lib/time';
+  import { relativeTime } from '../../lib/time';
 
   interface Props {
     postId: string;

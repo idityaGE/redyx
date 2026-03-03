@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { api, ApiError } from '../lib/api';
-  import { isAuthenticated } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { isAuthenticated } from '../../lib/auth';
 
   interface Props {
     postId: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, ApiError } from '../lib/api';
-  import { isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
 
   type CommunityRule = {
     title: string;

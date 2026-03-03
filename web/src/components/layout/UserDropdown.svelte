@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { logout } from '../lib/auth';
+  import { logout } from '../../lib/auth';
 
   interface Props {
     username: string;

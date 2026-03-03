@@ -1,7 +1,7 @@
 <script lang="ts">
   import AuthForm from './AuthForm.svelte';
-  import { api, ApiError } from '../lib/api';
-  import { loginWithTokens } from '../lib/auth';
+  import { api, ApiError } from '../../lib/api';
+  import { loginWithTokens } from '../../lib/auth';
 
   let username = $state('');
   let error = $state<string | null>(null);

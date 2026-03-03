@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getUser, isAuthenticated, isLoading, whenReady, subscribe } from '../lib/auth';
-  import { api } from '../lib/api';
+  import { getUser, isAuthenticated, isLoading, whenReady, subscribe } from '../../lib/auth';
+  import { api } from '../../lib/api';
 
   let authed = $state(isAuthenticated());
   let loading = $state(isLoading());
