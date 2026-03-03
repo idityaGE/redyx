@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation + Frontend Shell** - Proto definitions, shared platform libraries, Envoy gateway, Docker Compose, Astro+Svelte project init with responsive layout shell ✓ (2026-03-02)
 - [x] **Phase 2: Auth + User + Community (Full Stack)** - Identity services + registration/login/profile/community frontend pages ✓ (2026-03-03)
-- [ ] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components
+- [x] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components ✓ (2026-03-03)
 - [ ] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI
 - [ ] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend
 - [ ] **Phase 6: Moderation + Spam (Full Stack)** - Moderation tools + mod dashboard, report UI, spam feedback frontend
@@ -84,7 +84,7 @@ Plans:
 - [x] 03-04-PLAN.md — Frontend shared components: VoteButtons, FeedRow, FeedList, SortBar, PostBody ✓
 - [x] 03-05-PLAN.md — Frontend pages: home feed, community feed, post submit, post detail ✓
 - [x] 03-06-PLAN.md — Frontend saved posts: /saved page, profile Saved tab, sidebar link ✓
-- [ ] 03-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
+- [x] 03-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint ✓
 
 ### Phase 4: Comments (Full Stack)
 **Goal**: Users can have threaded discussions on posts — with a frontend comment tree component supporting nested replies, sorting, and lazy-loading of deep threads
@@ -159,7 +159,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
-| 3. Posts + Voting + Feeds (Full Stack) | 6/7 | In Progress | - |
+| 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |

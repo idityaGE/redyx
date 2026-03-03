@@ -6,9 +6,9 @@ status: in-progress
 last_updated: "2026-03-03"
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # State: Redyx
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 3 in progress — Posts + Voting + Feeds (Full Stack)
+**Current focus:** Phase 4 next — Comments (Full Stack)
 
 ## Current Position
 
-Phase: 3 of 7 — In Progress
-Plan: 6 of 7 complete in Phase 3
-Status: Executing Phase 3 plans
-Last activity: 2026-03-03 — Completed 03-05-PLAN.md (Frontend pages for posts and feeds)
+Phase: 3 of 7 — Complete
+Plan: 7 of 7 complete in Phase 3
+Status: Phase 3 complete, ready for Phase 4
+Last activity: 2026-03-03 — Phase 3 approved (Posts + Voting + Feeds)
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100% (Phase 3)
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [█████████░] 90%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 6/7 | ~39 min | ~7 min |
+| 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 
 *Updated after each plan completion*
 
@@ -118,6 +118,12 @@ Recent decisions affecting current work:
 - [03-06]: Saved tab only on own profile via $derived tabs with isOwnProfile conditional
 - [03-06]: Auth guard redirects to /login?redirect=/saved for unauthenticated users
 - [03-06]: Optimistic unsave removes post immediately, restores on API failure
+- [03-07]: ListHomeFeed serves public feed for anonymous users (queries all shards)
+- [03-07]: Live vote scores overlaid from Redis vote-service on all feed endpoints via pipeline batch
+- [03-07]: Astro ClientRouter + transition:persist prevents sidebar/header remount on navigation
+- [03-07]: whenReady() promise pattern for auth initialization — all components await before API calls
+- [03-07]: untrack() pattern for $effect + $state mutation — prevents infinite loops in Svelte 5
+- [03-07]: Kafka producer uses context.Background() for fire-and-forget produce (not request context)
 
 ### Context from Init
 
@@ -139,8 +145,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-05-PLAN.md (Frontend pages for posts and feeds)
+Stopped at: Phase 3 complete — approved by user after debugging and verification
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-6 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 complete (7/7 plans), ready for Phase 4*
