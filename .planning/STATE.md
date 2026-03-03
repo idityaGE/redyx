@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 20
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # State: Redyx
@@ -32,9 +32,9 @@ Progress: [███████░░░] 70%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: ~9 min
-- Total execution time: ~2.7 hours
+- Total execution time: ~2.9 hours
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ Progress: [███████░░░] 70%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 2/7 | ~10 min | ~10 min |
+| 03-posts-voting-feeds | 2/7 | ~23 min | ~12 min |
 
 *Updated after each plan completion*
 
@@ -92,6 +92,13 @@ Recent decisions affecting current work:
 - [02-10]: Profile fetch uses JWT-decoded username (route is /users/{username}, not /users/{uuid})
 - [02-10]: No dedicated "my communities" RPC — sidebar filters ListCommunities by ownerId client-side
 - [02-10]: Logout uses pub/sub instead of page reload for instant [anonymous] UI update
+- [03-01]: 2 post shards in same PostgreSQL instance for v1 simplicity
+- [03-01]: Community name as shard routing key via consistent hash (serialx/hashring)
+- [03-01]: saved_posts centralized on shard_0 to avoid cross-shard coordination
+- [03-01]: Hot score precomputed in column, refreshed every 15min for recent posts
+- [03-01]: Fan-out-on-read for home feed with 2min Redis cache
+- [03-01]: Anonymous posts store real author_id in DB but mask in API responses
+- [03-01]: GetPost and ListPosts as public auth methods for anonymous browsing
 - [03-02]: Async Kafka publish in Vote RPC — fire-and-forget to keep <50ms response
 - [03-02]: Redis-only vote service (no PostgreSQL) — Kafka provides durability
 - [03-02]: Redis SADD deduplication for karma consumer — 24h TTL on processed set
@@ -111,14 +118,14 @@ None.
 ### Blockers/Concerns
 
 - ScyllaDB migration tooling gap — no standard tool, needs custom version tracking
-- Home feed aggregation: fan-out-on-read with Redis caching (decided in Phase 3 research)
-- Post shard count: 2 shards for v1 (decided in Phase 3 research)
+- Home feed aggregation: fan-out-on-read with Redis caching (implemented in 03-01)
+- Post shard count: 2 shards for v1 (implemented in 03-01)
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-02-PLAN.md (Vote service backend)
+Stopped at: Completed 03-01-PLAN.md (Post service backend)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plan 2 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-2 of 7 complete*

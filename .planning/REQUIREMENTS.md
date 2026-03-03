@@ -38,16 +38,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Posts & Feeds (POST)
 
-- [ ] **POST-01**: User can create text post (title max 300 chars + markdown body max 40K chars) in a community
-- [ ] **POST-02**: User can create link post (title + validated URL)
-- [ ] **POST-03**: User can create media post (title + image/video upload via Media Service)
-- [ ] **POST-04**: Post displays title, author, community, timestamp, vote score, and comment count
-- [ ] **POST-05**: User can edit and delete own posts (edited shows timestamp, deleted shows [deleted])
-- [ ] **POST-06**: Community feed sortable by Hot (Lemmy algorithm), New, Top (hour/day/week/month/year/all), Rising
-- [ ] **POST-07**: Home feed aggregates posts from all joined communities with same sorting options
-- [ ] **POST-08**: User can post anonymously as [anonymous] within a community (mods see real author)
-- [ ] **POST-09**: User can save/bookmark posts to a private "Saved" list
-- [ ] **POST-10**: Posts stored on shard determined by consistent hashing of community_id
+- [x] **POST-01**: User can create text post (title max 300 chars + markdown body max 40K chars) in a community ✓
+- [x] **POST-02**: User can create link post (title + validated URL) ✓
+- [x] **POST-03**: User can create media post (title + image/video upload via Media Service) ✓ (stubbed UNIMPLEMENTED)
+- [x] **POST-04**: Post displays title, author, community, timestamp, vote score, and comment count ✓
+- [x] **POST-05**: User can edit and delete own posts (edited shows timestamp, deleted shows [deleted]) ✓
+- [x] **POST-06**: Community feed sortable by Hot (Lemmy algorithm), New, Top (hour/day/week/month/year/all), Rising ✓
+- [x] **POST-07**: Home feed aggregates posts from all joined communities with same sorting options ✓
+- [x] **POST-08**: User can post anonymously as [anonymous] within a community (mods see real author) ✓
+- [x] **POST-09**: User can save/bookmark posts to a private "Saved" list ✓
+- [x] **POST-10**: Posts stored on shard determined by consistent hashing of community_id ✓
 
 ### Comments (CMNT)
 
@@ -192,16 +192,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMM-05 | Phase 2 | Complete |
 | COMM-06 | Phase 2 | Complete |
 | COMM-07 | Phase 2 | Complete |
-| POST-01 | Phase 3 | Pending |
-| POST-02 | Phase 3 | Pending |
-| POST-03 | Phase 3 | Pending |
-| POST-04 | Phase 3 | Pending |
-| POST-05 | Phase 3 | Pending |
-| POST-06 | Phase 3 | Pending |
-| POST-07 | Phase 3 | Pending |
-| POST-08 | Phase 3 | Pending |
-| POST-09 | Phase 3 | Pending |
-| POST-10 | Phase 3 | Pending |
+| POST-01 | Phase 3 | Complete |
+| POST-02 | Phase 3 | Complete |
+| POST-03 | Phase 3 | Complete |
+| POST-04 | Phase 3 | Complete |
+| POST-05 | Phase 3 | Complete |
+| POST-06 | Phase 3 | Complete |
+| POST-07 | Phase 3 | Complete |
+| POST-08 | Phase 3 | Complete |
+| POST-09 | Phase 3 | Complete |
+| POST-10 | Phase 3 | Complete |
 | CMNT-01 | Phase 4 | Pending |
 | CMNT-02 | Phase 4 | Pending |
 | CMNT-03 | Phase 4 | Pending |

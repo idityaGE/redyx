@@ -78,7 +78,7 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Post service backend: shard router, schemas, VoteEvent proto, all PostService RPCs
+- [x] 03-01-PLAN.md — Post service backend: shard router, schemas, VoteEvent proto, all PostService RPCs ✓
 - [x] 03-02-PLAN.md — Vote service backend: Redis Lua vote state, Kafka producer, karma consumer ✓
 - [ ] 03-03-PLAN.md — Docker/Envoy wiring: Kafka broker, post-service + vote-service containers, Envoy routes, Kafka consumers
 - [ ] 03-04-PLAN.md — Frontend shared components: VoteButtons, FeedRow, FeedList, SortBar, PostBody
