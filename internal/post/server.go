@@ -224,6 +224,11 @@ func (s *Server) GetPost(ctx context.Context, req *postv1.GetPostRequest) (*post
 		}
 	}
 
+	// Overlay live vote score from vote-service Redis (PG may lag behind)
+	if liveScore, found, _ := s.cache.GetVoteScore(ctx, postID); found {
+		foundPost.VoteScore = liveScore
+	}
+
 	// Get user_vote and is_saved for authenticated users
 	var userVote int32
 	var isSaved bool
@@ -483,6 +488,21 @@ func (s *Server) ListPosts(ctx context.Context, req *postv1.ListPostsRequest) (*
 		protoPosts[i] = p.Post
 	}
 
+	// Overlay live vote scores from vote-service Redis
+	{
+		ids := make([]string, len(protoPosts))
+		for i, p := range protoPosts {
+			ids[i] = p.PostId
+		}
+		if liveScores, err := s.cache.GetVoteScores(ctx, ids); err == nil && len(liveScores) > 0 {
+			for _, p := range protoPosts {
+				if sc, ok := liveScores[p.PostId]; ok {
+					p.VoteScore = sc
+				}
+			}
+		}
+	}
+
 	return &postv1.ListPostsResponse{
 		Posts: protoPosts,
 		Pagination: &commonv1.PaginationResponse{
@@ -492,12 +512,10 @@ func (s *Server) ListPosts(ctx context.Context, req *postv1.ListPostsRequest) (*
 	}, nil
 }
 
-// ListHomeFeed returns posts from all communities the user has joined, across shards.
+// ListHomeFeed returns the home feed.
+// Authenticated: posts from joined communities. Anonymous: public feed from all communities.
 func (s *Server) ListHomeFeed(ctx context.Context, req *postv1.ListHomeFeedRequest) (*postv1.ListHomeFeedResponse, error) {
 	claims := auth.ClaimsFromContext(ctx)
-	if claims == nil {
-		return nil, fmt.Errorf("list home feed: %w", perrors.ErrUnauthenticated)
-	}
 
 	pag := req.GetPagination()
 	limit := pagination.DefaultLimit(pag.GetLimit(), 25, 100)
@@ -512,13 +530,34 @@ func (s *Server) ListHomeFeed(ctx context.Context, req *postv1.ListHomeFeedReque
 	timeRangeStr := req.GetTimeRange().String()
 	cursor := pag.GetCursor()
 
-	cached, err := s.cache.GetFeed(ctx, claims.UserID, sortStr, timeRangeStr, cursor)
+	// Use "anon" as cache key for anonymous users
+	cacheUserID := "anon"
+	if claims != nil {
+		cacheUserID = claims.UserID
+	}
+
+	cached, err := s.cache.GetFeed(ctx, cacheUserID, sortStr, timeRangeStr, cursor)
 	if err != nil {
 		s.logger.Warn("feed cache get error", zap.Error(err))
 	}
 	if cached != nil {
 		var posts []*postv1.Post
 		if err := json.Unmarshal(cached.PostsJSON, &posts); err == nil {
+			// Overlay live vote scores from vote-service Redis so cached feeds
+			// don't show stale scores (the feed cache TTL is 2min but votes
+			// update instantly in the vote-service Redis DB 5).
+			ids := make([]string, len(posts))
+			for i, p := range posts {
+				ids[i] = p.PostId
+			}
+			if scores, err := s.cache.GetVoteScores(ctx, ids); err == nil && len(scores) > 0 {
+				for _, p := range posts {
+					if sc, ok := scores[p.PostId]; ok {
+						p.VoteScore = sc
+					}
+				}
+			}
+
 			return &postv1.ListHomeFeedResponse{
 				Posts: posts,
 				Pagination: &commonv1.PaginationResponse{
@@ -529,27 +568,23 @@ func (s *Server) ListHomeFeed(ctx context.Context, req *postv1.ListHomeFeedReque
 		}
 	}
 
-	// Get user's joined community IDs
-	communityIDs, err := s.getUserCommunityIDs(ctx, claims.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("get user communities: %w", err)
+	// Determine which communities to include in the feed
+	// Authenticated: user's joined communities. Anonymous: all communities (public feed).
+	var communityNames []string // nil = all communities (anonymous)
+	if claims != nil {
+		communityNames, err = s.getUserCommunityIDs(ctx, claims.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("get user communities: %w", err)
+		}
+		if len(communityNames) == 0 {
+			return &postv1.ListHomeFeedResponse{
+				Posts:      nil,
+				Pagination: &commonv1.PaginationResponse{HasMore: false},
+			}, nil
+		}
 	}
 
-	if len(communityIDs) == 0 {
-		return &postv1.ListHomeFeedResponse{
-			Posts:      nil,
-			Pagination: &commonv1.PaginationResponse{HasMore: false},
-		}, nil
-	}
-
-	// Group community IDs by shard
-	shardCommunities := make(map[string][]string)
-	for _, cid := range communityIDs {
-		_, shardName := s.shards.GetPool(cid)
-		shardCommunities[shardName] = append(shardCommunities[shardName], cid)
-	}
-
-	// Query each shard in parallel
+	// Query shards in parallel
 	fetchLimit := (limit + 1) * 2 // Overfetch to allow merge
 
 	type shardResult struct {
@@ -558,16 +593,36 @@ func (s *Server) ListHomeFeed(ctx context.Context, req *postv1.ListHomeFeedReque
 	}
 
 	var wg sync.WaitGroup
-	resultsCh := make(chan shardResult, len(shardCommunities))
+	pools := s.shards.AllPools()
+	resultsCh := make(chan shardResult, len(pools))
 
-	for shardName, cids := range shardCommunities {
-		wg.Add(1)
-		go func(sName string, communityIDs []string) {
-			defer wg.Done()
-			pool, _ := s.shards.GetPool(communityIDs[0])
-			posts, err := s.queryShardForFeed(ctx, pool, communityIDs, sortOrder, req.GetTimeRange(), cursor, fetchLimit)
-			resultsCh <- shardResult{posts: posts, err: err}
-		}(shardName, cids)
+	if communityNames != nil {
+		// Authenticated: group by shard and query only relevant shards
+		shardCommunities := make(map[string][]string)
+		for _, cname := range communityNames {
+			_, shardName := s.shards.GetPool(cname)
+			shardCommunities[shardName] = append(shardCommunities[shardName], cname)
+		}
+
+		for _, cnames := range shardCommunities {
+			wg.Add(1)
+			go func(names []string) {
+				defer wg.Done()
+				pool, _ := s.shards.GetPool(names[0])
+				posts, err := s.queryShardForFeed(ctx, pool, names, sortOrder, req.GetTimeRange(), cursor, fetchLimit)
+				resultsCh <- shardResult{posts: posts, err: err}
+			}(cnames)
+		}
+	} else {
+		// Anonymous: query ALL shards for all posts (no community filter)
+		for _, pool := range pools {
+			wg.Add(1)
+			go func(p *pgxpool.Pool) {
+				defer wg.Done()
+				posts, err := s.queryShardForFeed(ctx, p, nil, sortOrder, req.GetTimeRange(), cursor, fetchLimit)
+				resultsCh <- shardResult{posts: posts, err: err}
+			}(pool)
+		}
 	}
 
 	wg.Wait()
@@ -621,9 +676,25 @@ func (s *Server) ListHomeFeed(ctx context.Context, req *postv1.ListHomeFeedReque
 		protoPosts[i] = p.Post
 	}
 
+	// Overlay live vote scores from vote-service Redis (PG vote_score may lag
+	// behind due to async Kafka→ScoreConsumer pipeline).
+	{
+		ids := make([]string, len(protoPosts))
+		for i, p := range protoPosts {
+			ids[i] = p.PostId
+		}
+		if liveScores, err := s.cache.GetVoteScores(ctx, ids); err == nil && len(liveScores) > 0 {
+			for _, p := range protoPosts {
+				if sc, ok := liveScores[p.PostId]; ok {
+					p.VoteScore = sc
+				}
+			}
+		}
+	}
+
 	// Cache the result
 	postsJSON, _ := json.Marshal(protoPosts)
-	_ = s.cache.SetFeed(ctx, claims.UserID, sortStr, timeRangeStr, cursor, &cachedFeedPage{
+	_ = s.cache.SetFeed(ctx, cacheUserID, sortStr, timeRangeStr, cursor, &cachedFeedPage{
 		PostsJSON:  postsJSON,
 		NextCursor: nextCursor,
 		HasMore:    hasMore,
@@ -884,29 +955,37 @@ func (s *Server) getUserCommunityIDs(ctx context.Context, userID string) ([]stri
 }
 
 // queryShardForFeed queries a single shard for posts in the given communities.
-func (s *Server) queryShardForFeed(ctx context.Context, pool *pgxpool.Pool, communityIDs []string, sortOrder postv1.SortOrder, timeRange postv1.TimeRange, cursor string, fetchLimit int32) ([]*postWithScore, error) {
-	if len(communityIDs) == 0 {
-		return nil, nil
-	}
-
+// If communityNames is nil, queries ALL posts on this shard (public feed).
+func (s *Server) queryShardForFeed(ctx context.Context, pool *pgxpool.Pool, communityNames []string, sortOrder postv1.SortOrder, timeRange postv1.TimeRange, cursor string, fetchLimit int32) ([]*postWithScore, error) {
 	var args []any
 	argIdx := 1
 
-	// Build community_name IN (...) clause
-	placeholders := make([]string, len(communityIDs))
-	for i, cid := range communityIDs {
-		placeholders[i] = fmt.Sprintf("$%d", argIdx)
-		args = append(args, cid)
-		argIdx++
-	}
-
-	baseSelect := fmt.Sprintf(
-		`SELECT id, title, body, url, post_type, author_id, author_username,
+	var baseSelect string
+	if communityNames != nil {
+		if len(communityNames) == 0 {
+			return nil, nil
+		}
+		// Build community_name IN (...) clause
+		placeholders := make([]string, len(communityNames))
+		for i, cname := range communityNames {
+			placeholders[i] = fmt.Sprintf("$%d", argIdx)
+			args = append(args, cname)
+			argIdx++
+		}
+		baseSelect = fmt.Sprintf(
+			`SELECT id, title, body, url, post_type, author_id, author_username,
+			        community_id, community_name, vote_score, comment_count, hot_score,
+			        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
+			 FROM posts WHERE community_name IN (%s) AND is_deleted = false`,
+			strings.Join(placeholders, ","),
+		)
+	} else {
+		// Public feed: all posts
+		baseSelect = `SELECT id, title, body, url, post_type, author_id, author_username,
 		        community_id, community_name, vote_score, comment_count, hot_score,
 		        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
-		 FROM posts WHERE community_name IN (%s) AND is_deleted = false`,
-		strings.Join(placeholders, ","),
-	)
+		 FROM posts WHERE is_deleted = false`
+	}
 
 	// Time range filter for TOP
 	if sortOrder == postv1.SortOrder_SORT_ORDER_TOP && timeRange != postv1.TimeRange_TIME_RANGE_ALL && timeRange != postv1.TimeRange_TIME_RANGE_UNSPECIFIED {

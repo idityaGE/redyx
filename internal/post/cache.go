@@ -138,6 +138,30 @@ func (c *Cache) GetUserVote(ctx context.Context, userID, targetID string) (int32
 	}
 }
 
+// GetVoteScores reads cached scores for multiple targets from vote-service Redis in a single pipeline.
+// Returns a map of targetID → score. Missing scores are omitted from the map.
+func (c *Cache) GetVoteScores(ctx context.Context, targetIDs []string) (map[string]int32, error) {
+	if c.voteRdb == nil || len(targetIDs) == 0 {
+		return nil, nil
+	}
+
+	pipe := c.voteRdb.Pipeline()
+	cmds := make([]*goredis.StringCmd, len(targetIDs))
+	for i, id := range targetIDs {
+		cmds[i] = pipe.Get(ctx, fmt.Sprintf("votes:score:%s", id))
+	}
+	_, _ = pipe.Exec(ctx) // errors are per-cmd, not fatal
+
+	result := make(map[string]int32, len(targetIDs))
+	for i, cmd := range cmds {
+		val, err := cmd.Int()
+		if err == nil {
+			result[targetIDs[i]] = int32(val)
+		}
+	}
+	return result, nil
+}
+
 // GetVoteScore reads the cached score for a target from vote-service Redis.
 func (c *Cache) GetVoteScore(ctx context.Context, targetID string) (int32, bool, error) {
 	if c.voteRdb == nil {

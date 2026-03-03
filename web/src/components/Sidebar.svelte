@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../lib/auth';
+  import { getUser, isAuthenticated, isLoading, whenReady, subscribe } from '../lib/auth';
   import { api } from '../lib/api';
 
   let authed = $state(isAuthenticated());
@@ -22,6 +22,11 @@
     { icon: '\u22A1', label: 'Saved', href: '/saved' },
   ];
 
+  type CommunityDetail = {
+    community: Community;
+    isMember: boolean;
+  };
+
   async function fetchMyCommunities() {
     const user = getUser();
     if (!user) {
@@ -30,18 +35,32 @@
     }
     try {
       const data = await api<{ communities: Community[] }>('/communities?pagination.limit=100');
-      // Filter communities where the current user is the owner
-      // (a proper "my communities" endpoint would also include joined ones)
-      myCommunities = (data.communities ?? [])
-        .filter(c => c.ownerId === user.userId)
-        .map(c => c.name);
+      const communities = data.communities ?? [];
+
+      // Check membership for each community in parallel
+      const details = await Promise.all(
+        communities.map(c =>
+          api<CommunityDetail>(`/communities/${encodeURIComponent(c.name)}`)
+            .catch(() => null)
+        )
+      );
+
+      myCommunities = details
+        .filter((d): d is CommunityDetail => d !== null && d.isMember)
+        .map(d => d.community.name);
     } catch {
       myCommunities = [];
     }
   }
 
   onMount(() => {
-    initialize();
+    // Wait for auth to resolve, then fetch if logged in
+    whenReady().then(() => {
+      authed = isAuthenticated();
+      loading = isLoading();
+      currentUser = getUser();
+      if (authed) fetchMyCommunities();
+    });
 
     const unsub = subscribe(() => {
       const wasAuthed = authed;
@@ -57,11 +76,6 @@
         myCommunities = [];
       }
     });
-
-    // If already authed on mount, fetch immediately
-    if (isAuthenticated()) {
-      fetchMyCommunities();
-    }
 
     return unsub;
   });
@@ -112,22 +126,20 @@
       {/if}
     </div>
   {:else if !loading}
-    <!-- Anonymous: show static community list -->
+    <!-- Anonymous: prompt to log in -->
     <div>
       <div class="px-2 text-terminal-dim text-xs mb-1 uppercase tracking-wide">
         Communities
       </div>
-      {#each ['programming', 'typescript', 'svelte', 'linux', 'privacy', 'selfhosted', 'terminal', 'rust'] as name, i}
-        <a
-          href="/community/{name}"
-          class="flex items-center px-2 py-0.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg rounded transition-colors"
-        >
-          <span class="text-terminal-dim text-xs mr-1 w-5 shrink-0">
-            {i < 7 ? '\u251C\u2500\u2500' : '\u2514\u2500\u2500'}
-          </span>
-          <span class="truncate">r/{name}</span>
-        </a>
-      {/each}
+      <div class="px-2 py-1 text-terminal-dim text-xs">
+        <a href="/login" class="text-accent-600 hover:text-accent-500">log in</a> to see your communities
+      </div>
+      <a
+        href="/communities"
+        class="flex items-center px-2 py-0.5 text-accent-600 hover:text-accent-500 transition-colors text-xs"
+      >
+        browse all communities &rarr;
+      </a>
     </div>
   {/if}
 </nav>

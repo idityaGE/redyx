@@ -77,8 +77,9 @@ var publicMethods = map[string]bool{
 	"/redyx.community.v1.CommunityService/ListCommunities": true,
 	"/redyx.community.v1.CommunityService/ListMembers":     true,
 	// Post service — public browsing
-	"/redyx.post.v1.PostService/GetPost":   true,
-	"/redyx.post.v1.PostService/ListPosts": true,
+	"/redyx.post.v1.PostService/GetPost":      true,
+	"/redyx.post.v1.PostService/ListPosts":    true,
+	"/redyx.post.v1.PostService/ListHomeFeed": true,
 	// Health check
 	"/grpc.health.v1.Health/Check": true,
 }
