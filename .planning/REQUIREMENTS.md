@@ -60,11 +60,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Voting (VOTE)
 
-- [ ] **VOTE-01**: User can upvote or downvote any post or comment
-- [ ] **VOTE-02**: One vote per user per item; can change direction or remove (enforced in Redis)
-- [ ] **VOTE-03**: Net score (upvotes minus downvotes) displayed on each item, updates within 500ms
-- [ ] **VOTE-04**: Votes update author's karma asynchronously via Kafka (set-based idempotent processing)
-- [ ] **VOTE-05**: Vote endpoints are idempotent (duplicate requests are safe)
+- [x] **VOTE-01**: User can upvote or downvote any post or comment ✓
+- [x] **VOTE-02**: One vote per user per item; can change direction or remove (enforced in Redis) ✓
+- [x] **VOTE-03**: Net score (upvotes minus downvotes) displayed on each item, updates within 500ms ✓
+- [x] **VOTE-04**: Votes update author's karma asynchronously via Kafka (set-based idempotent processing) ✓
+- [x] **VOTE-05**: Vote endpoints are idempotent (duplicate requests are safe) ✓
 
 ### Search (SRCH)
 
@@ -208,11 +208,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMNT-04 | Phase 4 | Pending |
 | CMNT-05 | Phase 4 | Pending |
 | CMNT-06 | Phase 4 | Pending |
-| VOTE-01 | Phase 3 | Pending |
-| VOTE-02 | Phase 3 | Pending |
-| VOTE-03 | Phase 3 | Pending |
-| VOTE-04 | Phase 3 | Pending |
-| VOTE-05 | Phase 3 | Pending |
+| VOTE-01 | Phase 3, Plan 02 | ✓ Complete |
+| VOTE-02 | Phase 3, Plan 02 | ✓ Complete |
+| VOTE-03 | Phase 3, Plan 02 | ✓ Complete |
+| VOTE-04 | Phase 3, Plan 02 | ✓ Complete |
+| VOTE-05 | Phase 3, Plan 02 | ✓ Complete |
 | SRCH-01 | Phase 5 | Pending |
 | SRCH-02 | Phase 5 | Pending |
 | SRCH-03 | Phase 5 | Pending |

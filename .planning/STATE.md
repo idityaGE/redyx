@@ -7,8 +7,8 @@ last_updated: "2026-03-03"
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 20
+  completed_plans: 14
 ---
 
 # State: Redyx
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 2 complete. Ready for Phase 3: Posts + Voting + Feeds (Full Stack)
+**Current focus:** Phase 3 in progress — Posts + Voting + Feeds (Full Stack)
 
 ## Current Position
 
-Phase: 2 of 7 — Complete ✓
-Plan: 10 of 10 complete in Phase 2
-Status: Phase 2 fully verified and approved by user
-Last activity: 2026-03-03 — Completed 02-10-PLAN.md (E2E integration verification)
+Phase: 3 of 7 — In Progress
+Plan: 2 of 7 complete in Phase 3
+Status: Executing Phase 3 plans
+Last activity: 2026-03-03 — Completed 03-02-PLAN.md (Vote service backend)
 
-Progress: [████████░░] 77%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: ~8 min
-- Total execution time: ~2.5 hours
+- Total plans completed: 14
+- Average duration: ~9 min
+- Total execution time: ~2.7 hours
 
 **By Phase:**
 
@@ -42,6 +42,7 @@ Progress: [████████░░] 77%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
+| 03-posts-voting-feeds | 2/7 | ~10 min | ~10 min |
 
 *Updated after each plan completion*
 
@@ -91,6 +92,10 @@ Recent decisions affecting current work:
 - [02-10]: Profile fetch uses JWT-decoded username (route is /users/{username}, not /users/{uuid})
 - [02-10]: No dedicated "my communities" RPC — sidebar filters ListCommunities by ownerId client-side
 - [02-10]: Logout uses pub/sub instead of page reload for instant [anonymous] UI update
+- [03-02]: Async Kafka publish in Vote RPC — fire-and-forget to keep <50ms response
+- [03-02]: Redis-only vote service (no PostgreSQL) — Kafka provides durability
+- [03-02]: Redis SADD deduplication for karma consumer — 24h TTL on processed set
+- [03-02]: 6-partition Kafka topic for votes — explicit creation on startup prevents wrong defaults
 
 ### Context from Init
 
@@ -105,15 +110,15 @@ None.
 
 ### Blockers/Concerns
 
-- Home feed aggregation strategy not yet decided (fan-out-on-write vs fan-out-on-read) — needs Phase 3 research
 - ScyllaDB migration tooling gap — no standard tool, needs custom version tracking
-- Post shard count (2 vs 4 for v1) — affects consistent hash ring, decide during Phase 3 planning
+- Home feed aggregation: fan-out-on-read with Redis caching (decided in Phase 3 research)
+- Post shard count: 2 shards for v1 (decided in Phase 3 research)
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed Phase 2 — all 10 plans executed and verified
+Stopped at: Completed 03-02-PLAN.md (Vote service backend)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 2 complete, ready for Phase 3*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plan 2 of 7 complete*
