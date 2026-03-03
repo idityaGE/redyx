@@ -159,7 +159,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
-| 3. Posts + Voting + Feeds (Full Stack) | 2/7 | In Progress | - |
+| 3. Posts + Voting + Feeds (Full Stack) | 3/7 | In Progress | - |
 | 4. Comments (Full Stack) | 0/? | Not started | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |

@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 20
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # State: Redyx
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 3 of 7 — In Progress
-Plan: 2 of 7 complete in Phase 3
+Plan: 3 of 7 complete in Phase 3
 Status: Executing Phase 3 plans
-Last activity: 2026-03-03 — Completed 03-02-PLAN.md (Vote service backend)
+Last activity: 2026-03-03 — Completed 03-04-PLAN.md (Frontend feed components)
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: ~9 min
-- Total execution time: ~2.9 hours
+- Total execution time: ~3.0 hours
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ Progress: [███████░░░] 70%
 |-------|-------|-------|----------|
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
-| 03-posts-voting-feeds | 2/7 | ~23 min | ~12 min |
+| 03-posts-voting-feeds | 3/7 | ~26 min | ~9 min |
 
 *Updated after each plan completion*
 
@@ -103,6 +103,10 @@ Recent decisions affecting current work:
 - [03-02]: Redis-only vote service (no PostgreSQL) — Kafka provides durability
 - [03-02]: Redis SADD deduplication for karma consumer — 24h TTL on processed set
 - [03-02]: 6-partition Kafka topic for votes — explicit creation on startup prevents wrong defaults
+- [03-04]: Component-local $state for vote state (not global store) — each post card owns its own vote state
+- [03-04]: marked + DOMPurify for client-side markdown rendering (user content changes, preview needs client rendering)
+- [03-04]: IntersectionObserver with 200px rootMargin for infinite scroll trigger
+- [03-04]: $effect() for sort/timeRange reactive reset in FeedList
 
 ### Context from Init
 
@@ -124,8 +128,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-01-PLAN.md (Post service backend)
+Stopped at: Completed 03-04-PLAN.md (Frontend feed components)
 Resume file: None
 
 ---
-*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-2 of 7 complete*
+*Last updated: 2026-03-03 — Phase 3 in progress, Plans 1-3 of 7 complete*
