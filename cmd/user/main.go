@@ -24,6 +24,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/ratelimit"
 	platformredis "github.com/redyx/redyx/internal/platform/redis"
 	"github.com/redyx/redyx/internal/user"
+	"github.com/redyx/redyx/internal/vote"
 )
 
 func main() {
@@ -80,6 +81,29 @@ func main() {
 	userServer := user.NewServer(db, logger)
 	userv1.RegisterUserServiceServer(srv.Server(), userServer)
 
+	// Start karma consumer goroutine if Kafka brokers configured
+	var karmaConsumer *vote.KarmaConsumer
+	consumerCtx, consumerCancel := context.WithCancel(context.Background())
+	defer consumerCancel()
+
+	if cfg.KafkaBrokers != "" {
+		brokers := strings.Split(cfg.KafkaBrokers, ",")
+		kc, err := vote.NewKarmaConsumer(brokers, rdb, db, logger)
+		if err != nil {
+			logger.Warn("failed to create karma consumer, karma updates disabled", zap.Error(err))
+		} else {
+			karmaConsumer = kc
+			go func() {
+				if err := karmaConsumer.Run(consumerCtx); err != nil && consumerCtx.Err() == nil {
+					logger.Error("karma consumer stopped unexpectedly", zap.Error(err))
+				}
+			}()
+			logger.Info("karma consumer started",
+				zap.String("brokers", cfg.KafkaBrokers),
+			)
+		}
+	}
+
 	logger.Info("user service starting",
 		zap.Int("grpc_port", cfg.GRPCPort),
 	)
@@ -87,6 +111,12 @@ func main() {
 	// Block until shutdown signal
 	if err := srv.Run(); err != nil {
 		logger.Fatal("server failed", zap.Error(err))
+	}
+
+	// Cleanup karma consumer on shutdown
+	consumerCancel()
+	if karmaConsumer != nil {
+		karmaConsumer.Close()
 	}
 }
 
