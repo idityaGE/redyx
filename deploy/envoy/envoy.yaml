@@ -43,6 +43,32 @@ static_resources:
                 route:
                   cluster: user-service
                   timeout: 30s
+              # Post-related routes — MUST be before /api/v1/communities catch-all
+              - match: { prefix: "/api/v1/posts" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/feed" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/saved" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              # Vote routes
+              - match: { prefix: "/api/v1/votes" }
+                route:
+                  cluster: vote-service
+                  timeout: 30s
+              # Community posts feed — route to post-service BEFORE community catch-all
+              # Matches /api/v1/communities/{name}/posts*
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/communities/[^/]+/posts.*"
+                route:
+                  cluster: post-service
+                  timeout: 30s
               - match: { prefix: "/api/v1/communities" }
                 route:
                   cluster: community-service
@@ -63,6 +89,8 @@ static_resources:
                 - redyx.user.v1.UserService
                 - redyx.community.v1.CommunityService
                 - redyx.ratelimit.v1.RateLimitService
+                - redyx.post.v1.PostService
+                - redyx.vote.v1.VoteService
               # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
               match_incoming_request_route: true
               print_options:
@@ -140,3 +168,35 @@ static_resources:
         - endpoint:
             address:
               socket_address: { address: community-service, port_value: 50054 }
+
+  - name: post-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: post-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: post-service, port_value: 50055 }
+
+  - name: vote-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: vote-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: vote-service, port_value: 50056 }
