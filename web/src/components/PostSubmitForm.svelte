@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
-  import { isAuthenticated } from '../lib/auth';
+  import { isAuthenticated, whenReady } from '../lib/auth';
   import PostBody from './PostBody.svelte';
 
   interface Props {
@@ -57,11 +57,13 @@
     activeTab === 'media'
   );
 
-  // Auth guard
+  // Auth guard — wait for auth initialization before checking
   onMount(() => {
-    if (!isAuthenticated()) {
-      window.location.href = `/login?redirect=/community/${encodeURIComponent(communityName)}/submit`;
-    }
+    whenReady().then(() => {
+      if (!isAuthenticated()) {
+        window.location.href = `/login?redirect=/community/${encodeURIComponent(communityName)}/submit`;
+      }
+    });
   });
 
   const postTabs: { id: PostTab; label: string }[] = [

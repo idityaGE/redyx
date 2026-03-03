@@ -75,7 +75,11 @@ func (p *Producer) EnsureTopic(ctx context.Context) error {
 // The target_id is used as the partition key to ensure ordering per target.
 // This method does not block the caller — errors are logged but not returned
 // to keep the Vote RPC fast.
-func (p *Producer) PublishVoteEvent(ctx context.Context, event *commonv1.VoteEvent) {
+//
+// Uses context.Background() instead of the request context because the produce
+// is fire-and-forget — the gRPC request context gets canceled as soon as the
+// Vote RPC returns, which would cancel the pending Kafka produce.
+func (p *Producer) PublishVoteEvent(_ context.Context, event *commonv1.VoteEvent) {
 	data, err := proto.Marshal(event)
 	if err != nil {
 		p.logger.Error("failed to marshal vote event", zap.Error(err))
@@ -88,7 +92,7 @@ func (p *Producer) PublishVoteEvent(ctx context.Context, event *commonv1.VoteEve
 		Topic: VotesTopic,
 	}
 
-	p.client.Produce(ctx, record, func(r *kgo.Record, err error) {
+	p.client.Produce(context.Background(), record, func(r *kgo.Record, err error) {
 		if err != nil {
 			p.logger.Error("failed to produce vote event",
 				zap.String("target_id", event.GetTargetId()),

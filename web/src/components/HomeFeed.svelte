@@ -1,10 +1,19 @@
 <script lang="ts">
-  import { isAuthenticated } from '../lib/auth';
+  import { onMount } from 'svelte';
+  import { isAuthenticated, subscribe } from '../lib/auth';
   import SortBar from './SortBar.svelte';
   import FeedList from './FeedList.svelte';
 
   let sort = $state('SORT_ORDER_HOT');
   let timeRange = $state<string | undefined>(undefined);
+  let authed = $state(isAuthenticated());
+
+  onMount(() => {
+    const unsub = subscribe(() => {
+      authed = isAuthenticated();
+    });
+    return unsub;
+  });
 
   function handleSortChange(newSort: string, newTimeRange?: string) {
     sort = newSort;
@@ -18,7 +27,7 @@
   <div class="text-terminal-dim text-xs">
     a terminal-aesthetic community platform &middot; information-dense &middot; privacy-first
   </div>
-  {#if !isAuthenticated()}
+  {#if !authed}
     <div class="text-terminal-dim text-xs mt-2">
       <a href="/login" class="text-accent-600 hover:text-accent-500">log in</a> or
       <a href="/register" class="text-accent-600 hover:text-accent-500">register</a>

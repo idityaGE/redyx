@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
-  import { isAuthenticated, initialize, subscribe } from '../lib/auth';
+  import { isAuthenticated, whenReady, subscribe } from '../lib/auth';
   import FeedRow from './FeedRow.svelte';
 
   type Post = {
@@ -81,24 +81,18 @@
   }
 
   onMount(() => {
-    initialize();
+    let observer: IntersectionObserver | null = null;
 
-    const unsub = subscribe(() => {
-      if (!isAuthenticated()) {
-        window.location.href = '/login?redirect=/saved';
-      }
-    });
-
-    // Auth guard: redirect if not authenticated
-    // Wait a tick for auth to initialize before checking
-    const checkAuth = setTimeout(() => {
+    // Wait for auth initialization, then check + load
+    whenReady().then(() => {
       if (!isAuthenticated()) {
         window.location.href = '/login?redirect=/saved';
         return;
       }
+
       loadPage();
 
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting && hasMore && !loading) {
             loadPage();
@@ -108,31 +102,18 @@
       );
 
       if (sentinel) observer.observe(sentinel);
-      return () => observer.disconnect();
-    }, 100);
+    });
 
-    // If already authenticated, load immediately
-    if (isAuthenticated()) {
-      clearTimeout(checkAuth);
-      loadPage();
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0]?.isIntersecting && hasMore && !loading) {
-            loadPage();
-          }
-        },
-        { rootMargin: '200px' }
-      );
-
-      if (sentinel) {
-        observer.observe(sentinel);
+    // Redirect on logout
+    const unsub = subscribe(() => {
+      if (!isAuthenticated()) {
+        window.location.href = '/login?redirect=/saved';
       }
-    }
+    });
 
     return () => {
-      clearTimeout(checkAuth);
       unsub();
+      observer?.disconnect();
     };
   });
 </script>

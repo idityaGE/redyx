@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { api } from '../lib/api';
+  import { whenReady } from '../lib/auth';
   import FeedRow from './FeedRow.svelte';
 
   type Post = {
@@ -43,6 +44,8 @@
   let hasMore = $state(true);
   let loading = $state(false);
   let initialLoading = $state(true);
+  // Track whether the first load has completed (not reactive — avoids $effect re-fire)
+  let hasLoaded = false;
   let sentinel: HTMLElement;
 
   async function loadPage() {
@@ -65,11 +68,14 @@
     } finally {
       loading = false;
       initialLoading = false;
+      hasLoaded = true;
     }
   }
 
   onMount(() => {
-    loadPage();
+    // Wait for auth initialization before making API calls
+    // This prevents 401 races when accessToken hasn't been set yet
+    whenReady().then(() => loadPage());
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -90,14 +96,20 @@
     const _sort = sort;
     const _timeRange = timeRange;
 
-    // Skip the initial run (onMount handles first load)
-    if (initialLoading) return;
+    // Skip until first load completes (onMount handles initial load)
+    // Using plain boolean (not $state) so this check doesn't create a dependency
+    if (!hasLoaded) return;
 
-    // Reset and reload
-    posts = [];
-    nextCursor = null;
-    hasMore = true;
-    loadPage();
+    // Untrack the reset+reload so writes to $state (posts, nextCursor, hasMore)
+    // and reads inside loadPage() (loading, hasMore) don't become dependencies
+    // of this effect — otherwise loadPage toggling `loading` re-triggers the
+    // effect in an infinite loop.
+    untrack(() => {
+      posts = [];
+      nextCursor = null;
+      hasMore = true;
+      loadPage();
+    });
   });
 </script>
 

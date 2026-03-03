@@ -113,6 +113,24 @@ func main() {
 	defer refreshCancel()
 	go hotScoreRefreshLoop(refreshCtx, shardRouter, logger)
 
+	// Start Kafka vote-event consumer (updates vote_score in PostgreSQL)
+	if voteRdb != nil {
+		brokers := strings.Split(cfg.KafkaBrokers, ",")
+		scoreConsumer, err := post.NewScoreConsumer(brokers, shardRouter, voteRdb, logger)
+		if err != nil {
+			logger.Fatal("failed to create score consumer", zap.Error(err))
+		}
+		defer scoreConsumer.Close()
+		go func() {
+			if err := scoreConsumer.Run(refreshCtx); err != nil && err != context.Canceled {
+				logger.Error("score consumer exited with error", zap.Error(err))
+			}
+		}()
+		logger.Info("score consumer started", zap.String("brokers", cfg.KafkaBrokers))
+	} else {
+		logger.Warn("vote redis not available, score consumer disabled — vote scores will not update in DB")
+	}
+
 	logger.Info("post service starting",
 		zap.Int("grpc_port", cfg.GRPCPort),
 		zap.Int("shard_count", shardRouter.ShardCount()),

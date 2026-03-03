@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
-  import { getUser, isAuthenticated } from '../lib/auth';
+  import { getUser, isAuthenticated, whenReady, subscribe } from '../lib/auth';
   import VoteButtons from './VoteButtons.svelte';
   import PostBody from './PostBody.svelte';
   import { relativeTime } from '../lib/time';
@@ -59,9 +59,12 @@
   // Delete state
   let confirmingDelete = $state(false);
 
+  // Reactive auth state
+  let authed = $state(isAuthenticated());
+
   // Check if current user owns this post
   let isOwner = $derived((() => {
-    if (!post || !isAuthenticated()) return false;
+    if (!post || !authed) return false;
     const user = getUser();
     return user?.userId === post.authorId;
   })());
@@ -98,7 +101,7 @@
   }
 
   async function toggleSave() {
-    if (!post || !isAuthenticated()) return;
+    if (!post || !authed) return;
 
     const prevSaved = isSaved;
     isSaved = !isSaved; // optimistic
@@ -172,7 +175,14 @@
   }
 
   onMount(() => {
-    fetchPost();
+    // Wait for auth initialization so the request includes the access token
+    // (needed for user_vote and is_saved in GetPostResponse)
+    whenReady().then(() => fetchPost());
+
+    const unsub = subscribe(() => {
+      authed = isAuthenticated();
+    });
+    return unsub;
   });
 </script>
 
@@ -320,7 +330,7 @@
             <span class="text-terminal-dim">{post.commentCount} comments</span>
 
             <!-- Save/unsave -->
-            {#if isAuthenticated()}
+            {#if authed}
               <button
                 onclick={toggleSave}
                 class="text-terminal-dim hover:text-accent-500 transition-colors cursor-pointer"

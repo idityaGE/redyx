@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { isAuthenticated } from '../lib/auth';
+  import { onMount } from 'svelte';
+  import { isAuthenticated, subscribe } from '../lib/auth';
   import SortBar from './SortBar.svelte';
   import FeedList from './FeedList.svelte';
 
@@ -11,6 +12,14 @@
 
   let sort = $state('SORT_ORDER_HOT');
   let timeRange = $state<string | undefined>(undefined);
+  let authed = $state(isAuthenticated());
+
+  onMount(() => {
+    const unsub = subscribe(() => {
+      authed = isAuthenticated();
+    });
+    return unsub;
+  });
 
   function handleSortChange(newSort: string, newTimeRange?: string) {
     sort = newSort;
@@ -18,7 +27,7 @@
   }
 </script>
 
-{#if isAuthenticated()}
+{#if authed}
   <div class="mb-3">
     <a
       href="/community/{communityName}/submit"

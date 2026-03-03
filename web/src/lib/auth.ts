@@ -37,6 +37,12 @@ let user: AuthUser | null = null;
 // Start loading only if there's a stored refresh token (avoids [...]  flash for anonymous users)
 let loading = (typeof window !== 'undefined' && localStorage.getItem('refreshToken') !== null);
 
+// Ready promise — resolves when initialize() completes (or immediately if no refresh token)
+let readyResolve: (() => void) | null = null;
+const readyPromise: Promise<void> = loading
+  ? new Promise<void>((resolve) => { readyResolve = resolve; })
+  : Promise.resolve();
+
 // Pub/sub for reactivity
 type Subscriber = () => void;
 const subscribers = new Set<Subscriber>();
@@ -69,14 +75,33 @@ export function isLoading(): boolean {
 }
 
 /**
+ * Returns a promise that resolves when initialize() has completed.
+ * If no stored refresh token exists, resolves immediately.
+ * Safe to call multiple times — always returns the same promise.
+ */
+export function whenReady(): Promise<void> {
+  return readyPromise;
+}
+
+/**
  * Initialize auth state on app start.
  *
  * Attempts to refresh tokens (if stored). On success, fetches user profile.
  * On failure, sets user to null (anonymous). Always sets loading=false.
+ *
+ * Idempotent: multiple calls return the same promise.
  */
-export async function initialize(): Promise<void> {
-  if (!loading) return; // already initialized
+let initPromise: Promise<void> | null = null;
 
+export function initialize(): Promise<void> {
+  if (initPromise) return initPromise; // already started/finished
+  if (!loading) return Promise.resolve(); // no refresh token, nothing to do
+
+  initPromise = _doInitialize();
+  return initPromise;
+}
+
+async function _doInitialize(): Promise<void> {
   try {
     const storedRefresh = getRefreshToken();
     if (!storedRefresh) {
@@ -116,6 +141,10 @@ export async function initialize(): Promise<void> {
     user = null;
   } finally {
     loading = false;
+    if (readyResolve) {
+      readyResolve();
+      readyResolve = null;
+    }
     notify();
   }
 }

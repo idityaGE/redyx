@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../lib/api';
+  import { whenReady } from '../lib/auth';
   import CommunitySidebar from './CommunitySidebar.svelte';
   import CommunityFeed from './CommunityFeed.svelte';
 
@@ -70,7 +71,8 @@
   }
 
   onMount(() => {
-    fetchCommunity();
+    // Wait for auth so isMember/isModerator are populated correctly
+    whenReady().then(() => fetchCommunity());
   });
 </script>
 
@@ -111,9 +113,11 @@
   <div class="flex flex-col lg:flex-row gap-4 max-w-5xl">
     <!-- Main content area (left) -->
     <div class="flex-1 min-w-0">
-      <!-- Community header -->
+      <!-- Community header with breadcrumb -->
       <div class="box-terminal mb-4">
-        <div class="text-accent-500 text-sm">~ /community/{community.name}</div>
+        <div class="text-accent-500 text-sm">
+          ~ <a href="/communities" class="hover:text-accent-400 transition-colors">/communities</a>/{community.name}
+        </div>
       </div>
 
       <!-- Posts feed -->
