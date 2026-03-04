@@ -78,8 +78,14 @@ export function isLoading(): boolean {
  * Returns a promise that resolves when initialize() has completed.
  * If no stored refresh token exists, resolves immediately.
  * Safe to call multiple times — always returns the same promise.
+ *
+ * Automatically triggers initialize() if it hasn't been called yet,
+ * so components don't need to depend on another component calling
+ * initialize() first.
  */
 export function whenReady(): Promise<void> {
+  // Auto-trigger initialization if needed (idempotent)
+  initialize();
   return readyPromise;
 }
 
