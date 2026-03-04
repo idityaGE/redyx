@@ -94,6 +94,11 @@ func main() {
 	}
 	defer postProducer.Close()
 
+	// Ensure Kafka topics exist before producing
+	if err := postProducer.EnsureTopic(context.Background()); err != nil {
+		logger.Fatal("failed to ensure posts topic", zap.Error(err))
+	}
+
 	// Create rate limiter
 	limiter := ratelimit.New(rdb)
 

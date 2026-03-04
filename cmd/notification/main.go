@@ -90,8 +90,19 @@ func main() {
 	consumerCtx, consumerCancel := context.WithCancel(context.Background())
 	defer consumerCancel()
 
+	// Create PostResolver for enriching notifications with post author/community info
+	postServiceAddr := os.Getenv("POST_SERVICE_ADDR")
+	if postServiceAddr == "" {
+		postServiceAddr = "post-service:50055"
+	}
+	postResolver, err := notification.NewPostResolver(postServiceAddr, logger)
+	if err != nil {
+		logger.Fatal("failed to create post resolver", zap.Error(err))
+	}
+	defer postResolver.Close()
+
 	brokers := strings.Split(cfg.KafkaBrokers, ",")
-	consumer, err := notification.NewConsumer(brokers, store, hub, logger)
+	consumer, err := notification.NewConsumer(brokers, store, hub, postResolver, logger)
 	if err != nil {
 		logger.Fatal("failed to create kafka consumer", zap.Error(err))
 	}

@@ -103,6 +103,11 @@ func main() {
 	}
 	defer commentProducer.Close()
 
+	// Ensure Kafka topics exist before producing
+	if err := commentProducer.EnsureTopic(context.Background()); err != nil {
+		logger.Fatal("failed to ensure comments topic", zap.Error(err))
+	}
+
 	// Create and register comment service
 	commentServer := comment.NewServer(store, commentProducer, voteRedis, logger)
 	commentv1.RegisterCommentServiceServer(srv.Server(), commentServer)

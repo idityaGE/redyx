@@ -2,12 +2,14 @@ package notification
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+
+	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
 )
 
 const (
@@ -20,14 +22,15 @@ const (
 
 // Consumer processes CommentEvents from Kafka and creates notifications.
 type Consumer struct {
-	client *kgo.Client
-	store  *Store
-	hub    *Hub
-	logger *zap.Logger
+	client       *kgo.Client
+	store        *Store
+	hub          *Hub
+	postResolver *PostResolver
+	logger       *zap.Logger
 }
 
 // NewConsumer creates a Kafka consumer connected to the given brokers.
-func NewConsumer(brokers []string, store *Store, hub *Hub, logger *zap.Logger) (*Consumer, error) {
+func NewConsumer(brokers []string, store *Store, hub *Hub, postResolver *PostResolver, logger *zap.Logger) (*Consumer, error) {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup(commentConsumerGroup),
@@ -39,10 +42,11 @@ func NewConsumer(brokers []string, store *Store, hub *Hub, logger *zap.Logger) (
 	}
 
 	return &Consumer{
-		client: client,
-		store:  store,
-		hub:    hub,
-		logger: logger,
+		client:       client,
+		store:        store,
+		hub:          hub,
+		postResolver: postResolver,
+		logger:       logger,
 	}, nil
 }
 
@@ -77,10 +81,27 @@ func (c *Consumer) Run(ctx context.Context) error {
 		}
 
 		fetches.EachRecord(func(record *kgo.Record) {
-			event := &CommentEvent{}
-			if err := json.Unmarshal(record.Value, event); err != nil {
+			pbEvent := &eventsv1.CommentEvent{}
+			if err := proto.Unmarshal(record.Value, pbEvent); err != nil {
 				c.logger.Error("failed to unmarshal comment event", zap.Error(err))
 				return
+			}
+
+			// Convert proto event to internal CommentEvent
+			event := &CommentEvent{
+				EventID:               pbEvent.GetEventId(),
+				CommentID:             pbEvent.GetCommentId(),
+				PostID:                pbEvent.GetPostId(),
+				AuthorID:              pbEvent.GetAuthorId(),
+				AuthorUsername:        pbEvent.GetAuthorUsername(),
+				ParentCommentID:       pbEvent.GetParentCommentId(),
+				ParentCommentAuthorID: pbEvent.GetParentCommentAuthorId(),
+				PostAuthorID:          pbEvent.GetPostAuthorId(),
+				CommunityName:         pbEvent.GetCommunityName(),
+				Body:                  pbEvent.GetBody(),
+			}
+			if ts := pbEvent.GetCreatedAt(); ts != nil {
+				event.CreatedAt = ts.AsTime()
 			}
 
 			if err := c.processEvent(ctx, event); err != nil {
@@ -115,7 +136,26 @@ func (c *Consumer) Run(ctx context.Context) error {
 // 2. Comment replies (nested comment → notify parent comment author)
 // 3. Mentions (u/username in body → notify mentioned users)
 func (c *Consumer) processEvent(ctx context.Context, event *CommentEvent) error {
-	// Load preferences for checking before creating notifications
+	// Resolve missing post info (PostAuthorID, CommunityName) via post-service gRPC
+	if event.PostAuthorID == "" || event.CommunityName == "" {
+		if c.postResolver != nil {
+			info, err := c.postResolver.Resolve(ctx, event.PostID)
+			if err != nil {
+				c.logger.Warn("failed to resolve post info for notification",
+					zap.String("post_id", event.PostID),
+					zap.Error(err),
+				)
+			} else {
+				if event.PostAuthorID == "" {
+					event.PostAuthorID = info.AuthorID
+				}
+				if event.CommunityName == "" {
+					event.CommunityName = info.CommunityName
+				}
+			}
+		}
+	}
+
 	// Track who we've already notified to avoid duplicates
 	notified := make(map[string]bool)
 

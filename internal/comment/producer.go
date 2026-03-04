@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -34,6 +35,42 @@ func NewCommentProducer(brokers []string, logger *zap.Logger) (*CommentProducer,
 		return nil, fmt.Errorf("create kafka comment producer: %w", err)
 	}
 	return &CommentProducer{client: client, logger: logger}, nil
+}
+
+// EnsureTopic creates the comments topic with the correct partition count.
+// Safe to call on every startup — existing topics are ignored.
+func (p *CommentProducer) EnsureTopic(ctx context.Context) error {
+	const partitions = 6
+	adm := kadm.NewClient(p.client)
+
+	resp, err := adm.CreateTopics(ctx, partitions, 1, map[string]*string{
+		"retention.ms": strPtr("604800000"), // 7 days
+	}, TopicComments)
+	if err != nil {
+		return fmt.Errorf("create topic: %w", err)
+	}
+
+	for _, r := range resp.Sorted() {
+		if r.Err != nil {
+			if r.ErrMessage != "" && r.ErrMessage != "Topic with this name already exists" {
+				p.logger.Warn("topic creation issue",
+					zap.String("topic", r.Topic),
+					zap.String("error", r.ErrMessage),
+				)
+			}
+		} else {
+			p.logger.Info("created topic",
+				zap.String("topic", r.Topic),
+				zap.Int32("partitions", int32(partitions)),
+			)
+		}
+	}
+
+	return nil
+}
+
+func strPtr(s string) *string {
+	return &s
 }
 
 // Publish serializes and publishes a CommentEvent to Kafka asynchronously.
