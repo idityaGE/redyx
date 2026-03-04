@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NotificationList from '../components/notification/NotificationList.svelte';
+---
+<BaseLayout title="Notifications">
+  <NotificationList client:load />
+</BaseLayout>
