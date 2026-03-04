@@ -86,6 +86,14 @@ func main() {
 	// Create post cache
 	cache := post.NewCache(rdb, voteRdb)
 
+	// Create Kafka PostProducer for publishing post events
+	brokers := strings.Split(cfg.KafkaBrokers, ",")
+	postProducer, err := post.NewPostProducer(brokers, logger)
+	if err != nil {
+		logger.Fatal("failed to create post producer", zap.Error(err))
+	}
+	defer postProducer.Close()
+
 	// Create rate limiter
 	limiter := ratelimit.New(rdb)
 
@@ -105,7 +113,7 @@ func main() {
 	)
 
 	// Create and register post service
-	postServer := post.NewServer(shardRouter, cache, communityPool, logger)
+	postServer := post.NewServer(shardRouter, cache, postProducer, communityPool, logger)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 
 	// Start background hot score refresh goroutine
@@ -115,7 +123,6 @@ func main() {
 
 	// Start Kafka vote-event consumer (updates vote_score in PostgreSQL)
 	if voteRdb != nil {
-		brokers := strings.Split(cfg.KafkaBrokers, ",")
 		scoreConsumer, err := post.NewScoreConsumer(brokers, shardRouter, voteRdb, logger)
 		if err != nil {
 			logger.Fatal("failed to create score consumer", zap.Error(err))

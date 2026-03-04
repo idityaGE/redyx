@@ -95,8 +95,16 @@ func main() {
 	// Create comment store with ScyllaDB session
 	store := comment.NewStore(session, logger)
 
+	// Create Kafka CommentProducer for publishing comment events
+	brokers := strings.Split(cfg.KafkaBrokers, ",")
+	commentProducer, err := comment.NewCommentProducer(brokers, logger)
+	if err != nil {
+		logger.Fatal("failed to create comment producer", zap.Error(err))
+	}
+	defer commentProducer.Close()
+
 	// Create and register comment service
-	commentServer := comment.NewServer(store, voteRedis, logger)
+	commentServer := comment.NewServer(store, commentProducer, voteRedis, logger)
 	commentv1.RegisterCommentServiceServer(srv.Server(), commentServer)
 
 	// Start Kafka VoteConsumer goroutine
@@ -104,7 +112,6 @@ func main() {
 	defer consumerCancel()
 
 	if voteRedis != nil {
-		brokers := strings.Split(cfg.KafkaBrokers, ",")
 		voteConsumer, err := comment.NewVoteConsumer(brokers, store, voteRedis, logger)
 		if err != nil {
 			logger.Fatal("failed to create vote consumer", zap.Error(err))

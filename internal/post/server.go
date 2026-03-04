@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
@@ -19,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
@@ -30,15 +32,17 @@ type Server struct {
 	postv1.UnimplementedPostServiceServer
 	shards      *ShardRouter
 	cache       *Cache
+	producer    *PostProducer
 	communityDB *pgxpool.Pool
 	logger      *zap.Logger
 }
 
 // NewServer creates a new post gRPC server.
-func NewServer(shards *ShardRouter, cache *Cache, communityDB *pgxpool.Pool, logger *zap.Logger) *Server {
+func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityDB *pgxpool.Pool, logger *zap.Logger) *Server {
 	return &Server{
 		shards:      shards,
 		cache:       cache,
+		producer:    producer,
 		communityDB: communityDB,
 		logger:      logger,
 	}
@@ -138,6 +142,22 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	).Scan(&postID, &createdAt)
 	if err != nil {
 		return nil, fmt.Errorf("insert post: %w", err)
+	}
+
+	// Publish PostEvent to Kafka (fire-and-forget for search-service indexing).
+	if s.producer != nil {
+		s.producer.Publish(ctx, &eventsv1.PostEvent{
+			EventId:        uuid.New().String(),
+			PostId:         postID,
+			Title:          title,
+			Body:           body,
+			AuthorUsername: authorUsername,
+			CommunityName:  communityName,
+			VoteScore:      0,
+			CommentCount:   0,
+			CreatedAt:      timestamppb.New(createdAt),
+			EventType:      eventsv1.PostEventType_POST_EVENT_TYPE_CREATED,
+		})
 	}
 
 	// Build response — mask anonymous author
@@ -315,6 +335,22 @@ func (s *Server) UpdatePost(ctx context.Context, req *postv1.UpdatePostRequest) 
 	post.IsEdited = true
 	post.EditedAt = timestamppb.New(now)
 
+	// Publish PostEvent for search re-indexing.
+	if s.producer != nil {
+		s.producer.Publish(ctx, &eventsv1.PostEvent{
+			EventId:        uuid.New().String(),
+			PostId:         postID,
+			Title:          title,
+			Body:           body,
+			AuthorUsername: post.AuthorUsername,
+			CommunityName:  post.CommunityName,
+			VoteScore:      post.VoteScore,
+			CommentCount:   post.CommentCount,
+			CreatedAt:      post.CreatedAt,
+			EventType:      eventsv1.PostEventType_POST_EVENT_TYPE_UPDATED,
+		})
+	}
+
 	return &postv1.UpdatePostResponse{Post: post}, nil
 }
 
@@ -349,6 +385,22 @@ func (s *Server) DeletePost(ctx context.Context, req *postv1.DeletePostRequest) 
 	)
 	if err != nil {
 		return nil, fmt.Errorf("delete post: %w", err)
+	}
+
+	// Publish PostEvent for search de-indexing.
+	if s.producer != nil {
+		s.producer.Publish(ctx, &eventsv1.PostEvent{
+			EventId:        uuid.New().String(),
+			PostId:         postID,
+			Title:          post.Title,
+			Body:           "",
+			AuthorUsername: post.AuthorUsername,
+			CommunityName:  post.CommunityName,
+			VoteScore:      post.VoteScore,
+			CommentCount:   post.CommentCount,
+			CreatedAt:      post.CreatedAt,
+			EventType:      eventsv1.PostEventType_POST_EVENT_TYPE_DELETED,
+		})
 	}
 
 	return &postv1.DeletePostResponse{}, nil

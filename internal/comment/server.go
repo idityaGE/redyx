@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 )
@@ -19,14 +21,16 @@ import (
 type Server struct {
 	commentv1.UnimplementedCommentServiceServer
 	store     *Store
+	producer  *CommentProducer
 	voteRedis *redis.Client // vote-service Redis DB 5 (read-only for user_vote)
 	logger    *zap.Logger
 }
 
 // NewServer creates a new comment gRPC server.
-func NewServer(store *Store, voteRedis *redis.Client, logger *zap.Logger) *Server {
+func NewServer(store *Store, producer *CommentProducer, voteRedis *redis.Client, logger *zap.Logger) *Server {
 	return &Server{
 		store:     store,
+		producer:  producer,
 		voteRedis: voteRedis,
 		logger:    logger,
 	}
@@ -62,6 +66,31 @@ func (s *Server) CreateComment(ctx context.Context, req *commentv1.CreateComment
 	comment, err := s.store.CreateComment(ctx, postID, parentID, claims.UserID, claims.Username, body)
 	if err != nil {
 		return nil, fmt.Errorf("create comment: %w", err)
+	}
+
+	// Publish CommentEvent to Kafka (fire-and-forget for notification-service).
+	if s.producer != nil {
+		var parentCommentAuthorID string
+		if parentID != "" {
+			parent, err := s.store.GetComment(ctx, parentID)
+			if err == nil {
+				parentCommentAuthorID = parent.AuthorID.String()
+			}
+		}
+
+		s.producer.Publish(ctx, &eventsv1.CommentEvent{
+			EventId:               uuid.New().String(),
+			CommentId:             comment.CommentID.String(),
+			PostId:                comment.PostID.String(),
+			AuthorId:              claims.UserID,
+			AuthorUsername:        claims.Username,
+			ParentCommentId:       parentID,
+			ParentCommentAuthorId: parentCommentAuthorID,
+			PostAuthorId:          "", // Not available in comment-service; notification-service resolves via post-service
+			CommunityName:         "", // Not available in comment-service; notification-service resolves via post
+			Body:                  body,
+			CreatedAt:             timestamppb.New(comment.CreatedAt),
+		})
 	}
 
 	return &commentv1.CreateCommentResponse{
