@@ -40,6 +40,10 @@ type Config struct {
 
 	// Community DB for cross-service lookups (Phase 3)
 	CommunityDatabaseURL string
+
+	// ScyllaDB fields (Phase 4 — comments)
+	ScyllaDBHosts    string
+	ScyllaDBKeyspace string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -80,6 +84,10 @@ func Load(serviceName string) *Config {
 
 		// Community DB
 		CommunityDatabaseURL: envStr("COMMUNITY_DATABASE_URL", "postgres://redyx:dev@postgres:5432/community?sslmode=disable"),
+
+		// ScyllaDB
+		ScyllaDBHosts:    envStr("SCYLLADB_HOSTS", "localhost:9042"),
+		ScyllaDBKeyspace: envStr("SCYLLADB_KEYSPACE", "redyx_comments"),
 	}
 
 	logger.Info("loaded config",
@@ -92,6 +100,8 @@ func Load(serviceName string) *Config {
 		zap.Bool("rate_limit_enabled", cfg.RateLimitEnabled),
 		zap.String("kafka_brokers", cfg.KafkaBrokers),
 		zap.Int("post_shard_count", len(cfg.PostShardDSNs)),
+		zap.String("scylladb_hosts", cfg.ScyllaDBHosts),
+		zap.String("scylladb_keyspace", cfg.ScyllaDBKeyspace),
 	)
 
 	return cfg
