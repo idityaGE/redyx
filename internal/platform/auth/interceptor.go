@@ -84,6 +84,8 @@ var publicMethods = map[string]bool{
 	"/redyx.comment.v1.CommentService/GetComment":   true,
 	"/redyx.comment.v1.CommentService/ListComments": true,
 	"/redyx.comment.v1.CommentService/ListReplies":  true,
+	// Media service — public metadata viewing
+	"/redyx.media.v1.MediaService/GetMedia": true,
 	// Health check
 	"/grpc.health.v1.Health/Check": true,
 }
