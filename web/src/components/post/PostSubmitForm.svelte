@@ -3,6 +3,7 @@
   import { api, ApiError } from '../../lib/api';
   import { isAuthenticated, whenReady } from '../../lib/auth';
   import PostBody from './PostBody.svelte';
+  import MediaUpload from '../media/MediaUpload.svelte';
 
   interface Props {
     communityName: string;
@@ -27,6 +28,14 @@
   // Submission state
   let submitting = $state(false);
   let error = $state<string | null>(null);
+
+  // Media state
+  let mediaIds = $state<string[]>([]);
+  let mediaUploading = $derived(false); // Will be true if any uploads in progress
+
+  function handleMediaChange(ids: string[]) {
+    mediaIds = ids;
+  }
 
   // URL validation
   let urlValid = $derived((() => {
@@ -54,7 +63,7 @@
     !title.trim() ||
     (activeTab === 'text' && !body.trim()) ||
     (activeTab === 'link' && !urlValid) ||
-    activeTab === 'media'
+    (activeTab === 'media' && mediaIds.length === 0)
   );
 
   // Auth guard — wait for auth initialization before checking
@@ -84,7 +93,12 @@
     error = null;
 
     try {
-      const postType = activeTab === 'text' ? 'POST_TYPE_TEXT' : 'POST_TYPE_LINK';
+      const postType =
+        activeTab === 'text'
+          ? 'POST_TYPE_TEXT'
+          : activeTab === 'link'
+            ? 'POST_TYPE_LINK'
+            : 'POST_TYPE_MEDIA';
 
       const res = await api<{ post: { postId: string } }>('/posts', {
         method: 'POST',
@@ -95,6 +109,7 @@
           url: activeTab === 'link' ? url : '',
           postType,
           isAnonymous,
+          mediaIds: activeTab === 'media' ? mediaIds : [],
         }),
       });
 
@@ -204,11 +219,12 @@
 
     <!-- Media tab content -->
     {:else if activeTab === 'media'}
-      <div class="text-xs text-terminal-dim font-mono text-center py-8">
-        <div class="mb-2">┌──────────────────────────────────────┐</div>
-        <div class="mb-2">│  media uploads — coming in phase 5   │</div>
-        <div>└──────────────────────────────────────┘</div>
-      </div>
+      <MediaUpload onMediaChange={handleMediaChange} />
+      {#if mediaIds.length > 0}
+        <div class="text-xs text-terminal-dim font-mono mt-2">
+          &gt; {mediaIds.length} file{mediaIds.length !== 1 ? 's' : ''} attached
+        </div>
+      {/if}
     {/if}
 
     <!-- Anonymous checkbox -->
