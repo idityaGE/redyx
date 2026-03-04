@@ -92,7 +92,7 @@ Plans:
 **Requirements**: CMNT-01, CMNT-02, CMNT-03, CMNT-04, CMNT-05, CMNT-06
 **Success Criteria** (what must be TRUE):
   1. User can comment on a post and reply to existing comments, forming nested threads stored in ScyllaDB with materialized path ordering
-  2. Comments display author, timestamp, vote score, and reply count — and are sortable by Best (Wilson score), Top, New, and Controversial
+  2. Comments display author, timestamp, vote score, and reply count — and are sortable by Best (Wilson score), Top, and New (Controversial sort deferred per user decision — infrastructure ready)
   3. Deleted comments show [deleted] but preserve thread structure (children remain visible), and deep threads lazy-load on demand (top 2-3 levels shown initially)
   4. Frontend comment tree component renders nested threads with indentation, collapse/expand controls, sort selector, inline reply form, and "load more replies" button for deep threads
 **Plans**: 4 plans

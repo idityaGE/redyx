@@ -54,7 +54,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CMNT-01**: User can comment on posts (markdown, max 10K chars, stored in ScyllaDB) ✓
 - [x] **CMNT-02**: User can reply to comments, forming nested threads (materialized path for tree ordering) ✓
 - [x] **CMNT-03**: Comments display author, timestamp, vote score, and reply count ✓
-- [x] **CMNT-04**: Comments sortable by Best (Wilson score confidence interval), Top, New, Controversial ✓
+- [x] **CMNT-04**: Comments sortable by Best (Wilson score confidence interval), Top, New ✓ (Controversial deferred per user decision)
 - [x] **CMNT-05**: Deleted comments show [deleted] but thread structure preserved (children remain visible) ✓
 - [x] **CMNT-06**: Deep threads lazy-loaded (top 2-3 levels shown initially, rest on demand) ✓
 
