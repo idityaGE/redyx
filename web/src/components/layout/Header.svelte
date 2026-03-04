@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
   import UserDropdown from './UserDropdown.svelte';
+  import SearchBar from '../search/SearchBar.svelte';
 
   let user = $state(getUser());
   let authed = $state(isAuthenticated());
@@ -31,16 +32,7 @@
   </div>
 
   <!-- Center: Search -->
-  <div class="flex-1 max-w-md mx-4">
-    <div class="flex items-center bg-terminal-bg border border-terminal-border rounded px-2 h-7">
-      <span class="text-accent-500 text-xs mr-1">&gt;</span>
-      <input
-        type="text"
-        placeholder="search..."
-        class="bg-transparent text-xs text-terminal-fg placeholder:text-terminal-dim outline-none w-full font-mono"
-      />
-    </div>
-  </div>
+  <SearchBar />
 
   <!-- Right: Actions -->
   <div class="flex items-center gap-3 text-xs">
