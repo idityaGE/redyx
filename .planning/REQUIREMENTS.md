@@ -69,9 +69,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Search (SRCH)
 
 - [x] **SRCH-01**: User can search posts by title and body text via Meilisearch (results within 300ms)
-- [ ] **SRCH-02**: User can search within a specific community or globally
-- [ ] **SRCH-03**: Community name autocomplete in search bar (prefix-based, cached in Redis, triggers after 2+ chars)
-- [ ] **SRCH-04**: Search results ranked by relevance, recency, and vote score
+- [x] **SRCH-02**: User can search within a specific community or globally
+- [x] **SRCH-03**: Community name autocomplete in search bar (prefix-based, cached in Redis, triggers after 2+ chars)
+- [x] **SRCH-04**: Search results ranked by relevance, recency, and vote score
 
 ### Notifications (NOTF)
 
@@ -214,9 +214,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VOTE-04 | Phase 3, Plan 02 | ✓ Complete |
 | VOTE-05 | Phase 3, Plan 02 | ✓ Complete |
 | SRCH-01 | Phase 5 | Complete |
-| SRCH-02 | Phase 5 | Pending |
-| SRCH-03 | Phase 5 | Pending |
-| SRCH-04 | Phase 5 | Pending |
+| SRCH-02 | Phase 5 | Complete |
+| SRCH-03 | Phase 5 | Complete |
+| SRCH-04 | Phase 5 | Complete |
 | NOTF-01 | Phase 5 | Complete |
 | NOTF-02 | Phase 5 | Complete |
 | NOTF-03 | Phase 5 | Complete |
