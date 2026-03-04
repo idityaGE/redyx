@@ -84,6 +84,9 @@ var publicMethods = map[string]bool{
 	"/redyx.comment.v1.CommentService/GetComment":   true,
 	"/redyx.comment.v1.CommentService/ListComments": true,
 	"/redyx.comment.v1.CommentService/ListReplies":  true,
+	// Search service — public search (anonymous users should search)
+	"/redyx.search.v1.SearchService/SearchPosts":             true,
+	"/redyx.search.v1.SearchService/AutocompleteCommunities": true,
 	// Media service — public metadata viewing
 	"/redyx.media.v1.MediaService/GetMedia": true,
 	// Health check
