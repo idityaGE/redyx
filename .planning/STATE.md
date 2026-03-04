@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # State: Redyx
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 4 — Comments (Full Stack), plan 02 complete
+**Current focus:** Phase 4 — Comments (Full Stack), plan 03 complete
 
 ## Current Position
 
 Phase: 4 of 7 — In Progress
-Plan: 2 of 4 complete in Phase 4
-Status: Executing Phase 4 — infrastructure wiring done
-Last activity: 2026-03-04 — Completed 04-02-PLAN.md (comments infrastructure wiring)
+Plan: 3 of 4 complete in Phase 4
+Status: Executing Phase 4 — frontend comment components done
+Last activity: 2026-03-04 — Completed 04-03-PLAN.md (frontend comment components)
 
-Progress: [██████░░░░] 57% (Plan 22/24 overall, Phase 4: 2/4)
+Progress: [██████░░░░] 60% (Plan 23/24 overall, Phase 4: 3/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
+- Total plans completed: 23
 - Average duration: ~9 min
-- Total execution time: ~3.3 hours
+- Total execution time: ~3.4 hours
 
 **By Phase:**
 
@@ -43,7 +43,7 @@ Progress: [██████░░░░] 57% (Plan 22/24 overall, Phase 4: 2/4
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
-| 04-comments | 2/4 | ~7 min | ~4 min |
+| 04-comments | 3/4 | ~10 min | ~3 min |
 
 *Updated after each plan completion*
 
@@ -134,6 +134,10 @@ Recent decisions affecting current work:
 - [04-02]: Comment regex route BEFORE /api/v1/posts prefix to prevent post-service catching comment requests
 - [04-02]: ScyllaDB dev mode (--smp 1 --memory 512M --developer-mode 1) for minimal resource usage
 - [04-02]: 60s start_period on ScyllaDB healthcheck to accommodate slow cold starts
+- [04-03]: Flat list rendering with depth-based padding (no recursive tree-building) — server provides display order
+- [04-03]: Auto-collapse comments with voteScore < -5 as initial collapsed state
+- [04-03]: localStorage key 'commentSort' for sort preference persistence across posts
+- [04-03]: shouldShowLoadMore checks if children already in flat list before showing trigger
 
 ### Context from Init
 
@@ -161,8 +165,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 04-02-PLAN.md
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-04 — Completed 04-02 comments infrastructure wiring*
+*Last updated: 2026-03-04 — Completed 04-03 frontend comment components*
