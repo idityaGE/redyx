@@ -51,12 +51,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Comments (CMNT)
 
-- [ ] **CMNT-01**: User can comment on posts (markdown, max 10K chars, stored in ScyllaDB)
-- [ ] **CMNT-02**: User can reply to comments, forming nested threads (materialized path for tree ordering)
-- [ ] **CMNT-03**: Comments display author, timestamp, vote score, and reply count
-- [ ] **CMNT-04**: Comments sortable by Best (Wilson score confidence interval), Top, New, Controversial
-- [ ] **CMNT-05**: Deleted comments show [deleted] but thread structure preserved (children remain visible)
-- [ ] **CMNT-06**: Deep threads lazy-loaded (top 2-3 levels shown initially, rest on demand)
+- [x] **CMNT-01**: User can comment on posts (markdown, max 10K chars, stored in ScyllaDB) ✓
+- [x] **CMNT-02**: User can reply to comments, forming nested threads (materialized path for tree ordering) ✓
+- [x] **CMNT-03**: Comments display author, timestamp, vote score, and reply count ✓
+- [x] **CMNT-04**: Comments sortable by Best (Wilson score confidence interval), Top, New, Controversial ✓
+- [x] **CMNT-05**: Deleted comments show [deleted] but thread structure preserved (children remain visible) ✓
+- [x] **CMNT-06**: Deep threads lazy-loaded (top 2-3 levels shown initially, rest on demand) ✓
 
 ### Voting (VOTE)
 
@@ -202,12 +202,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POST-08 | Phase 3 | Complete |
 | POST-09 | Phase 3 | Complete |
 | POST-10 | Phase 3 | Complete |
-| CMNT-01 | Phase 4 | Pending |
-| CMNT-02 | Phase 4 | Pending |
-| CMNT-03 | Phase 4 | Pending |
-| CMNT-04 | Phase 4 | Pending |
-| CMNT-05 | Phase 4 | Pending |
-| CMNT-06 | Phase 4 | Pending |
+| CMNT-01 | Phase 4 | ✓ Complete |
+| CMNT-02 | Phase 4 | ✓ Complete |
+| CMNT-03 | Phase 4 | ✓ Complete |
+| CMNT-04 | Phase 4 | ✓ Complete |
+| CMNT-05 | Phase 4 | ✓ Complete |
+| CMNT-06 | Phase 4 | ✓ Complete |
 | VOTE-01 | Phase 3, Plan 02 | ✓ Complete |
 | VOTE-02 | Phase 3, Plan 02 | ✓ Complete |
 | VOTE-03 | Phase 3, Plan 02 | ✓ Complete |

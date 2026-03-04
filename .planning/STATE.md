@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-03"
+last_updated: "2026-03-04"
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 24
+  completed_plans: 21
 ---
 
 # State: Redyx
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 4 — Comments (Full Stack), context gathered
+**Current focus:** Phase 4 — Comments (Full Stack), plan 01 complete
 
 ## Current Position
 
-Phase: 3 of 7 — Complete
-Plan: 7 of 7 complete in Phase 3
-Status: Phase 3 complete, ready for Phase 4
-Last activity: 2026-03-04 — Phase 4 context discussion completed
+Phase: 4 of 7 — In Progress
+Plan: 1 of 4 complete in Phase 4
+Status: Executing Phase 4 — comment service backend done
+Last activity: 2026-03-04 — Completed 04-01-PLAN.md (comment service backend)
 
-Progress: [██████████] 100% (Phase 3)
+Progress: [█████░░░░░] 53% (Plan 21/24 overall, Phase 4: 1/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
+- Total plans completed: 21
 - Average duration: ~9 min
-- Total execution time: ~3.2 hours
+- Total execution time: ~3.3 hours
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ Progress: [██████████] 100% (Phase 3)
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
+| 04-comments | 1/4 | ~5 min | ~5 min |
 
 *Updated after each plan completion*
 
@@ -124,6 +125,12 @@ Recent decisions affecting current work:
 - [03-07]: whenReady() promise pattern for auth initialization — all components await before API calls
 - [03-07]: untrack() pattern for $effect + $state mutation — prevents infinite loops in Svelte 5
 - [03-07]: Kafka producer uses context.Background() for fire-and-forget produce (not request context)
+- [04-01]: ScyllaDB dual-table write pattern: comments_by_post (query) + comments_by_id (lookup), both updated on every mutation
+- [04-01]: Counter table for atomic materialized path generation (avoids race conditions)
+- [04-01]: Read-increment-write for reply_count (acceptable minor race risk for v1)
+- [04-01]: In-memory sort for ListComments (fetch all, sort, paginate) — acceptable for v1 comment volumes
+- [04-01]: ScyllaDB connection retry loop (30 attempts, 2s apart) for slow container startup
+- [04-01]: Separate Kafka consumer group (comment-service.redyx.votes.v1) on same votes topic
 
 ### Context from Init
 
@@ -138,7 +145,7 @@ None.
 
 ### Blockers/Concerns
 
-- ScyllaDB migration tooling gap — no standard tool, needs custom version tracking
+- ScyllaDB migration tooling gap — solved with simple RunMigrations reading .cql files (CREATE IF NOT EXISTS is idempotent)
 - Home feed aggregation: fan-out-on-read with Redis caching (implemented in 03-01)
 - Post shard count: 2 shards for v1 (implemented in 03-01)
 
@@ -151,8 +158,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-comments/04-CONTEXT.md
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
 
 ---
-*Last updated: 2026-03-04 — Phase 4 context gathered, ready for planning*
+*Last updated: 2026-03-04 — Completed 04-01 comment service backend*
