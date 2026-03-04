@@ -114,12 +114,18 @@ Plans:
   4. Offline notifications are stored and delivered on next connection, and user can mark notifications as read and configure notification preferences
   5. User can upload images (JPEG/PNG/GIF/WebP, 20MB max) and videos (100MB max) when creating a post, with thumbnails generated and media served via CDN
   6. Frontend includes: search bar with autocomplete dropdown, search results page, notification bell with unread count badge, notification dropdown/panel with mark-as-read, notification preferences page, and media upload component with drag-and-drop and progress indicator
-**Plans**: TBD
+**Plans**: 9 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — Event proto definitions + Kafka producers for comment-service and post-service
+- [ ] 05-02-PLAN.md — Search service backend: Meilisearch integration, Kafka post indexer, community autocomplete
+- [ ] 05-03-PLAN.md — Notification service backend: Kafka consumer, PostgreSQL store, WebSocket hub, mention detection
+- [ ] 05-04-PLAN.md — Media service backend: presigned URL uploads, S3/MinIO integration, thumbnail generation
+- [ ] 05-05-PLAN.md — Docker Compose + Envoy wiring: Meilisearch, MinIO, 3 new services, WebSocket route
+- [ ] 05-06-PLAN.md — Frontend search: SearchBar with autocomplete, search results page, Header integration
+- [ ] 05-07-PLAN.md — Frontend notifications: WebSocket client, NotificationBell, dropdown, preferences page
+- [ ] 05-08-PLAN.md — Frontend media: drag-and-drop upload, progress bars, gallery, lightbox
+- [ ] 05-09-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
 
 ### Phase 6: Moderation + Spam (Full Stack)
 **Goal**: Communities have moderation tools and the platform detects/prevents spam — with frontend moderation dashboard, report dialogs, and mod log views
@@ -163,6 +169,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
 | 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
-| 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
+| 5. Search + Notifications + Media (Full Stack) | 0/9 | Planned | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
 | 7. Deployment + Observability | 0/? | Not started | - |
