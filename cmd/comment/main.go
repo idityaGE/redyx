@@ -36,17 +36,26 @@ func main() {
 	cfg := config.Load("comment")
 
 	// Connect to ScyllaDB with retry loop (ScyllaDB container takes 30-60s to start)
-	session, err := connectScyllaDB(cfg.ScyllaDBHosts, cfg.ScyllaDBKeyspace, logger)
+	// Phase 1: connect WITHOUT keyspace to run migrations that create it
+	migrationSession, err := connectScyllaDBNoKeyspace(cfg.ScyllaDBHosts, logger)
 	if err != nil {
-		logger.Fatal("failed to connect to scylladb", zap.Error(err))
+		logger.Fatal("failed to connect to scylladb for migrations", zap.Error(err))
 	}
-	defer session.Close()
 
-	// Run ScyllaDB migrations (CREATE IF NOT EXISTS is idempotent)
-	if err := comment.RunMigrations(session, "migrations/comment"); err != nil {
+	// Run ScyllaDB migrations (CREATE IF NOT EXISTS is idempotent — creates keyspace + tables)
+	if err := comment.RunMigrations(migrationSession, "migrations/comment"); err != nil {
+		migrationSession.Close()
 		logger.Fatal("failed to run scylladb migrations", zap.Error(err))
 	}
+	migrationSession.Close()
 	logger.Info("scylladb migrations applied")
+
+	// Phase 2: reconnect WITH keyspace now that it exists
+	session, err := connectScyllaDBWithKeyspace(cfg.ScyllaDBHosts, cfg.ScyllaDBKeyspace, logger)
+	if err != nil {
+		logger.Fatal("failed to connect to scylladb with keyspace", zap.Error(err))
+	}
+	defer session.Close()
 
 	// Connect to Redis DB 6 (comment-service's reserved DB) for rate limiting
 	commentRedis, err := platformredis.NewClient(redisURL(cfg.RedisURL, 6))
@@ -123,9 +132,9 @@ func main() {
 	}
 }
 
-// connectScyllaDB connects to ScyllaDB with a retry loop.
-// ScyllaDB container can take 30-60s to become ready, so we retry up to 30 times (2s apart = 60s total).
-func connectScyllaDB(hosts, keyspace string, logger *zap.Logger) (*gocql.Session, error) {
+// connectScyllaDBNoKeyspace connects to ScyllaDB without a keyspace (for running migrations).
+// Retries up to 30 times (2s apart = 60s total) to handle slow ScyllaDB startup.
+func connectScyllaDBNoKeyspace(hosts string, logger *zap.Logger) (*gocql.Session, error) {
 	hostList := strings.Split(hosts, ",")
 	for i := range hostList {
 		hostList[i] = strings.TrimSpace(hostList[i])
@@ -136,15 +145,16 @@ func connectScyllaDB(hosts, keyspace string, logger *zap.Logger) (*gocql.Session
 	cluster.Timeout = 10 * time.Second
 	cluster.ConnectTimeout = 10 * time.Second
 
-	// First connect without keyspace to run migrations that create the keyspace
 	var session *gocql.Session
 	var err error
 
 	for attempt := 1; attempt <= 30; attempt++ {
 		session, err = cluster.CreateSession()
 		if err == nil {
-			session.Close()
-			break
+			logger.Info("connected to scylladb (no keyspace, for migrations)",
+				zap.Strings("hosts", hostList),
+			)
+			return session, nil
 		}
 		logger.Warn("scylladb connection attempt failed, retrying...",
 			zap.Int("attempt", attempt),
@@ -152,12 +162,26 @@ func connectScyllaDB(hosts, keyspace string, logger *zap.Logger) (*gocql.Session
 		)
 		time.Sleep(2 * time.Second)
 	}
-	if err != nil {
-		return nil, fmt.Errorf("scylladb connect failed after 30 retries: %w", err)
+	return nil, fmt.Errorf("scylladb connect failed after 30 retries: %w", err)
+}
+
+// connectScyllaDBWithKeyspace connects to ScyllaDB with a specific keyspace.
+// Retries up to 30 times (2s apart = 60s total).
+func connectScyllaDBWithKeyspace(hosts, keyspace string, logger *zap.Logger) (*gocql.Session, error) {
+	hostList := strings.Split(hosts, ",")
+	for i := range hostList {
+		hostList[i] = strings.TrimSpace(hostList[i])
 	}
 
-	// Now connect with keyspace
+	cluster := gocql.NewCluster(hostList...)
+	cluster.Consistency = gocql.Quorum
+	cluster.Timeout = 10 * time.Second
+	cluster.ConnectTimeout = 10 * time.Second
 	cluster.Keyspace = keyspace
+
+	var session *gocql.Session
+	var err error
+
 	for attempt := 1; attempt <= 30; attempt++ {
 		session, err = cluster.CreateSession()
 		if err == nil {
