@@ -4,6 +4,7 @@
   import { getUser, isAuthenticated, whenReady, subscribe } from '../../lib/auth';
   import VoteButtons from './VoteButtons.svelte';
   import PostBody from './PostBody.svelte';
+  import MediaGallery from '../media/MediaGallery.svelte';
   import { relativeTime } from '../../lib/time';
 
   interface Props {
@@ -290,11 +291,13 @@
                   {/if}
                 </div>
               {:else if post.postType === 'POST_TYPE_MEDIA'}
-                <div class="text-xs text-terminal-dim font-mono text-center py-4">
-                  <div>┌─────────────────────────────────────┐</div>
-                  <div>│  media display — coming in phase 5   │</div>
-                  <div>└─────────────────────────────────────┘</div>
-                </div>
+                {#if post.mediaUrls && post.mediaUrls.length > 0}
+                  <MediaGallery mediaUrls={post.mediaUrls} thumbnailUrl={post.thumbnailUrl} />
+                {:else}
+                  <div class="text-xs text-terminal-dim font-mono">
+                    &gt; media processing...
+                  </div>
+                {/if}
               {/if}
             {/if}
           </div>
