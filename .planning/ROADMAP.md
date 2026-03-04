@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation + Frontend Shell** - Proto definitions, shared platform libraries, Envoy gateway, Docker Compose, Astro+Svelte project init with responsive layout shell ✓ (2026-03-02)
 - [x] **Phase 2: Auth + User + Community (Full Stack)** - Identity services + registration/login/profile/community frontend pages ✓ (2026-03-03)
 - [x] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components ✓ (2026-03-03)
-- [ ] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI
+- [x] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI ✓ (2026-03-04)
 - [ ] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend
 - [ ] **Phase 6: Moderation + Spam (Full Stack)** - Moderation tools + mod dashboard, report UI, spam feedback frontend
 - [ ] **Phase 7: Deployment + Observability** - Kubernetes deployment, monitoring stack, performance optimization
@@ -101,7 +101,7 @@ Plans:
 - [x] 04-01-PLAN.md — Comment service backend: ScyllaDB schema, store, all 6 RPCs, Wilson score, Kafka consumer, service entrypoint ✓
 - [x] 04-02-PLAN.md — Docker/Envoy wiring: ScyllaDB container, comment-service container, Envoy routes, proto descriptor rebuild ✓
 - [x] 04-03-PLAN.md — Frontend comment components: CommentSection, CommentCard, CommentSortBar, CommentForm with all interactions ✓
-- [ ] 04-04-PLAN.md — E2E integration: mount in post detail page, API curl tests, human verification checkpoint
+- [x] 04-04-PLAN.md — E2E integration: mount in post detail page, API curl tests, human verification checkpoint ✓
 
 ### Phase 5: Search + Notifications + Media (Full Stack)
 **Goal**: Users can search content, receive real-time notifications, and upload media — with frontend components for search, notification panel, and media upload
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
-| 4. Comments (Full Stack) | 3/4 | In Progress | - |
+| 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
 | 7. Deployment + Observability | 0/? | Not started | - |
