@@ -195,6 +195,119 @@ services:
       kafka:
         condition: service_healthy
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    ports: ["7700:7700"]
+    environment:
+      MEILI_MASTER_KEY: "dev-master-key"
+      MEILI_ENV: "development"
+    volumes:
+      - meili-data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    ports: ["9000:9000", "9001:9001"]
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3 &&
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb local/redyx-media --ignore-existing &&
+      mc anonymous set download local/redyx-media
+      "
+
+  search-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: search
+    environment:
+      REDIS_URL: redis://redis:6379/7
+      GRPC_PORT: "50058"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      KAFKA_BROKERS: "kafka:9092"
+      MEILISEARCH_URL: "http://meilisearch:7700"
+      MEILISEARCH_API_KEY: "dev-master-key"
+      COMMUNITY_DATABASE_URL: "postgres://redyx:dev@postgres:5432/community?sslmode=disable"
+    ports: ["50058:50058"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: notification
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/notifications?sslmode=disable
+      REDIS_URL: redis://redis:6379/8
+      GRPC_PORT: "50059"
+      WEBSOCKET_PORT: "8081"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      KAFKA_BROKERS: "kafka:9092"
+    ports: ["50059:50059", "8081:8081"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  media-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: media
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/media?sslmode=disable
+      REDIS_URL: redis://redis:6379/9
+      GRPC_PORT: "50060"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "redyx-media"
+    ports: ["50060:50060"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
   envoy:
     image: envoyproxy/envoy:v1.37.0
     ports:
@@ -211,7 +324,12 @@ services:
       - post-service
       - vote-service
       - comment-service
+      - search-service
+      - notification-service
+      - media-service
 
 volumes:
   pg-data:
   scylla-data:
+  meili-data:
+  minio-data:

@@ -17,3 +17,10 @@ CREATE DATABASE posts_shard_1;
 
 GRANT ALL PRIVILEGES ON DATABASE posts_shard_0 TO redyx;
 GRANT ALL PRIVILEGES ON DATABASE posts_shard_1 TO redyx;
+
+-- Phase 5 databases
+CREATE DATABASE notifications;
+CREATE DATABASE media;
+
+GRANT ALL PRIVILEGES ON DATABASE notifications TO redyx;
+GRANT ALL PRIVILEGES ON DATABASE media TO redyx;
