@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-04T21:07:22Z"
-last_activity: 2026-03-05 — Completed 05-02-PLAN.md (Search service backend)
+stopped_at: Completed 05-05-PLAN.md
+last_updated: "2026-03-04T21:13:06Z"
+last_activity: 2026-03-04 — Completed 05-05-PLAN.md (Infrastructure wiring)
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 33
-  completed_plans: 26
-  percent: 79
+  completed_plans: 29
+  percent: 88
 ---
 
 # State: Redyx
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 5 of 7 — In Progress
-Plan: 2 of 9 complete in Phase 5
+Plan: 5 of 9 complete in Phase 5
 Status: Executing Phase 5 plans
-Last activity: 2026-03-05 — Completed 05-02-PLAN.md (Search service backend)
+Last activity: 2026-03-04 — Completed 05-05-PLAN.md (Infrastructure wiring)
 
-Progress: [████████░░] 79% (Plan 26/33 overall, Phase 5: 2/9)
+Progress: [█████████░] 88% (Plan 29/33 overall, Phase 5: 5/9)
 
 ## Performance Metrics
 
@@ -47,7 +47,7 @@ Progress: [████████░░] 79% (Plan 26/33 overall, Phase 5: 2/9
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 | 04-comments | 4/4 | ~34 min | ~9 min |
-| 05-search-notifications-media | 4/9 | ~31 min | ~8 min |
+| 05-search-notifications-media | 5/9 | ~33 min | ~7 min |
 
 *Updated after each plan completion*
 
@@ -156,6 +156,9 @@ Recent decisions affecting current work:
 - [05-03]: Redis DB 8 reserved for notification-service unread count cache
 - [05-03]: Dual-server pattern: gRPC (50059) + HTTP/WebSocket (8081) from same main.go
 - [05-03]: Mention notifications use username as target (no cross-service user lookup in v1)
+- [05-05]: WebSocket route as first Envoy route — bypasses gRPC transcoder (HTTP/1.1 upgrade)
+- [05-05]: notification-ws cluster uses HTTP/1.1 (no http2_protocol_options) for WebSocket
+- [05-05]: minio-init sidecar pattern with mc for bucket auto-creation + public download policy
 
 ### Context from Init
 
@@ -182,9 +185,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T21:07:22Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-04T21:13:06Z
+Stopped at: Completed 05-05-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-05 — Phase 5 in progress (2/9 plans complete)*
+*Last updated: 2026-03-04 — Phase 5 in progress (5/9 plans complete)*
