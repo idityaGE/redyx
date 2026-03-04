@@ -99,7 +99,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Comment service backend: ScyllaDB schema, store, all 6 RPCs, Wilson score, Kafka consumer, service entrypoint ✓
-- [ ] 04-02-PLAN.md — Docker/Envoy wiring: ScyllaDB container, comment-service container, Envoy routes, proto descriptor rebuild
+- [x] 04-02-PLAN.md — Docker/Envoy wiring: ScyllaDB container, comment-service container, Envoy routes, proto descriptor rebuild ✓
 - [ ] 04-03-PLAN.md — Frontend comment components: CommentSection, CommentCard, CommentSortBar, CommentForm with all interactions
 - [ ] 04-04-PLAN.md — E2E integration: mount in post detail page, API curl tests, human verification checkpoint
 
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Foundation + Frontend Shell | 3/3 | ✓ Complete | 2026-03-02 |
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
-| 4. Comments (Full Stack) | 1/4 | In Progress | - |
+| 4. Comments (Full Stack) | 2/4 | In Progress | - |
 | 5. Search + Notifications + Media (Full Stack) | 0/? | Not started | - |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
 | 7. Deployment + Observability | 0/? | Not started | - |

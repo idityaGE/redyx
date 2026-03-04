@@ -8,7 +8,7 @@ progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # State: Redyx
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 4 — Comments (Full Stack), plan 01 complete
+**Current focus:** Phase 4 — Comments (Full Stack), plan 02 complete
 
 ## Current Position
 
 Phase: 4 of 7 — In Progress
-Plan: 1 of 4 complete in Phase 4
-Status: Executing Phase 4 — comment service backend done
-Last activity: 2026-03-04 — Completed 04-01-PLAN.md (comment service backend)
+Plan: 2 of 4 complete in Phase 4
+Status: Executing Phase 4 — infrastructure wiring done
+Last activity: 2026-03-04 — Completed 04-02-PLAN.md (comments infrastructure wiring)
 
-Progress: [█████░░░░░] 53% (Plan 21/24 overall, Phase 4: 1/4)
+Progress: [██████░░░░] 57% (Plan 22/24 overall, Phase 4: 2/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 22
 - Average duration: ~9 min
 - Total execution time: ~3.3 hours
 
@@ -43,7 +43,7 @@ Progress: [█████░░░░░] 53% (Plan 21/24 overall, Phase 4: 1/4
 | 01-foundation-frontend-shell | 3/3 | ~35 min | ~12 min |
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
-| 04-comments | 1/4 | ~5 min | ~5 min |
+| 04-comments | 2/4 | ~7 min | ~4 min |
 
 *Updated after each plan completion*
 
@@ -131,6 +131,9 @@ Recent decisions affecting current work:
 - [04-01]: In-memory sort for ListComments (fetch all, sort, paginate) — acceptable for v1 comment volumes
 - [04-01]: ScyllaDB connection retry loop (30 attempts, 2s apart) for slow container startup
 - [04-01]: Separate Kafka consumer group (comment-service.redyx.votes.v1) on same votes topic
+- [04-02]: Comment regex route BEFORE /api/v1/posts prefix to prevent post-service catching comment requests
+- [04-02]: ScyllaDB dev mode (--smp 1 --memory 512M --developer-mode 1) for minimal resource usage
+- [04-02]: 60s start_period on ScyllaDB healthcheck to accommodate slow cold starts
 
 ### Context from Init
 
@@ -158,8 +161,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 04-01-PLAN.md
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-04 — Completed 04-01 comment service backend*
+*Last updated: 2026-03-04 — Completed 04-02 comments infrastructure wiring*
