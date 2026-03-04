@@ -3,6 +3,7 @@
   import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
   import UserDropdown from './UserDropdown.svelte';
   import SearchBar from '../search/SearchBar.svelte';
+  import NotificationBell from '../notification/NotificationBell.svelte';
 
   let user = $state(getUser());
   let authed = $state(isAuthenticated());
@@ -36,10 +37,8 @@
 
   <!-- Right: Actions -->
   <div class="flex items-center gap-3 text-xs">
-    <!-- Notification diamond -->
-    <button class="text-terminal-dim hover:text-accent-500 transition-colors" title="Notifications">
-      <span>&#9830;</span>
-    </button>
+    <!-- Notification bell with real-time badge and dropdown -->
+    <NotificationBell />
 
     {#if loading}
       <span class="text-terminal-dim">[...]</span>
