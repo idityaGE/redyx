@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-04T20:29:26.332Z"
-last_activity: 2026-03-04 — Completed 04-04-PLAN.md (E2E integration verification)
+status: executing
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-03-04T21:00:20Z"
+last_activity: 2026-03-04 — Completed 05-04-PLAN.md (Media service backend)
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 24
-  completed_plans: 24
-  percent: 100
+  total_plans: 33
+  completed_plans: 25
+  percent: 76
 ---
 
 # State: Redyx
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 5 next — Search + Notifications + Media (Full Stack)
+**Current focus:** Phase 5 in progress — Search + Notifications + Media (Full Stack)
 
 ## Current Position
 
-Phase: 4 of 7 — Complete
-Plan: 4 of 4 complete in Phase 4
-Status: Phase 4 complete — ready for Phase 5 planning
-Last activity: 2026-03-04 — Completed 04-04-PLAN.md (E2E integration verification)
+Phase: 5 of 7 — In Progress
+Plan: 1 of 9 complete in Phase 5
+Status: Executing Phase 5 plans
+Last activity: 2026-03-04 — Completed 05-04-PLAN.md (Media service backend)
 
-Progress: [██████████] 100% (Plan 24/24 overall, Phase 4: 4/4)
+Progress: [█████████░] 93% (Plan 25/33 overall, Phase 5: 1/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 25
 - Average duration: ~9 min
-- Total execution time: ~3.4 hours
+- Total execution time: ~3.5 hours
 
 **By Phase:**
 
@@ -47,6 +47,7 @@ Progress: [██████████] 100% (Plan 24/24 overall, Phase 4: 4/
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 | 04-comments | 4/4 | ~34 min | ~9 min |
+| 05-search-notifications-media | 1/9 | ~6 min | ~6 min |
 
 *Updated after each plan completion*
 
@@ -142,6 +143,10 @@ Recent decisions affecting current work:
 - [04-03]: localStorage key 'commentSort' for sort preference persistence across posts
 - [04-03]: shouldShowLoadMore checks if children already in flat list before showing trigger
 - [04-04]: ScyllaDB two-phase connection: connect without keyspace for migrations, then reconnect with keyspace after creation
+- [05-04]: Synchronous thumbnail generation in CompleteUpload (v1 simplicity — fast for images)
+- [05-04]: Video thumbnails deferred, return empty thumbnail_url for videos
+- [05-04]: S3 path-style addressing (UsePathStyle: true) for MinIO compatibility
+- [05-04]: Redis DB 9 reserved for media-service rate limiting
 
 ### Context from Init
 
@@ -168,9 +173,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T20:29:26.329Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-search-notifications-media-full-stack/05-CONTEXT.md
+Last session: 2026-03-04T21:00:20Z
+Stopped at: Completed 05-04-PLAN.md
+Resume file: None
 
 ---
 *Last updated: 2026-03-05 — Phase 4 complete (4/4 plans, verified), ready for Phase 5*

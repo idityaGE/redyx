@@ -84,10 +84,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Media (MDIA)
 
-- [ ] **MDIA-01**: User can upload images and videos when creating a post
-- [ ] **MDIA-02**: Uploaded files validated for type (JPEG, PNG, GIF, WebP) and size (20MB image, 100MB video)
-- [ ] **MDIA-03**: Thumbnails generated for image uploads (max 320px wide)
-- [ ] **MDIA-04**: Media stored in AWS S3 and served through CloudFront CDN
+- [x] **MDIA-01**: User can upload images and videos when creating a post
+- [x] **MDIA-02**: Uploaded files validated for type (JPEG, PNG, GIF, WebP) and size (20MB image, 100MB video)
+- [x] **MDIA-03**: Thumbnails generated for image uploads (max 320px wide)
+- [x] **MDIA-04**: Media stored in AWS S3 and served through CloudFront CDN
 
 ### Moderation (MOD)
 
@@ -223,10 +223,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTF-04 | Phase 5 | Pending |
 | NOTF-05 | Phase 5 | Pending |
 | NOTF-06 | Phase 5 | Pending |
-| MDIA-01 | Phase 5 | Pending |
-| MDIA-02 | Phase 5 | Pending |
-| MDIA-03 | Phase 5 | Pending |
-| MDIA-04 | Phase 5 | Pending |
+| MDIA-01 | Phase 5 | Complete |
+| MDIA-02 | Phase 5 | Complete |
+| MDIA-03 | Phase 5 | Complete |
+| MDIA-04 | Phase 5 | Complete |
 | MOD-01 | Phase 6 | Pending |
 | MOD-02 | Phase 6 | Pending |
 | MOD-03 | Phase 6 | Pending |
