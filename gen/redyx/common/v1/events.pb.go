@@ -22,6 +22,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PostEventType indicates what happened to a post.
+type PostEventType int32
+
+const (
+	PostEventType_POST_EVENT_TYPE_UNSPECIFIED PostEventType = 0
+	PostEventType_POST_EVENT_TYPE_CREATED     PostEventType = 1
+	PostEventType_POST_EVENT_TYPE_UPDATED     PostEventType = 2
+	PostEventType_POST_EVENT_TYPE_DELETED     PostEventType = 3
+)
+
+// Enum value maps for PostEventType.
+var (
+	PostEventType_name = map[int32]string{
+		0: "POST_EVENT_TYPE_UNSPECIFIED",
+		1: "POST_EVENT_TYPE_CREATED",
+		2: "POST_EVENT_TYPE_UPDATED",
+		3: "POST_EVENT_TYPE_DELETED",
+	}
+	PostEventType_value = map[string]int32{
+		"POST_EVENT_TYPE_UNSPECIFIED": 0,
+		"POST_EVENT_TYPE_CREATED":     1,
+		"POST_EVENT_TYPE_UPDATED":     2,
+		"POST_EVENT_TYPE_DELETED":     3,
+	}
+)
+
+func (x PostEventType) Enum() *PostEventType {
+	p := new(PostEventType)
+	*p = x
+	return p
+}
+
+func (x PostEventType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PostEventType) Descriptor() protoreflect.EnumDescriptor {
+	return file_redyx_common_v1_events_proto_enumTypes[0].Descriptor()
+}
+
+func (PostEventType) Type() protoreflect.EnumType {
+	return &file_redyx_common_v1_events_proto_enumTypes[0]
+}
+
+func (x PostEventType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PostEventType.Descriptor instead.
+func (PostEventType) EnumDescriptor() ([]byte, []int) {
+	return file_redyx_common_v1_events_proto_rawDescGZIP(), []int{0}
+}
+
 // VoteEvent is published to Kafka when a vote is cast, changed, or removed.
 // Consumed by post-service (score updates) and user-service (karma updates).
 type VoteEvent struct {
@@ -124,6 +177,124 @@ func (x *VoteEvent) GetOccurredAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// PostEvent is published to Kafka when a post is created, updated, or deleted.
+// Consumed by search-service (indexing) and notification-service (alerts).
+type PostEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	EventId        string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	PostId         string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Body           string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	AuthorUsername string                 `protobuf:"bytes,5,opt,name=author_username,json=authorUsername,proto3" json:"author_username,omitempty"`
+	CommunityName  string                 `protobuf:"bytes,6,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	VoteScore      int32                  `protobuf:"varint,7,opt,name=vote_score,json=voteScore,proto3" json:"vote_score,omitempty"`
+	CommentCount   int32                  `protobuf:"varint,8,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	EventType      PostEventType          `protobuf:"varint,10,opt,name=event_type,json=eventType,proto3,enum=redyx.common.v1.PostEventType" json:"event_type,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *PostEvent) Reset() {
+	*x = PostEvent{}
+	mi := &file_redyx_common_v1_events_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PostEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PostEvent) ProtoMessage() {}
+
+func (x *PostEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_common_v1_events_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PostEvent.ProtoReflect.Descriptor instead.
+func (*PostEvent) Descriptor() ([]byte, []int) {
+	return file_redyx_common_v1_events_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PostEvent) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *PostEvent) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *PostEvent) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *PostEvent) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *PostEvent) GetAuthorUsername() string {
+	if x != nil {
+		return x.AuthorUsername
+	}
+	return ""
+}
+
+func (x *PostEvent) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *PostEvent) GetVoteScore() int32 {
+	if x != nil {
+		return x.VoteScore
+	}
+	return 0
+}
+
+func (x *PostEvent) GetCommentCount() int32 {
+	if x != nil {
+		return x.CommentCount
+	}
+	return 0
+}
+
+func (x *PostEvent) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *PostEvent) GetEventType() PostEventType {
+	if x != nil {
+		return x.EventType
+	}
+	return PostEventType_POST_EVENT_TYPE_UNSPECIFIED
+}
+
 var File_redyx_common_v1_events_proto protoreflect.FileDescriptor
 
 const file_redyx_common_v1_events_proto_rawDesc = "" +
@@ -140,7 +311,27 @@ const file_redyx_common_v1_events_proto_rawDesc = "" +
 	"scoreDelta\x12!\n" +
 	"\fcommunity_id\x18\a \x01(\tR\vcommunityId\x12;\n" +
 	"\voccurred_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAtB\xb5\x01\n" +
+	"occurredAt\"\xf7\x02\n" +
+	"\tPostEvent\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x04 \x01(\tR\x04body\x12'\n" +
+	"\x0fauthor_username\x18\x05 \x01(\tR\x0eauthorUsername\x12%\n" +
+	"\x0ecommunity_name\x18\x06 \x01(\tR\rcommunityName\x12\x1d\n" +
+	"\n" +
+	"vote_score\x18\a \x01(\x05R\tvoteScore\x12#\n" +
+	"\rcomment_count\x18\b \x01(\x05R\fcommentCount\x129\n" +
+	"\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n" +
+	"\n" +
+	"event_type\x18\n" +
+	" \x01(\x0e2\x1e.redyx.common.v1.PostEventTypeR\teventType*\x87\x01\n" +
+	"\rPostEventType\x12\x1f\n" +
+	"\x1bPOST_EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17POST_EVENT_TYPE_CREATED\x10\x01\x12\x1b\n" +
+	"\x17POST_EVENT_TYPE_UPDATED\x10\x02\x12\x1b\n" +
+	"\x17POST_EVENT_TYPE_DELETED\x10\x03B\xb5\x01\n" +
 	"\x13com.redyx.common.v1B\vEventsProtoP\x01Z3github.com/redyx/redyx/gen/redyx/common/v1;commonv1\xa2\x02\x03RCX\xaa\x02\x0fRedyx.Common.V1\xca\x02\x0fRedyx\\Common\\V1\xe2\x02\x1bRedyx\\Common\\V1\\GPBMetadata\xea\x02\x11Redyx::Common::V1b\x06proto3"
 
 var (
@@ -155,18 +346,23 @@ func file_redyx_common_v1_events_proto_rawDescGZIP() []byte {
 	return file_redyx_common_v1_events_proto_rawDescData
 }
 
-var file_redyx_common_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_redyx_common_v1_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_redyx_common_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_redyx_common_v1_events_proto_goTypes = []any{
-	(*VoteEvent)(nil),             // 0: redyx.common.v1.VoteEvent
-	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(PostEventType)(0),            // 0: redyx.common.v1.PostEventType
+	(*VoteEvent)(nil),             // 1: redyx.common.v1.VoteEvent
+	(*PostEvent)(nil),             // 2: redyx.common.v1.PostEvent
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
 }
 var file_redyx_common_v1_events_proto_depIdxs = []int32{
-	1, // 0: redyx.common.v1.VoteEvent.occurred_at:type_name -> google.protobuf.Timestamp
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: redyx.common.v1.VoteEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	3, // 1: redyx.common.v1.PostEvent.created_at:type_name -> google.protobuf.Timestamp
+	0, // 2: redyx.common.v1.PostEvent.event_type:type_name -> redyx.common.v1.PostEventType
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_redyx_common_v1_events_proto_init() }
@@ -179,13 +375,14 @@ func file_redyx_common_v1_events_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_common_v1_events_proto_rawDesc), len(file_redyx_common_v1_events_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_redyx_common_v1_events_proto_goTypes,
 		DependencyIndexes: file_redyx_common_v1_events_proto_depIdxs,
+		EnumInfos:         file_redyx_common_v1_events_proto_enumTypes,
 		MessageInfos:      file_redyx_common_v1_events_proto_msgTypes,
 	}.Build()
 	File_redyx_common_v1_events_proto = out.File

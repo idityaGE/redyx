@@ -16,3 +16,26 @@ message VoteEvent {
   string community_id = 7;
   google.protobuf.Timestamp occurred_at = 8;
 }
+
+// PostEventType indicates what happened to a post.
+enum PostEventType {
+  POST_EVENT_TYPE_UNSPECIFIED = 0;
+  POST_EVENT_TYPE_CREATED = 1;
+  POST_EVENT_TYPE_UPDATED = 2;
+  POST_EVENT_TYPE_DELETED = 3;
+}
+
+// PostEvent is published to Kafka when a post is created, updated, or deleted.
+// Consumed by search-service (indexing) and notification-service (alerts).
+message PostEvent {
+  string event_id = 1;
+  string post_id = 2;
+  string title = 3;
+  string body = 4;
+  string author_username = 5;
+  string community_name = 6;
+  int32 vote_score = 7;
+  int32 comment_count = 8;
+  google.protobuf.Timestamp created_at = 9;
+  PostEventType event_type = 10;
+}
