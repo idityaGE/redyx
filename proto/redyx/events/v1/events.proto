@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package redyx.events.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// CommentEvent is published to Kafka when a comment is created.
+// Consumed by notification-service (reply/mention notifications).
+message CommentEvent {
+  string event_id = 1;
+  string comment_id = 2;
+  string post_id = 3;
+  string author_id = 4;
+  string author_username = 5;
+  // Parent comment ID for replies. Empty for top-level comments.
+  string parent_comment_id = 6;
+  // Author of the parent comment (for reply notifications).
+  string parent_comment_author_id = 7;
+  // Author of the post (for "someone commented on your post" notifications).
+  string post_author_id = 8;
+  string community_name = 9;
+  string body = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// PostEventType classifies the mutation that produced a PostEvent.
+enum PostEventType {
+  POST_EVENT_TYPE_UNSPECIFIED = 0;
+  POST_EVENT_TYPE_CREATED = 1;
+  POST_EVENT_TYPE_UPDATED = 2;
+  POST_EVENT_TYPE_DELETED = 3;
+}
+
+// PostEvent is published to Kafka when a post is created, updated, or deleted.
+// Consumed by search-service (index updates).
+message PostEvent {
+  string event_id = 1;
+  string post_id = 2;
+  string title = 3;
+  string body = 4;
+  string author_username = 5;
+  string community_name = 6;
+  int32 vote_score = 7;
+  int32 comment_count = 8;
+  google.protobuf.Timestamp created_at = 9;
+  PostEventType event_type = 10;
+}

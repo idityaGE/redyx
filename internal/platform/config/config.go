@@ -44,6 +44,19 @@ type Config struct {
 	// ScyllaDB fields (Phase 4 — comments)
 	ScyllaDBHosts    string
 	ScyllaDBKeyspace string
+
+	// Meilisearch fields (Phase 5 — search)
+	MeilisearchURL    string
+	MeilisearchAPIKey string
+
+	// MinIO / S3 fields (Phase 5 — media)
+	MinIOEndpoint  string
+	MinIOAccessKey string
+	MinIOSecretKey string
+	MinIOBucket    string
+
+	// WebSocket fields (Phase 5 — notifications)
+	WebSocketPort int
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -88,6 +101,19 @@ func Load(serviceName string) *Config {
 		// ScyllaDB
 		ScyllaDBHosts:    envStr("SCYLLADB_HOSTS", "localhost:9042"),
 		ScyllaDBKeyspace: envStr("SCYLLADB_KEYSPACE", "redyx_comments"),
+
+		// Meilisearch
+		MeilisearchURL:    envStr("MEILISEARCH_URL", "http://meilisearch:7700"),
+		MeilisearchAPIKey: envStr("MEILISEARCH_API_KEY", "dev-master-key"),
+
+		// MinIO / S3
+		MinIOEndpoint:  envStr("MINIO_ENDPOINT", "http://minio:9000"),
+		MinIOAccessKey: envStr("MINIO_ACCESS_KEY", "minioadmin"),
+		MinIOSecretKey: envStr("MINIO_SECRET_KEY", "minioadmin"),
+		MinIOBucket:    envStr("MINIO_BUCKET", "redyx-media"),
+
+		// WebSocket
+		WebSocketPort: envInt("WEBSOCKET_PORT", 8081),
 	}
 
 	logger.Info("loaded config",
