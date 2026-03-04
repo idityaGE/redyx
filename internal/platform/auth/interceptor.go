@@ -80,6 +80,10 @@ var publicMethods = map[string]bool{
 	"/redyx.post.v1.PostService/GetPost":      true,
 	"/redyx.post.v1.PostService/ListPosts":    true,
 	"/redyx.post.v1.PostService/ListHomeFeed": true,
+	// Comment service — public browsing
+	"/redyx.comment.v1.CommentService/GetComment":   true,
+	"/redyx.comment.v1.CommentService/ListComments": true,
+	"/redyx.comment.v1.CommentService/ListReplies":  true,
 	// Health check
 	"/grpc.health.v1.Health/Check": true,
 }
