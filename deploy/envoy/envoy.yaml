@@ -35,6 +35,16 @@ static_resources:
               routes:
               # Routes match on incoming REST paths (match_incoming_request_route: true)
               # Specific routes BEFORE catch-all (Envoy uses first-match)
+
+              # WebSocket for notifications — BEFORE all other routes
+              # Must bypass gRPC transcoder (WebSocket is raw HTTP/1.1 upgrade)
+              - match: { prefix: "/api/v1/ws/notifications" }
+                route:
+                  cluster: notification-ws
+                  timeout: 0s
+                  upgrade_configs:
+                    - upgrade_type: websocket
+
               - match: { prefix: "/api/v1/auth/" }
                 route:
                   cluster: auth-service
@@ -42,6 +52,21 @@ static_resources:
               - match: { prefix: "/api/v1/users/" }
                 route:
                   cluster: user-service
+                  timeout: 30s
+              # Search routes
+              - match: { prefix: "/api/v1/search" }
+                route:
+                  cluster: search-service
+                  timeout: 30s
+              # Notification routes
+              - match: { prefix: "/api/v1/notifications" }
+                route:
+                  cluster: notification-service
+                  timeout: 30s
+              # Media routes
+              - match: { prefix: "/api/v1/media" }
+                route:
+                  cluster: media-service
                   timeout: 30s
               # Comment routes — BEFORE post catch-all (Pitfall 15)
               # Matches: GET/POST /api/v1/posts/{post_id}/comments
@@ -105,6 +130,9 @@ static_resources:
                 - redyx.post.v1.PostService
                 - redyx.vote.v1.VoteService
                 - redyx.comment.v1.CommentService
+                - redyx.search.v1.SearchService
+                - redyx.notification.v1.NotificationService
+                - redyx.media.v1.MediaService
               # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
               match_incoming_request_route: true
               print_options:
@@ -230,3 +258,63 @@ static_resources:
         - endpoint:
             address:
               socket_address: { address: comment-service, port_value: 50057 }
+
+  - name: search-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: search-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: search-service, port_value: 50058 }
+
+  - name: notification-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: notification-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: notification-service, port_value: 50059 }
+
+  - name: notification-ws
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    # CRITICAL: WebSocket requires HTTP/1.1, NOT HTTP/2
+    load_assignment:
+      cluster_name: notification-ws
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: notification-service, port_value: 8081 }
+
+  - name: media-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: media-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: media-service, port_value: 50060 }
