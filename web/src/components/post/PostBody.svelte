@@ -8,13 +8,35 @@
 
   let { body }: Props = $props();
 
+  // Custom renderer: external links open in new tab, auto-prefix protocol
+  const renderer = new marked.Renderer();
+  renderer.link = ({ href, title, tokens }) => {
+    const text = marked.Parser.parseInline(tokens);
+    // Auto-prefix https:// for bare domains (e.g. "iditya.dev" → "https://iditya.dev")
+    let url = href;
+    if (url && !/^https?:\/\/|^mailto:|^#|^\//.test(url)) {
+      url = 'https://' + url;
+    }
+    const isExternal = url && /^https?:\/\//.test(url);
+    const attrs = [
+      `href="${url}"`,
+      title ? `title="${title}"` : '',
+      isExternal ? 'target="_blank" rel="noopener noreferrer"' : '',
+    ].filter(Boolean).join(' ');
+    return `<a ${attrs}>${text}</a>`;
+  };
+
   // Configure marked for terminal-friendly rendering
   marked.setOptions({
     breaks: true,
     gfm: true,
+    renderer,
   });
 
-  let html = $derived(DOMPurify.sanitize(marked.parse(body) as string));
+  // DOMPurify: allow target and rel attributes on links
+  let html = $derived(DOMPurify.sanitize(marked.parse(body) as string, {
+    ADD_ATTR: ['target', 'rel'],
+  }));
 </script>
 
 <div class="prose-terminal font-mono text-sm text-terminal-fg">
