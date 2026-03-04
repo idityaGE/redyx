@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Auth + User + Community (Full Stack)** - Identity services + registration/login/profile/community frontend pages ✓ (2026-03-03)
 - [x] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components ✓ (2026-03-03)
 - [x] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI ✓ (2026-03-04)
-- [ ] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend
+- [x] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend ✓ (2026-03-05)
 - [ ] **Phase 6: Moderation + Spam (Full Stack)** - Moderation tools + mod dashboard, report UI, spam feedback frontend
 - [ ] **Phase 7: Deployment + Observability** - Kubernetes deployment, monitoring stack, performance optimization
 
@@ -117,15 +117,15 @@ Plans:
 **Plans**: 9 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Event proto definitions + Kafka producers for comment-service and post-service
-- [ ] 05-02-PLAN.md — Search service backend: Meilisearch integration, Kafka post indexer, community autocomplete
-- [ ] 05-03-PLAN.md — Notification service backend: Kafka consumer, PostgreSQL store, WebSocket hub, mention detection
-- [ ] 05-04-PLAN.md — Media service backend: presigned URL uploads, S3/MinIO integration, thumbnail generation
-- [ ] 05-05-PLAN.md — Docker Compose + Envoy wiring: Meilisearch, MinIO, 3 new services, WebSocket route
-- [ ] 05-06-PLAN.md — Frontend search: SearchBar with autocomplete, search results page, Header integration
-- [ ] 05-07-PLAN.md — Frontend notifications: WebSocket client, NotificationBell, dropdown, preferences page
-- [ ] 05-08-PLAN.md — Frontend media: drag-and-drop upload, progress bars, gallery, lightbox
-- [ ] 05-09-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
+- [x] 05-01-PLAN.md — Event proto definitions + Kafka producers for comment-service and post-service ✓
+- [x] 05-02-PLAN.md — Search service backend: Meilisearch integration, Kafka post indexer, community autocomplete ✓
+- [x] 05-03-PLAN.md — Notification service backend: Kafka consumer, PostgreSQL store, WebSocket hub, mention detection ✓
+- [x] 05-04-PLAN.md — Media service backend: presigned URL uploads, S3/MinIO integration, thumbnail generation ✓
+- [x] 05-05-PLAN.md — Docker Compose + Envoy wiring: Meilisearch, MinIO, 3 new services, WebSocket route ✓
+- [x] 05-06-PLAN.md — Frontend search: SearchBar with autocomplete, search results page, Header integration ✓
+- [x] 05-07-PLAN.md — Frontend notifications: WebSocket client, NotificationBell, dropdown, preferences page ✓
+- [x] 05-08-PLAN.md — Frontend media: drag-and-drop upload, progress bars, gallery, lightbox ✓
+- [x] 05-09-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint ✓
 
 ### Phase 6: Moderation + Spam (Full Stack)
 **Goal**: Communities have moderation tools and the platform detects/prevents spam — with frontend moderation dashboard, report dialogs, and mod log views
@@ -169,6 +169,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Auth + User + Community (Full Stack) | 10/10 | ✓ Complete | 2026-03-03 |
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
 | 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
-| 5. Search + Notifications + Media (Full Stack) | 0/9 | Planned | - |
+| 5. Search + Notifications + Media (Full Stack) | 9/9 | ✓ Complete | 2026-03-05 |
 | 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
 | 7. Deployment + Observability | 0/? | Not started | - |

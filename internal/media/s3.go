@@ -13,18 +13,25 @@ import (
 
 // S3Client wraps the AWS S3 client for MinIO-compatible object storage.
 type S3Client struct {
-	client   *s3.Client
-	presign  *s3.PresignClient
-	bucket   string
-	endpoint string
+	client         *s3.Client
+	presign        *s3.PresignClient
+	bucket         string
+	endpoint       string
+	publicEndpoint string
 }
 
 // NewS3Client creates an S3 client configured for MinIO with path-style addressing.
-func NewS3Client(endpoint, accessKey, secretKey, region, bucket string) (*S3Client, error) {
+// publicEndpoint is the browser-reachable URL used for presigned upload URLs.
+// If empty, it defaults to endpoint (works when MinIO is directly reachable).
+func NewS3Client(endpoint, publicEndpoint, accessKey, secretKey, region, bucket string) (*S3Client, error) {
 	if region == "" {
 		region = "us-east-1"
 	}
+	if publicEndpoint == "" {
+		publicEndpoint = endpoint
+	}
 
+	// Internal client for server-side operations (GetObject, HeadObject, etc.)
 	client := s3.New(s3.Options{
 		BaseEndpoint: aws.String(endpoint),
 		Region:       region,
@@ -32,13 +39,22 @@ func NewS3Client(endpoint, accessKey, secretKey, region, bucket string) (*S3Clie
 		UsePathStyle: true, // CRITICAL for MinIO — virtual-hosted style won't work
 	})
 
-	presign := s3.NewPresignClient(client)
+	// Presign client uses public endpoint so browser can reach the upload URL.
+	// In Docker dev, internal=http://minio:9000, public=http://localhost:9000.
+	presignClient := s3.New(s3.Options{
+		BaseEndpoint: aws.String(publicEndpoint),
+		Region:       region,
+		Credentials:  credentials.NewStaticCredentialsProvider(accessKey, secretKey, ""),
+		UsePathStyle: true,
+	})
+	presign := s3.NewPresignClient(presignClient)
 
 	return &S3Client{
-		client:   client,
-		presign:  presign,
-		bucket:   bucket,
-		endpoint: endpoint,
+		client:         client,
+		presign:        presign,
+		bucket:         bucket,
+		endpoint:       endpoint,
+		publicEndpoint: publicEndpoint,
 	}, nil
 }
 
@@ -74,9 +90,9 @@ func (c *S3Client) ObjectExists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-// GetObjectURL constructs the public URL for an object (MinIO endpoint + bucket + key).
+// GetObjectURL constructs the public URL for an object (public MinIO endpoint + bucket + key).
 func (c *S3Client) GetObjectURL(key string) string {
-	return fmt.Sprintf("%s/%s/%s", c.endpoint, c.bucket, key)
+	return fmt.Sprintf("%s/%s/%s", c.publicEndpoint, c.bucket, key)
 }
 
 // GetObject downloads an object from the bucket and returns the body as an io.ReadCloser.

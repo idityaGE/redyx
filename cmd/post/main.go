@@ -83,6 +83,16 @@ func main() {
 	}
 	defer communityPool.Close()
 
+	// Connect to media database for resolving media IDs → URLs
+	mediaPool, err := pgxpool.New(context.Background(), cfg.MediaDatabaseURL)
+	if err != nil {
+		logger.Warn("failed to connect to media database, media posts disabled", zap.Error(err))
+		mediaPool = nil
+	}
+	if mediaPool != nil {
+		defer mediaPool.Close()
+	}
+
 	// Create post cache
 	cache := post.NewCache(rdb, voteRdb)
 
@@ -118,7 +128,7 @@ func main() {
 	)
 
 	// Create and register post service
-	postServer := post.NewServer(shardRouter, cache, postProducer, communityPool, logger)
+	postServer := post.NewServer(shardRouter, cache, postProducer, communityPool, mediaPool, logger)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 
 	// Start background hot score refresh goroutine

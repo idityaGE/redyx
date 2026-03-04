@@ -41,6 +41,9 @@ type Config struct {
 	// Community DB for cross-service lookups (Phase 3)
 	CommunityDatabaseURL string
 
+	// Media DB for cross-service lookups (Phase 5 — resolving media IDs to URLs)
+	MediaDatabaseURL string
+
 	// ScyllaDB fields (Phase 4 — comments)
 	ScyllaDBHosts    string
 	ScyllaDBKeyspace string
@@ -50,10 +53,11 @@ type Config struct {
 	MeilisearchAPIKey string
 
 	// MinIO / S3 fields (Phase 5 — media)
-	MinIOEndpoint  string
-	MinIOAccessKey string
-	MinIOSecretKey string
-	MinIOBucket    string
+	MinIOEndpoint       string
+	MinIOPublicEndpoint string // Browser-reachable URL for presigned uploads (defaults to MinIOEndpoint)
+	MinIOAccessKey      string
+	MinIOSecretKey      string
+	MinIOBucket         string
 
 	// WebSocket fields (Phase 5 — notifications)
 	WebSocketPort int
@@ -98,6 +102,9 @@ func Load(serviceName string) *Config {
 		// Community DB
 		CommunityDatabaseURL: envStr("COMMUNITY_DATABASE_URL", "postgres://redyx:dev@postgres:5432/community?sslmode=disable"),
 
+		// Media DB
+		MediaDatabaseURL: envStr("MEDIA_DATABASE_URL", "postgres://redyx:dev@postgres:5432/media?sslmode=disable"),
+
 		// ScyllaDB
 		ScyllaDBHosts:    envStr("SCYLLADB_HOSTS", "localhost:9042"),
 		ScyllaDBKeyspace: envStr("SCYLLADB_KEYSPACE", "redyx_comments"),
@@ -107,10 +114,11 @@ func Load(serviceName string) *Config {
 		MeilisearchAPIKey: envStr("MEILISEARCH_API_KEY", "dev-master-key"),
 
 		// MinIO / S3
-		MinIOEndpoint:  envStr("MINIO_ENDPOINT", "http://minio:9000"),
-		MinIOAccessKey: envStr("MINIO_ACCESS_KEY", "minioadmin"),
-		MinIOSecretKey: envStr("MINIO_SECRET_KEY", "minioadmin"),
-		MinIOBucket:    envStr("MINIO_BUCKET", "redyx-media"),
+		MinIOEndpoint:       envStr("MINIO_ENDPOINT", "http://minio:9000"),
+		MinIOPublicEndpoint: envStr("MINIO_PUBLIC_ENDPOINT", envStr("MINIO_ENDPOINT", "http://minio:9000")),
+		MinIOAccessKey:      envStr("MINIO_ACCESS_KEY", "minioadmin"),
+		MinIOSecretKey:      envStr("MINIO_SECRET_KEY", "minioadmin"),
+		MinIOBucket:         envStr("MINIO_BUCKET", "redyx-media"),
 
 		// WebSocket
 		WebSocketPort: envInt("WEBSOCKET_PORT", 8081),

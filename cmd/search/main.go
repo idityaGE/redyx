@@ -56,6 +56,10 @@ func main() {
 	// Seed community autocomplete from community database.
 	go seedCommunityAutocomplete(cfg, meili, searchRedis, logger)
 
+	// Backfill existing posts into Meilisearch from post shard databases.
+	// This ensures posts created before the Kafka producer was active are searchable.
+	go seedPostsFromShards(cfg, meili, logger)
+
 	// Create rate limiter with search Redis client.
 	limiter := ratelimit.New(searchRedis)
 
@@ -160,6 +164,61 @@ func seedCommunityAutocomplete(cfg *config.Config, meili *search.MeiliClient, re
 	}
 
 	logger.Info("seeded community autocomplete", zap.Int("count", seeded))
+}
+
+// seedPostsFromShards queries all post shard databases and indexes every non-deleted
+// post into Meilisearch. Meilisearch upserts by document ID, so re-running is safe.
+// This backfills posts that were created before the Kafka producer existed.
+func seedPostsFromShards(cfg *config.Config, meili *search.MeiliClient, logger *zap.Logger) {
+	ctx := context.Background()
+	var total int
+
+	for i, dsn := range cfg.PostShardDSNs {
+		pool, err := pgxpool.New(ctx, dsn)
+		if err != nil {
+			logger.Warn("failed to connect to post shard for seeding",
+				zap.Int("shard", i), zap.Error(err))
+			continue
+		}
+
+		rows, err := pool.Query(ctx,
+			`SELECT id, title, body, author_username, community_name, vote_score, comment_count,
+				EXTRACT(EPOCH FROM created_at)::bigint
+			 FROM posts WHERE is_deleted = false ORDER BY created_at DESC`)
+		if err != nil {
+			logger.Warn("failed to query posts from shard", zap.Int("shard", i), zap.Error(err))
+			pool.Close()
+			continue
+		}
+
+		for rows.Next() {
+			var (
+				id, title, body, authorUsername, communityName string
+				voteScore, commentCount                        int32
+				createdAt                                      int64
+			)
+			if err := rows.Scan(&id, &title, &body, &authorUsername, &communityName, &voteScore, &commentCount, &createdAt); err != nil {
+				logger.Warn("failed to scan post row", zap.Error(err))
+				continue
+			}
+
+			if err := meili.IndexPost(id, title, body, authorUsername, communityName, voteScore, commentCount, createdAt); err != nil {
+				logger.Warn("failed to seed post into meilisearch",
+					zap.String("post_id", id), zap.Error(err))
+				continue
+			}
+			total++
+		}
+
+		if err := rows.Err(); err != nil {
+			logger.Warn("post rows iteration error", zap.Int("shard", i), zap.Error(err))
+		}
+
+		rows.Close()
+		pool.Close()
+	}
+
+	logger.Info("seeded posts from database shards", zap.Int("count", total))
 }
 
 // redisURL adjusts a Redis URL to use a specific database number.

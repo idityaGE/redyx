@@ -15,8 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
@@ -34,16 +32,18 @@ type Server struct {
 	cache       *Cache
 	producer    *PostProducer
 	communityDB *pgxpool.Pool
+	mediaDB     *pgxpool.Pool
 	logger      *zap.Logger
 }
 
 // NewServer creates a new post gRPC server.
-func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityDB *pgxpool.Pool, logger *zap.Logger) *Server {
+func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityDB *pgxpool.Pool, mediaDB *pgxpool.Pool, logger *zap.Logger) *Server {
 	return &Server{
 		shards:      shards,
 		cache:       cache,
 		producer:    producer,
 		communityDB: communityDB,
+		mediaDB:     mediaDB,
 		logger:      logger,
 	}
 }
@@ -102,7 +102,9 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 			return nil, fmt.Errorf("invalid URL: %w", perrors.ErrInvalidInput)
 		}
 	case postv1.PostType_POST_TYPE_MEDIA:
-		return nil, status.Error(codes.Unimplemented, "media posts not yet supported — coming in Phase 5")
+		if len(req.GetMediaIds()) == 0 {
+			return nil, fmt.Errorf("media post requires at least one media_id: %w", perrors.ErrInvalidInput)
+		}
 	default:
 		return nil, fmt.Errorf("unknown post type: %w", perrors.ErrInvalidInput)
 	}
@@ -116,6 +118,49 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	communityID, err := s.resolveCommunity(ctx, communityName)
 	if err != nil {
 		return nil, err
+	}
+
+	// Verify user is a member of the community
+	if s.communityDB != nil {
+		var isMember bool
+		err := s.communityDB.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM community_members WHERE community_id = $1 AND user_id = $2)`,
+			communityID, claims.UserID,
+		).Scan(&isMember)
+		if err != nil {
+			return nil, fmt.Errorf("check membership: %w", err)
+		}
+		if !isMember {
+			return nil, fmt.Errorf("you must join the community before posting: %w", perrors.ErrForbidden)
+		}
+	}
+
+	// Resolve media IDs → URLs for media posts
+	var mediaURLs []string
+	var thumbnailURL string
+	if postType == postv1.PostType_POST_TYPE_MEDIA && s.mediaDB != nil {
+		for _, mediaID := range req.GetMediaIds() {
+			var mediaURL, thumbURL, mediaStatus string
+			err := s.mediaDB.QueryRow(ctx,
+				`SELECT COALESCE(url, ''), COALESCE(thumbnail_url, ''), status FROM media_items WHERE id = $1`,
+				mediaID,
+			).Scan(&mediaURL, &thumbURL, &mediaStatus)
+			if err != nil {
+				return nil, fmt.Errorf("media item %q not found: %w", mediaID, perrors.ErrInvalidInput)
+			}
+			if mediaStatus != "ready" {
+				return nil, fmt.Errorf("media item %q is not ready (status: %s): %w", mediaID, mediaStatus, perrors.ErrInvalidInput)
+			}
+			if mediaURL != "" {
+				mediaURLs = append(mediaURLs, mediaURL)
+			}
+			if thumbnailURL == "" && thumbURL != "" {
+				thumbnailURL = thumbURL
+			}
+		}
+		if len(mediaURLs) == 0 {
+			return nil, fmt.Errorf("no valid media URLs resolved: %w", perrors.ErrInvalidInput)
+		}
 	}
 
 	// Use community name as shard routing key (all posts for a community on same shard)
@@ -134,11 +179,11 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	var createdAt time.Time
 	err = pool.QueryRow(ctx,
 		`INSERT INTO posts (title, body, url, post_type, author_id, author_username,
-		                    community_id, community_name, hot_score, is_anonymous, created_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		                    community_id, community_name, hot_score, is_anonymous, media_urls, thumbnail_url, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		 RETURNING id, created_at`,
 		title, body, postURL, int16(postType), authorID, authorUsername,
-		communityID, communityName, initialHot, isAnonymous, now,
+		communityID, communityName, initialHot, isAnonymous, mediaURLs, thumbnailURL, now,
 	).Scan(&postID, &createdAt)
 	if err != nil {
 		return nil, fmt.Errorf("insert post: %w", err)
@@ -185,6 +230,8 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 			IsDeleted:      false,
 			IsPinned:       false,
 			IsAnonymous:    isAnonymous,
+			MediaUrls:      mediaURLs,
+			ThumbnailUrl:   thumbnailURL,
 			CreatedAt:      timestamppb.New(createdAt),
 		},
 	}, nil
@@ -432,7 +479,7 @@ func (s *Server) ListPosts(ctx context.Context, req *postv1.ListPostsRequest) (*
 
 	baseSelect := `SELECT id, title, body, url, post_type, author_id, author_username,
 		community_id, community_name, vote_score, comment_count, hot_score,
-		is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
+		is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, media_urls, created_at, edited_at
 		FROM posts WHERE community_name = $1 AND is_deleted = false`
 	args = append(args, communityName)
 	argIdx++
@@ -913,7 +960,7 @@ func (s *Server) getPostFromPool(ctx context.Context, pool *pgxpool.Pool, postID
 	row := pool.QueryRow(ctx,
 		`SELECT id, title, body, url, post_type, author_id, author_username,
 		        community_id, community_name, vote_score, comment_count, hot_score,
-		        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
+		        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, media_urls, created_at, edited_at
 		 FROM posts WHERE id = $1`,
 		postID,
 	)
@@ -1027,7 +1074,7 @@ func (s *Server) queryShardForFeed(ctx context.Context, pool *pgxpool.Pool, comm
 		baseSelect = fmt.Sprintf(
 			`SELECT id, title, body, url, post_type, author_id, author_username,
 			        community_id, community_name, vote_score, comment_count, hot_score,
-			        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
+			        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, media_urls, created_at, edited_at
 			 FROM posts WHERE community_name IN (%s) AND is_deleted = false`,
 			strings.Join(placeholders, ","),
 		)
@@ -1035,7 +1082,7 @@ func (s *Server) queryShardForFeed(ctx context.Context, pool *pgxpool.Pool, comm
 		// Public feed: all posts
 		baseSelect = `SELECT id, title, body, url, post_type, author_id, author_username,
 		        community_id, community_name, vote_score, comment_count, hot_score,
-		        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, created_at, edited_at
+		        is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, media_urls, created_at, edited_at
 		 FROM posts WHERE is_deleted = false`
 	}
 
@@ -1160,6 +1207,7 @@ func scanPostRow(row pgx.Row) (*postv1.Post, error) {
 		voteScore, commentCount                            int32
 		hotScore                                           float64
 		isEdited, isDeleted, isPinned, isAnonymous         bool
+		mediaURLs                                          []string
 		createdAt                                          time.Time
 		editedAt                                           *time.Time
 	)
@@ -1167,7 +1215,7 @@ func scanPostRow(row pgx.Row) (*postv1.Post, error) {
 	if err := row.Scan(
 		&id, &title, &body, &postURL, &postType, &authorID, &authorUsername,
 		&communityID, &communityName, &voteScore, &commentCount, &hotScore,
-		&isEdited, &isDeleted, &isPinned, &isAnonymous, &thumbnailURL, &createdAt, &editedAt,
+		&isEdited, &isDeleted, &isPinned, &isAnonymous, &thumbnailURL, &mediaURLs, &createdAt, &editedAt,
 	); err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, err
@@ -1192,6 +1240,7 @@ func scanPostRow(row pgx.Row) (*postv1.Post, error) {
 		IsPinned:       isPinned,
 		IsAnonymous:    isAnonymous,
 		ThumbnailUrl:   thumbnailURL,
+		MediaUrls:      mediaURLs,
 		CreatedAt:      timestamppb.New(createdAt),
 	}
 
@@ -1213,6 +1262,7 @@ func scanPosts(rows pgx.Rows) ([]*postWithScore, error) {
 			voteScore, commentCount                            int32
 			hotScore                                           float64
 			isEdited, isDeleted, isPinned, isAnonymous         bool
+			mediaURLs                                          []string
 			createdAt                                          time.Time
 			editedAt                                           *time.Time
 		)
@@ -1220,7 +1270,7 @@ func scanPosts(rows pgx.Rows) ([]*postWithScore, error) {
 		if err := rows.Scan(
 			&id, &title, &body, &postURL, &postType, &authorID, &authorUsername,
 			&communityID, &communityName, &voteScore, &commentCount, &hotScore,
-			&isEdited, &isDeleted, &isPinned, &isAnonymous, &thumbnailURL, &createdAt, &editedAt,
+			&isEdited, &isDeleted, &isPinned, &isAnonymous, &thumbnailURL, &mediaURLs, &createdAt, &editedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan post: %w", err)
 		}
@@ -1242,6 +1292,7 @@ func scanPosts(rows pgx.Rows) ([]*postWithScore, error) {
 			IsPinned:       isPinned,
 			IsAnonymous:    isAnonymous,
 			ThumbnailUrl:   thumbnailURL,
+			MediaUrls:      mediaURLs,
 			CreatedAt:      timestamppb.New(createdAt),
 		}
 		if editedAt != nil {

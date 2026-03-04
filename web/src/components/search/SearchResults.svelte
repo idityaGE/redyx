@@ -17,9 +17,8 @@
   type SearchResponse = {
     results: SearchResult[];
     pagination: {
+      nextCursor: string;
       totalCount: number;
-      limit: number;
-      offset: number;
       hasMore: boolean;
     };
   };
@@ -30,7 +29,7 @@
   let sort = $state<'relevance' | 'recency' | 'score'>('relevance');
   let query = $state('');
   let community = $state<string | null>(null);
-  let offset = $state(0);
+  let nextCursor = $state('');
   let hasMore = $state(false);
   let loadingMore = $state(false);
 
@@ -53,18 +52,16 @@
       loadingMore = true;
     } else {
       loading = true;
-      offset = 0;
+      nextCursor = '';
     }
 
     try {
-      let url = `/search/posts?query=${encodeURIComponent(query)}&pagination.limit=${LIMIT}&pagination.offset=${offset}`;
-      if (community) {
-        url += `&communityName=${encodeURIComponent(community)}`;
+      let url = `/search/posts?query=${encodeURIComponent(query)}&pagination.limit=${LIMIT}`;
+      if (nextCursor) {
+        url += `&pagination.cursor=${encodeURIComponent(nextCursor)}`;
       }
-      if (sort === 'recency') {
-        url += '&sort=createdAt:desc';
-      } else if (sort === 'score') {
-        url += '&sort=voteScore:desc';
+      if (community) {
+        url += `&community_name=${encodeURIComponent(community)}`;
       }
 
       const data = await api<SearchResponse>(url);
@@ -75,6 +72,7 @@
         results = data.results ?? [];
       }
 
+      nextCursor = data.pagination?.nextCursor ?? '';
       totalHits = data.pagination?.totalCount ?? results.length;
       hasMore = data.pagination?.hasMore ?? false;
     } catch {
@@ -90,13 +88,12 @@
     // Subscribe to sort value
     const _s = sort;
     if (query) {
-      offset = 0;
+      nextCursor = '';
       fetchResults();
     }
   });
 
   function loadMore() {
-    offset += LIMIT;
     fetchResults(true);
   }
 

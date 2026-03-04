@@ -8,8 +8,16 @@
     memberCount: number;
   };
 
+  /** Post search result for inline suggestions */
+  type PostSuggestion = {
+    postId: string;
+    title: string;
+    communityName: string;
+  };
+
   let query = $state('');
   let suggestions = $state<CommunitySuggestion[]>([]);
+  let postSuggestions = $state<PostSuggestion[]>([]);
   let showDropdown = $state(false);
 
   // Auto-detect community scope from URL path
@@ -44,13 +52,20 @@
 
     debounceTimer = setTimeout(async () => {
       try {
-        const data = await api<{ suggestions: CommunitySuggestion[] }>(
-          `/search/communities?query=${encodeURIComponent(q)}&limit=8`
-        );
-        suggestions = data.suggestions ?? [];
-        showDropdown = suggestions.length > 0;
+        const [commData, postData] = await Promise.all([
+          api<{ suggestions: CommunitySuggestion[] }>(
+            `/search/communities?query=${encodeURIComponent(q)}&limit=5`
+          ),
+          api<{ results: PostSuggestion[] }>(
+            `/search/posts?query=${encodeURIComponent(q)}&pagination.limit=5`
+          ),
+        ]);
+        suggestions = commData.suggestions ?? [];
+        postSuggestions = postData.results ?? [];
+        showDropdown = suggestions.length > 0 || postSuggestions.length > 0;
       } catch {
         suggestions = [];
+        postSuggestions = [];
         showDropdown = false;
       }
     }, 300);
@@ -129,17 +144,42 @@
     />
   </div>
 
-  {#if showDropdown && suggestions.length > 0}
-    <div class="absolute top-full left-0 right-0 mt-1 bg-terminal-bg border border-terminal-border rounded shadow-lg z-50 max-h-64 overflow-y-auto">
-      {#each suggestions as suggestion}
-        <button
-          class="w-full text-left px-3 py-1.5 text-xs font-mono flex items-center justify-between hover:bg-terminal-surface transition-colors cursor-pointer"
-          onclick={() => navigateToCommunity(suggestion.name)}
+  {#if showDropdown}
+    <div class="absolute top-full left-0 right-0 mt-1 bg-terminal-bg border border-terminal-border rounded shadow-lg z-50 max-h-72 overflow-y-auto">
+      {#if suggestions.length > 0}
+        <div class="px-3 py-1 text-[10px] text-terminal-dim uppercase tracking-wider border-b border-terminal-border">communities</div>
+        {#each suggestions as suggestion}
+          <button
+            class="w-full text-left px-3 py-1.5 text-xs font-mono flex items-center justify-between hover:bg-terminal-surface transition-colors cursor-pointer"
+            onclick={() => navigateToCommunity(suggestion.name)}
+          >
+            <span class="text-terminal-fg">r/{suggestion.name}</span>
+            <span class="text-terminal-dim">{formatMemberCount(suggestion.memberCount)} members</span>
+          </button>
+        {/each}
+      {/if}
+      {#if postSuggestions.length > 0}
+        <div class="px-3 py-1 text-[10px] text-terminal-dim uppercase tracking-wider border-b border-terminal-border {suggestions.length > 0 ? 'border-t' : ''}">posts</div>
+        {#each postSuggestions as post}
+          <a
+            href="/post/{post.postId}"
+            class="block w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-terminal-surface transition-colors"
+            onclick={() => { showDropdown = false; }}
+          >
+            <div class="text-terminal-fg truncate">{@html post.title}</div>
+            <div class="text-terminal-dim text-[10px]">r/{post.communityName}</div>
+          </a>
+        {/each}
+      {/if}
+      {#if query.trim().length >= 2}
+        <a
+          href="/search?q={encodeURIComponent(query.trim())}"
+          class="block w-full text-left px-3 py-1.5 text-xs font-mono text-accent-500 hover:bg-terminal-surface transition-colors border-t border-terminal-border"
+          onclick={() => { showDropdown = false; }}
         >
-          <span class="text-terminal-fg">r/{suggestion.name}</span>
-          <span class="text-terminal-dim">{formatMemberCount(suggestion.memberCount)} members</span>
-        </button>
-      {/each}
+          &gt; search all for "{query.trim()}"
+        </a>
+      {/if}
     </div>
   {/if}
 </div>

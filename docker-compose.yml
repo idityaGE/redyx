@@ -133,6 +133,7 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       POST_SHARD_DSNS: "postgres://redyx:dev@postgres:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgres:5432/posts_shard_1?sslmode=disable"
       COMMUNITY_DATABASE_URL: "postgres://redyx:dev@postgres:5432/community?sslmode=disable"
+      MEDIA_DATABASE_URL: "postgres://redyx:dev@postgres:5432/media?sslmode=disable"
     ports: ["50055:50055"]
     depends_on:
       postgres:
@@ -296,6 +297,7 @@ services:
       GRPC_PORT: "50060"
       JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
       MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_PUBLIC_ENDPOINT: "http://localhost:9000"
       MINIO_ACCESS_KEY: "minioadmin"
       MINIO_SECRET_KEY: "minioadmin"
       MINIO_BUCKET: "redyx-media"

@@ -63,8 +63,11 @@ func main() {
 	defer mediaRedis.Close()
 
 	// Create S3/MinIO client
+	// publicEndpoint is what the browser uses for presigned uploads (e.g. http://localhost:9000)
+	// endpoint is what the server uses internally (e.g. http://minio:9000)
 	s3Client, err := media.NewS3Client(
 		cfg.MinIOEndpoint,
+		cfg.MinIOPublicEndpoint,
 		cfg.MinIOAccessKey,
 		cfg.MinIOSecretKey,
 		"us-east-1",
