@@ -75,12 +75,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Notifications (NOTF)
 
-- [ ] **NOTF-01**: User receives notification when someone replies to their post or comment
-- [ ] **NOTF-02**: User receives notification when mentioned with u/username
-- [ ] **NOTF-03**: Notifications delivered in real time via WebSocket (within 1 second)
-- [ ] **NOTF-04**: Offline notifications stored in PostgreSQL and delivered on next WebSocket connection
-- [ ] **NOTF-05**: User can mark individual or all notifications as read
-- [ ] **NOTF-06**: User can configure notification preferences (mute communities, mute reply types)
+- [x] **NOTF-01**: User receives notification when someone replies to their post or comment
+- [x] **NOTF-02**: User receives notification when mentioned with u/username
+- [x] **NOTF-03**: Notifications delivered in real time via WebSocket (within 1 second)
+- [x] **NOTF-04**: Offline notifications stored in PostgreSQL and delivered on next WebSocket connection
+- [x] **NOTF-05**: User can mark individual or all notifications as read
+- [x] **NOTF-06**: User can configure notification preferences (mute communities, mute reply types)
 
 ### Media (MDIA)
 
@@ -217,12 +217,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-02 | Phase 5 | Pending |
 | SRCH-03 | Phase 5 | Pending |
 | SRCH-04 | Phase 5 | Pending |
-| NOTF-01 | Phase 5 | Pending |
-| NOTF-02 | Phase 5 | Pending |
-| NOTF-03 | Phase 5 | Pending |
-| NOTF-04 | Phase 5 | Pending |
-| NOTF-05 | Phase 5 | Pending |
-| NOTF-06 | Phase 5 | Pending |
+| NOTF-01 | Phase 5 | Complete |
+| NOTF-02 | Phase 5 | Complete |
+| NOTF-03 | Phase 5 | Complete |
+| NOTF-04 | Phase 5 | Complete |
+| NOTF-05 | Phase 5 | Complete |
+| NOTF-06 | Phase 5 | Complete |
 | MDIA-01 | Phase 5 | Complete |
 | MDIA-02 | Phase 5 | Complete |
 | MDIA-03 | Phase 5 | Complete |

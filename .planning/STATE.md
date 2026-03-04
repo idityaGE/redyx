@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 5 of 7 — In Progress
-Plan: 1 of 9 complete in Phase 5
+Plan: 3 of 9 complete in Phase 5
 Status: Executing Phase 5 plans
-Last activity: 2026-03-04 — Completed 05-04-PLAN.md (Media service backend)
+Last activity: 2026-03-04 — Completed 05-03-PLAN.md (Notification service backend)
 
-Progress: [█████████░] 93% (Plan 25/33 overall, Phase 5: 1/9)
+Progress: [█████████░] 93% (Plan 27/33 overall, Phase 5: 3/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 27
 - Average duration: ~9 min
-- Total execution time: ~3.5 hours
+- Total execution time: ~3.6 hours
 
 **By Phase:**
 
@@ -47,7 +47,7 @@ Progress: [█████████░] 93% (Plan 25/33 overall, Phase 5: 1/9
 | 02-auth-user-community | 10/10 | ~123 min | ~12 min |
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 | 04-comments | 4/4 | ~34 min | ~9 min |
-| 05-search-notifications-media | 1/9 | ~6 min | ~6 min |
+| 05-search-notifications-media | 3/9 | ~19 min | ~6 min |
 
 *Updated after each plan completion*
 
@@ -147,6 +147,11 @@ Recent decisions affecting current work:
 - [05-04]: Video thumbnails deferred, return empty thumbnail_url for videos
 - [05-04]: S3 path-style addressing (UsePathStyle: true) for MinIO compatibility
 - [05-04]: Redis DB 9 reserved for media-service rate limiting
+- [05-03]: nhooyr.io/websocket v1 over gorilla/websocket (archived) for WebSocket support
+- [05-03]: JWT token via query parameter for WebSocket auth (no custom headers post-handshake)
+- [05-03]: Redis DB 8 reserved for notification-service unread count cache
+- [05-03]: Dual-server pattern: gRPC (50059) + HTTP/WebSocket (8081) from same main.go
+- [05-03]: Mention notifications use username as target (no cross-service user lookup in v1)
 
 ### Context from Init
 
@@ -173,9 +178,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T21:00:20Z
-Stopped at: Completed 05-04-PLAN.md
+Last session: 2026-03-04T21:02:04Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-05 — Phase 4 complete (4/4 plans, verified), ready for Phase 5*
+*Last updated: 2026-03-04 — Phase 5 in progress (3/9 plans complete)*
