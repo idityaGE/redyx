@@ -160,6 +160,41 @@ services:
       kafka:
         condition: service_healthy
 
+  scylladb:
+    image: scylladb/scylla:6.2
+    ports: ["9042:9042"]
+    command: --smp 1 --memory 512M --developer-mode 1
+    volumes:
+      - scylla-data:/var/lib/scylla
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  comment-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: comment
+    environment:
+      SCYLLADB_HOSTS: "scylladb:9042"
+      SCYLLADB_KEYSPACE: "redyx_comments"
+      REDIS_URL: redis://redis:6379/6
+      GRPC_PORT: "50057"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      KAFKA_BROKERS: "kafka:9092"
+    ports: ["50057:50057"]
+    depends_on:
+      scylladb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   envoy:
     image: envoyproxy/envoy:v1.37.0
     ports:
@@ -175,6 +210,8 @@ services:
       - community-service
       - post-service
       - vote-service
+      - comment-service
 
 volumes:
   pg-data:
+  scylla-data:
