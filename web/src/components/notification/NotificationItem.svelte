@@ -38,8 +38,8 @@
   const typeInfo = $derived(getTypeLabel(notification.type));
 
   function buildLink(n: Notification): string {
-    if (n.communityName && n.postId) {
-      return `/community/${encodeURIComponent(n.communityName)}/post/${encodeURIComponent(n.postId)}`;
+    if (n.postId) {
+      return `/post/${encodeURIComponent(n.postId)}`;
     }
     return '#';
   }

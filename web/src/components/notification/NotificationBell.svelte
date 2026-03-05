@@ -11,17 +11,25 @@
   let incoming = $state<any[]>([]);
   let authed = $state(isAuthenticated());
   let authLoading = $state(isLoading());
+  let initialFetchDone = $state(false);
 
   let socketHandle: NotificationSocketHandle | null = null;
 
   function handleNewNotification(data: any) {
-    unreadCount += 1;
+    // Only increment unread count for genuinely new notifications arriving
+    // after the initial API fetch. The WebSocket also delivers offline/undelivered
+    // notifications on connect, which are already counted in the API's unreadCount.
+    if (initialFetchDone) {
+      unreadCount += 1;
+    }
     incoming = [data, ...incoming];
   }
 
   async function startSocket() {
     const token = getAccessToken();
     if (!token) return;
+
+    initialFetchDone = false;
 
     // Fetch initial unread count
     try {
@@ -35,8 +43,13 @@
       // Fallback: 0 unread
     }
 
-    // Connect WebSocket
+    // Connect WebSocket — offline notifications delivered on connect are already
+    // counted in unreadCount above, so mark initial fetch as done only after
+    // a short delay to allow the WebSocket's offline delivery burst to complete.
     socketHandle = createNotificationSocket(token, handleNewNotification);
+    setTimeout(() => {
+      initialFetchDone = true;
+    }, 2000);
   }
 
   function toggleDropdown(e: MouseEvent) {

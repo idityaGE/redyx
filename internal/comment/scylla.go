@@ -163,6 +163,16 @@ func (s *Store) CreateComment(ctx context.Context, postID, parentID, authorID, a
 		return nil, fmt.Errorf("insert comments_by_id: %w", err)
 	}
 
+	// Insert into comments_by_author for profile page queries
+	if err := s.session.Query(
+		`INSERT INTO redyx_comments.comments_by_author
+		 (author_username, created_at, comment_id, post_id, body, vote_score, is_deleted)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		authorUsername, now, commentID, postUUID, body, 0, false,
+	).WithContext(ctx).Exec(); err != nil {
+		s.logger.Warn("failed to insert into comments_by_author", zap.Error(err))
+	}
+
 	// If replying, increment parent's reply_count in both tables
 	if parentID != "" {
 		// Read current reply_count
@@ -298,6 +308,16 @@ func (s *Store) DeleteComment(ctx context.Context, commentID string) error {
 		"[deleted]", "[deleted]", emptyUUID, c.PostID, c.Path,
 	).WithContext(ctx).Exec(); err != nil {
 		return fmt.Errorf("delete comments_by_post: %w", err)
+	}
+
+	// Soft delete in comments_by_author
+	if c.AuthorUsername != "" && c.AuthorUsername != "[deleted]" {
+		if err := s.session.Query(
+			`UPDATE redyx_comments.comments_by_author SET is_deleted = true, body = ? WHERE author_username = ? AND created_at = ? AND comment_id = ?`,
+			"[deleted]", c.AuthorUsername, c.CreatedAt, c.CommentID,
+		).WithContext(ctx).Exec(); err != nil {
+			s.logger.Warn("failed to soft-delete in comments_by_author", zap.Error(err))
+		}
 	}
 
 	return nil

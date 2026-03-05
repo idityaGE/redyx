@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gocql/gocql"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
@@ -77,11 +79,7 @@ func main() {
 		),
 	)
 
-	// Register UserService
-	userServer := user.NewServer(db, logger)
-	userv1.RegisterUserServiceServer(srv.Server(), userServer)
-
-	// Connect to post shard databases for karma consumer author lookups
+	// Connect to post shard databases for GetUserPosts queries and karma consumer
 	var postShards []*pgxpool.Pool
 	for _, dsn := range cfg.PostShardDSNs {
 		shardCtx, shardCancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -98,7 +96,33 @@ func main() {
 			pool.Close()
 		}
 	}()
-	logger.Info("connected to post shards for karma lookups", zap.Int("shard_count", len(postShards)))
+	logger.Info("connected to post shards", zap.Int("shard_count", len(postShards)))
+
+	// Connect to ScyllaDB for GetUserComments queries
+	var scyllaSession *gocql.Session
+	if cfg.ScyllaDBHosts != "" {
+		scyllaSession, err = connectScyllaDB(cfg.ScyllaDBHosts, cfg.ScyllaDBKeyspace, logger)
+		if err != nil {
+			logger.Warn("failed to connect to scylladb, GetUserComments will return empty", zap.Error(err))
+		} else {
+			defer scyllaSession.Close()
+			logger.Info("connected to scylladb for user comments",
+				zap.String("hosts", cfg.ScyllaDBHosts),
+				zap.String("keyspace", cfg.ScyllaDBKeyspace),
+			)
+		}
+	}
+
+	// Register UserService with post shards and ScyllaDB for profile queries
+	var serverOpts []user.ServerOption
+	if len(postShards) > 0 {
+		serverOpts = append(serverOpts, user.WithPostShards(postShards))
+	}
+	if scyllaSession != nil {
+		serverOpts = append(serverOpts, user.WithScyllaDB(scyllaSession))
+	}
+	userServer := user.NewServer(db, logger, serverOpts...)
+	userv1.RegisterUserServiceServer(srv.Server(), userServer)
 
 	// Start karma consumer goroutine if Kafka brokers configured
 	var karmaConsumer *vote.KarmaConsumer
@@ -182,4 +206,35 @@ func runMigrations(ctx context.Context, db *pgxpool.Pool, logger *zap.Logger) er
 	}
 
 	return nil
+}
+
+// connectScyllaDB connects to ScyllaDB with a specific keyspace.
+// Retries up to 10 times (2s apart = 20s total) to handle slow ScyllaDB startup.
+func connectScyllaDB(hosts, keyspace string, logger *zap.Logger) (*gocql.Session, error) {
+	hostList := strings.Split(hosts, ",")
+	for i := range hostList {
+		hostList[i] = strings.TrimSpace(hostList[i])
+	}
+
+	cluster := gocql.NewCluster(hostList...)
+	cluster.Consistency = gocql.Quorum
+	cluster.Timeout = 10 * time.Second
+	cluster.ConnectTimeout = 10 * time.Second
+	cluster.Keyspace = keyspace
+
+	var session *gocql.Session
+	var err error
+
+	for attempt := 1; attempt <= 10; attempt++ {
+		session, err = cluster.CreateSession()
+		if err == nil {
+			return session, nil
+		}
+		logger.Warn("scylladb connection attempt failed, retrying...",
+			zap.Int("attempt", attempt),
+			zap.Error(err),
+		)
+		time.Sleep(2 * time.Second)
+	}
+	return nil, fmt.Errorf("scylladb connect failed after 10 retries: %w", err)
 }

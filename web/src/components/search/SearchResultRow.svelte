@@ -22,7 +22,7 @@
 <div class="flex items-start gap-3 px-2 py-2 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group">
   <div class="flex-1 min-w-0">
     <a
-      href="/community/{result.communityName}/post/{result.postId}"
+      href="/post/{result.postId}"
       class="text-terminal-fg group-hover:text-accent-500 transition-colors text-sm block"
     >
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
