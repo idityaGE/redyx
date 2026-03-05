@@ -72,6 +72,7 @@ services:
       GRPC_PORT: "50053"
       JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
       KAFKA_BROKERS: "kafka:9092"
+      POST_SHARD_DSNS: "postgres://redyx:dev@postgres:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgres:5432/posts_shard_1?sslmode=disable"
     ports: ["50053:50053"]
     depends_on:
       postgres:

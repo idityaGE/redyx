@@ -81,6 +81,25 @@ func main() {
 	userServer := user.NewServer(db, logger)
 	userv1.RegisterUserServiceServer(srv.Server(), userServer)
 
+	// Connect to post shard databases for karma consumer author lookups
+	var postShards []*pgxpool.Pool
+	for _, dsn := range cfg.PostShardDSNs {
+		shardCtx, shardCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		pool, err := database.NewPostgres(shardCtx, dsn)
+		shardCancel()
+		if err != nil {
+			logger.Warn("failed to connect to post shard, karma author lookup may be limited", zap.Error(err))
+			continue
+		}
+		postShards = append(postShards, pool)
+	}
+	defer func() {
+		for _, pool := range postShards {
+			pool.Close()
+		}
+	}()
+	logger.Info("connected to post shards for karma lookups", zap.Int("shard_count", len(postShards)))
+
 	// Start karma consumer goroutine if Kafka brokers configured
 	var karmaConsumer *vote.KarmaConsumer
 	consumerCtx, consumerCancel := context.WithCancel(context.Background())
@@ -88,7 +107,7 @@ func main() {
 
 	if cfg.KafkaBrokers != "" {
 		brokers := strings.Split(cfg.KafkaBrokers, ",")
-		kc, err := vote.NewKarmaConsumer(brokers, rdb, db, logger)
+		kc, err := vote.NewKarmaConsumer(brokers, rdb, db, postShards, logger)
 		if err != nil {
 			logger.Warn("failed to create karma consumer, karma updates disabled", zap.Error(err))
 		} else {
@@ -100,6 +119,7 @@ func main() {
 			}()
 			logger.Info("karma consumer started",
 				zap.String("brokers", cfg.KafkaBrokers),
+				zap.Int("post_shards", len(postShards)),
 			)
 		}
 	}
