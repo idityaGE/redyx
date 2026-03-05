@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
+	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	userv1 "github.com/redyx/redyx/gen/redyx/user/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
@@ -109,13 +110,28 @@ func main() {
 		logger.Info("connected to comment-service gRPC", zap.String("addr", commentServiceAddr))
 	}
 
-	// Register UserService with post-service and comment-service gRPC clients
+	// Connect to community-service via gRPC for GetUserCommunities.
+	communityServiceAddr := envStr("COMMUNITY_SERVICE_ADDR", "community-service:50054")
+	var communityClient communityv1.CommunityServiceClient
+	communityConn, err := grpc.NewClient(communityServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to community-service, GetUserCommunities will return empty", zap.Error(err))
+	} else {
+		defer communityConn.Close()
+		communityClient = communityv1.NewCommunityServiceClient(communityConn)
+		logger.Info("connected to community-service gRPC", zap.String("addr", communityServiceAddr))
+	}
+
+	// Register UserService with post/comment/community gRPC clients
 	var serverOpts []user.ServerOption
 	if postClient != nil {
 		serverOpts = append(serverOpts, user.WithPostClient(postClient))
 	}
 	if commentClient != nil {
 		serverOpts = append(serverOpts, user.WithCommentClient(commentClient))
+	}
+	if communityClient != nil {
+		serverOpts = append(serverOpts, user.WithCommunityClient(communityClient))
 	}
 	userServer := user.NewServer(db, logger, serverOpts...)
 	userv1.RegisterUserServiceServer(srv.Server(), userServer)

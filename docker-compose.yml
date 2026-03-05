@@ -74,6 +74,7 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       POST_SERVICE_ADDR: "post-service:50055"
       COMMENT_SERVICE_ADDR: "comment-service:50057"
+      COMMUNITY_SERVICE_ADDR: "community-service:50054"
     ports: ["50053:50053"]
     depends_on:
       postgres:
@@ -85,6 +86,8 @@ services:
       post-service:
         condition: service_started
       comment-service:
+        condition: service_started
+      community-service:
         condition: service_started
 
   community-service:

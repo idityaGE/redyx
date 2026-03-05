@@ -777,6 +777,163 @@ func (x *GetUserCommentsResponse) GetPagination() *v1.PaginationResponse {
 	return nil
 }
 
+type GetUserCommunitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Pagination    *v1.PaginationRequest  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCommunitiesRequest) Reset() {
+	*x = GetUserCommunitiesRequest{}
+	mi := &file_redyx_user_v1_user_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCommunitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCommunitiesRequest) ProtoMessage() {}
+
+func (x *GetUserCommunitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_user_v1_user_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCommunitiesRequest.ProtoReflect.Descriptor instead.
+func (*GetUserCommunitiesRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_user_v1_user_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetUserCommunitiesRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUserCommunitiesRequest) GetPagination() *v1.PaginationRequest {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+// CommunitySummary is a lightweight community reference for user membership queries.
+type CommunitySummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityId   string                 `protobuf:"bytes,1,opt,name=community_id,json=communityId,proto3" json:"community_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommunitySummary) Reset() {
+	*x = CommunitySummary{}
+	mi := &file_redyx_user_v1_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommunitySummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommunitySummary) ProtoMessage() {}
+
+func (x *CommunitySummary) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_user_v1_user_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommunitySummary.ProtoReflect.Descriptor instead.
+func (*CommunitySummary) Descriptor() ([]byte, []int) {
+	return file_redyx_user_v1_user_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CommunitySummary) GetCommunityId() string {
+	if x != nil {
+		return x.CommunityId
+	}
+	return ""
+}
+
+func (x *CommunitySummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GetUserCommunitiesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Communities   []*CommunitySummary    `protobuf:"bytes,1,rep,name=communities,proto3" json:"communities,omitempty"`
+	Pagination    *v1.PaginationResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCommunitiesResponse) Reset() {
+	*x = GetUserCommunitiesResponse{}
+	mi := &file_redyx_user_v1_user_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCommunitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCommunitiesResponse) ProtoMessage() {}
+
+func (x *GetUserCommunitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_user_v1_user_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCommunitiesResponse.ProtoReflect.Descriptor instead.
+func (*GetUserCommunitiesResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_user_v1_user_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetUserCommunitiesResponse) GetCommunities() []*CommunitySummary {
+	if x != nil {
+		return x.Communities
+	}
+	return nil
+}
+
+func (x *GetUserCommunitiesResponse) GetPagination() *v1.PaginationResponse {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
 var File_redyx_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_redyx_user_v1_user_proto_rawDesc = "" +
@@ -846,14 +1003,28 @@ const file_redyx_user_v1_user_proto_rawDesc = "" +
 	"\bcomments\x18\x01 \x03(\v2\x1d.redyx.user.v1.CommentSummaryR\bcomments\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination2\x80\x05\n" +
+	"pagination\"x\n" +
+	"\x19GetUserCommunitiesRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12B\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\".redyx.common.v1.PaginationRequestR\n" +
+	"pagination\"I\n" +
+	"\x10CommunitySummary\x12!\n" +
+	"\fcommunity_id\x18\x01 \x01(\tR\vcommunityId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xa4\x01\n" +
+	"\x1aGetUserCommunitiesResponse\x12A\n" +
+	"\vcommunities\x18\x01 \x03(\v2\x1f.redyx.user.v1.CommunitySummaryR\vcommunities\x12C\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
+	"pagination2\x99\x06\n" +
 	"\vUserService\x12s\n" +
 	"\n" +
 	"GetProfile\x12 .redyx.user.v1.GetProfileRequest\x1a!.redyx.user.v1.GetProfileResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/users/{username}\x12w\n" +
 	"\rUpdateProfile\x12#.redyx.user.v1.UpdateProfileRequest\x1a$.redyx.user.v1.UpdateProfileResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*2\x10/api/v1/users/me\x12t\n" +
 	"\rDeleteAccount\x12#.redyx.user.v1.DeleteAccountRequest\x1a$.redyx.user.v1.DeleteAccountResponse\"\x18\x82\xd3\xe4\x93\x02\x12*\x10/api/v1/users/me\x12\x7f\n" +
 	"\fGetUserPosts\x12\".redyx.user.v1.GetUserPostsRequest\x1a#.redyx.user.v1.GetUserPostsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/users/{username}/posts\x12\x8b\x01\n" +
-	"\x0fGetUserComments\x12%.redyx.user.v1.GetUserCommentsRequest\x1a&.redyx.user.v1.GetUserCommentsResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/users/{username}/commentsB\xa5\x01\n" +
+	"\x0fGetUserComments\x12%.redyx.user.v1.GetUserCommentsRequest\x1a&.redyx.user.v1.GetUserCommentsResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/users/{username}/comments\x12\x96\x01\n" +
+	"\x12GetUserCommunities\x12(.redyx.user.v1.GetUserCommunitiesRequest\x1a).redyx.user.v1.GetUserCommunitiesResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/users/{user_id}/communitiesB\xa5\x01\n" +
 	"\x11com.redyx.user.v1B\tUserProtoP\x01Z/github.com/redyx/redyx/gen/redyx/user/v1;userv1\xa2\x02\x03RUX\xaa\x02\rRedyx.User.V1\xca\x02\rRedyx\\User\\V1\xe2\x02\x19Redyx\\User\\V1\\GPBMetadata\xea\x02\x0fRedyx::User::V1b\x06proto3"
 
 var (
@@ -868,52 +1039,60 @@ func file_redyx_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_redyx_user_v1_user_proto_rawDescData
 }
 
-var file_redyx_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_redyx_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_redyx_user_v1_user_proto_goTypes = []any{
-	(*User)(nil),                    // 0: redyx.user.v1.User
-	(*GetProfileRequest)(nil),       // 1: redyx.user.v1.GetProfileRequest
-	(*GetProfileResponse)(nil),      // 2: redyx.user.v1.GetProfileResponse
-	(*UpdateProfileRequest)(nil),    // 3: redyx.user.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),   // 4: redyx.user.v1.UpdateProfileResponse
-	(*DeleteAccountRequest)(nil),    // 5: redyx.user.v1.DeleteAccountRequest
-	(*DeleteAccountResponse)(nil),   // 6: redyx.user.v1.DeleteAccountResponse
-	(*GetUserPostsRequest)(nil),     // 7: redyx.user.v1.GetUserPostsRequest
-	(*PostSummary)(nil),             // 8: redyx.user.v1.PostSummary
-	(*GetUserPostsResponse)(nil),    // 9: redyx.user.v1.GetUserPostsResponse
-	(*GetUserCommentsRequest)(nil),  // 10: redyx.user.v1.GetUserCommentsRequest
-	(*CommentSummary)(nil),          // 11: redyx.user.v1.CommentSummary
-	(*GetUserCommentsResponse)(nil), // 12: redyx.user.v1.GetUserCommentsResponse
-	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),    // 14: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil),   // 15: redyx.common.v1.PaginationResponse
+	(*User)(nil),                       // 0: redyx.user.v1.User
+	(*GetProfileRequest)(nil),          // 1: redyx.user.v1.GetProfileRequest
+	(*GetProfileResponse)(nil),         // 2: redyx.user.v1.GetProfileResponse
+	(*UpdateProfileRequest)(nil),       // 3: redyx.user.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),      // 4: redyx.user.v1.UpdateProfileResponse
+	(*DeleteAccountRequest)(nil),       // 5: redyx.user.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),      // 6: redyx.user.v1.DeleteAccountResponse
+	(*GetUserPostsRequest)(nil),        // 7: redyx.user.v1.GetUserPostsRequest
+	(*PostSummary)(nil),                // 8: redyx.user.v1.PostSummary
+	(*GetUserPostsResponse)(nil),       // 9: redyx.user.v1.GetUserPostsResponse
+	(*GetUserCommentsRequest)(nil),     // 10: redyx.user.v1.GetUserCommentsRequest
+	(*CommentSummary)(nil),             // 11: redyx.user.v1.CommentSummary
+	(*GetUserCommentsResponse)(nil),    // 12: redyx.user.v1.GetUserCommentsResponse
+	(*GetUserCommunitiesRequest)(nil),  // 13: redyx.user.v1.GetUserCommunitiesRequest
+	(*CommunitySummary)(nil),           // 14: redyx.user.v1.CommunitySummary
+	(*GetUserCommunitiesResponse)(nil), // 15: redyx.user.v1.GetUserCommunitiesResponse
+	(*timestamppb.Timestamp)(nil),      // 16: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),       // 17: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),      // 18: redyx.common.v1.PaginationResponse
 }
 var file_redyx_user_v1_user_proto_depIdxs = []int32{
-	13, // 0: redyx.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	16, // 0: redyx.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: redyx.user.v1.GetProfileResponse.user:type_name -> redyx.user.v1.User
 	0,  // 2: redyx.user.v1.UpdateProfileResponse.user:type_name -> redyx.user.v1.User
-	14, // 3: redyx.user.v1.GetUserPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
-	13, // 4: redyx.user.v1.PostSummary.created_at:type_name -> google.protobuf.Timestamp
+	17, // 3: redyx.user.v1.GetUserPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	16, // 4: redyx.user.v1.PostSummary.created_at:type_name -> google.protobuf.Timestamp
 	8,  // 5: redyx.user.v1.GetUserPostsResponse.posts:type_name -> redyx.user.v1.PostSummary
-	15, // 6: redyx.user.v1.GetUserPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	14, // 7: redyx.user.v1.GetUserCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
-	13, // 8: redyx.user.v1.CommentSummary.created_at:type_name -> google.protobuf.Timestamp
+	18, // 6: redyx.user.v1.GetUserPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	17, // 7: redyx.user.v1.GetUserCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	16, // 8: redyx.user.v1.CommentSummary.created_at:type_name -> google.protobuf.Timestamp
 	11, // 9: redyx.user.v1.GetUserCommentsResponse.comments:type_name -> redyx.user.v1.CommentSummary
-	15, // 10: redyx.user.v1.GetUserCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	1,  // 11: redyx.user.v1.UserService.GetProfile:input_type -> redyx.user.v1.GetProfileRequest
-	3,  // 12: redyx.user.v1.UserService.UpdateProfile:input_type -> redyx.user.v1.UpdateProfileRequest
-	5,  // 13: redyx.user.v1.UserService.DeleteAccount:input_type -> redyx.user.v1.DeleteAccountRequest
-	7,  // 14: redyx.user.v1.UserService.GetUserPosts:input_type -> redyx.user.v1.GetUserPostsRequest
-	10, // 15: redyx.user.v1.UserService.GetUserComments:input_type -> redyx.user.v1.GetUserCommentsRequest
-	2,  // 16: redyx.user.v1.UserService.GetProfile:output_type -> redyx.user.v1.GetProfileResponse
-	4,  // 17: redyx.user.v1.UserService.UpdateProfile:output_type -> redyx.user.v1.UpdateProfileResponse
-	6,  // 18: redyx.user.v1.UserService.DeleteAccount:output_type -> redyx.user.v1.DeleteAccountResponse
-	9,  // 19: redyx.user.v1.UserService.GetUserPosts:output_type -> redyx.user.v1.GetUserPostsResponse
-	12, // 20: redyx.user.v1.UserService.GetUserComments:output_type -> redyx.user.v1.GetUserCommentsResponse
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	18, // 10: redyx.user.v1.GetUserCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	17, // 11: redyx.user.v1.GetUserCommunitiesRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	14, // 12: redyx.user.v1.GetUserCommunitiesResponse.communities:type_name -> redyx.user.v1.CommunitySummary
+	18, // 13: redyx.user.v1.GetUserCommunitiesResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	1,  // 14: redyx.user.v1.UserService.GetProfile:input_type -> redyx.user.v1.GetProfileRequest
+	3,  // 15: redyx.user.v1.UserService.UpdateProfile:input_type -> redyx.user.v1.UpdateProfileRequest
+	5,  // 16: redyx.user.v1.UserService.DeleteAccount:input_type -> redyx.user.v1.DeleteAccountRequest
+	7,  // 17: redyx.user.v1.UserService.GetUserPosts:input_type -> redyx.user.v1.GetUserPostsRequest
+	10, // 18: redyx.user.v1.UserService.GetUserComments:input_type -> redyx.user.v1.GetUserCommentsRequest
+	13, // 19: redyx.user.v1.UserService.GetUserCommunities:input_type -> redyx.user.v1.GetUserCommunitiesRequest
+	2,  // 20: redyx.user.v1.UserService.GetProfile:output_type -> redyx.user.v1.GetProfileResponse
+	4,  // 21: redyx.user.v1.UserService.UpdateProfile:output_type -> redyx.user.v1.UpdateProfileResponse
+	6,  // 22: redyx.user.v1.UserService.DeleteAccount:output_type -> redyx.user.v1.DeleteAccountResponse
+	9,  // 23: redyx.user.v1.UserService.GetUserPosts:output_type -> redyx.user.v1.GetUserPostsResponse
+	12, // 24: redyx.user.v1.UserService.GetUserComments:output_type -> redyx.user.v1.GetUserCommentsResponse
+	15, // 25: redyx.user.v1.UserService.GetUserCommunities:output_type -> redyx.user.v1.GetUserCommunitiesResponse
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_redyx_user_v1_user_proto_init() }
@@ -927,7 +1106,7 @@ func file_redyx_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_user_v1_user_proto_rawDesc), len(file_redyx_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

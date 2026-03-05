@@ -69,9 +69,10 @@ var publicMethods = map[string]bool{
 	"/redyx.auth.v1.AuthService/GoogleOAuth":   true,
 	"/redyx.auth.v1.AuthService/RefreshToken":  true,
 	// User service — public profile viewing
-	"/redyx.user.v1.UserService/GetProfile":      true,
-	"/redyx.user.v1.UserService/GetUserPosts":    true,
-	"/redyx.user.v1.UserService/GetUserComments": true,
+	"/redyx.user.v1.UserService/GetProfile":         true,
+	"/redyx.user.v1.UserService/GetUserPosts":       true,
+	"/redyx.user.v1.UserService/GetUserComments":    true,
+	"/redyx.user.v1.UserService/GetUserCommunities": true,
 	// Community service — public browsing
 	"/redyx.community.v1.CommunityService/GetCommunity":        true,
 	"/redyx.community.v1.CommunityService/ListCommunities":     true,

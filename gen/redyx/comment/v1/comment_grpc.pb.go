@@ -47,6 +47,7 @@ type CommentServiceClient interface {
 	// ListReplies returns replies to a specific comment.
 	ListReplies(ctx context.Context, in *ListRepliesRequest, opts ...grpc.CallOption) (*ListRepliesResponse, error)
 	// ListCommentsByAuthor returns paginated comments authored by a given user.
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListCommentsByAuthor(ctx context.Context, in *ListCommentsByAuthorRequest, opts ...grpc.CallOption) (*ListCommentsByAuthorResponse, error)
 }
 
@@ -147,6 +148,7 @@ type CommentServiceServer interface {
 	// ListReplies returns replies to a specific comment.
 	ListReplies(context.Context, *ListRepliesRequest) (*ListRepliesResponse, error)
 	// ListCommentsByAuthor returns paginated comments authored by a given user.
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListCommentsByAuthor(context.Context, *ListCommentsByAuthorRequest) (*ListCommentsByAuthorResponse, error)
 	mustEmbedUnimplementedCommentServiceServer()
 }

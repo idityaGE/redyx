@@ -68,11 +68,8 @@ service PostService {
   }
 
   // ListUserPosts returns paginated posts by a specific user (public).
-  rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/users/{username}/posts"
-    };
-  }
+  // Called internally by user-service via gRPC — no public REST annotation.
+  rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {}
 }
 
 // PostType distinguishes between text, link, and media posts.

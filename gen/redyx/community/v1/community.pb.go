@@ -1465,7 +1465,7 @@ const file_redyx_community_v1_community_proto_rawDesc = "" +
 	"\x16VISIBILITY_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11VISIBILITY_PUBLIC\x10\x01\x12\x19\n" +
 	"\x15VISIBILITY_RESTRICTED\x10\x02\x12\x16\n" +
-	"\x12VISIBILITY_PRIVATE\x10\x032\xe9\v\n" +
+	"\x12VISIBILITY_PRIVATE\x10\x032\xbd\v\n" +
 	"\x10CommunityService\x12\x8a\x01\n" +
 	"\x0fCreateCommunity\x12*.redyx.community.v1.CreateCommunityRequest\x1a+.redyx.community.v1.CreateCommunityResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/communities\x12\x85\x01\n" +
 	"\fGetCommunity\x12'.redyx.community.v1.GetCommunityRequest\x1a(.redyx.community.v1.GetCommunityResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/communities/{name}\x12\x91\x01\n" +
@@ -1475,8 +1475,8 @@ const file_redyx_community_v1_community_proto_rawDesc = "" +
 	"\x0eLeaveCommunity\x12).redyx.community.v1.LeaveCommunityRequest\x1a*.redyx.community.v1.LeaveCommunityResponse\"*\x82\xd3\xe4\x93\x02$*\"/api/v1/communities/{name}/members\x12\x8a\x01\n" +
 	"\vListMembers\x12&.redyx.community.v1.ListMembersRequest\x1a'.redyx.community.v1.ListMembersResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/communities/{name}/members\x12\x9c\x01\n" +
 	"\x0fAssignModerator\x12*.redyx.community.v1.AssignModeratorRequest\x1a+.redyx.community.v1.AssignModeratorResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/communities/{name}/moderators\x12\xa3\x01\n" +
-	"\x0fRevokeModerator\x12*.redyx.community.v1.RevokeModeratorRequest\x1a+.redyx.community.v1.RevokeModeratorResponse\"7\x82\xd3\xe4\x93\x021*//api/v1/communities/{name}/moderators/{user_id}\x12\xa3\x01\n" +
-	"\x13ListUserCommunities\x12..redyx.community.v1.ListUserCommunitiesRequest\x1a/.redyx.community.v1.ListUserCommunitiesResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/users/{user_id}/communitiesB\xcd\x01\n" +
+	"\x0fRevokeModerator\x12*.redyx.community.v1.RevokeModeratorRequest\x1a+.redyx.community.v1.RevokeModeratorResponse\"7\x82\xd3\xe4\x93\x021*//api/v1/communities/{name}/moderators/{user_id}\x12x\n" +
+	"\x13ListUserCommunities\x12..redyx.community.v1.ListUserCommunitiesRequest\x1a/.redyx.community.v1.ListUserCommunitiesResponse\"\x00B\xcd\x01\n" +
 	"\x16com.redyx.community.v1B\x0eCommunityProtoP\x01Z9github.com/redyx/redyx/gen/redyx/community/v1;communityv1\xa2\x02\x03RCX\xaa\x02\x12Redyx.Community.V1\xca\x02\x12Redyx\\Community\\V1\xe2\x02\x1eRedyx\\Community\\V1\\GPBMetadata\xea\x02\x14Redyx::Community::V1b\x06proto3"
 
 var (

@@ -76,11 +76,8 @@ service CommunityService {
   }
 
   // ListUserCommunities returns the communities a user has joined.
-  rpc ListUserCommunities(ListUserCommunitiesRequest) returns (ListUserCommunitiesResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/users/{user_id}/communities"
-    };
-  }
+  // Called internally by user-service via gRPC — no public REST annotation.
+  rpc ListUserCommunities(ListUserCommunitiesRequest) returns (ListUserCommunitiesResponse) {}
 }
 
 // Visibility controls who can view and interact with a community.

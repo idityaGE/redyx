@@ -1466,7 +1466,7 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\x0fTIME_RANGE_WEEK\x10\x03\x12\x14\n" +
 	"\x10TIME_RANGE_MONTH\x10\x04\x12\x13\n" +
 	"\x0fTIME_RANGE_YEAR\x10\x05\x12\x12\n" +
-	"\x0eTIME_RANGE_ALL\x10\x062\xb5\b\n" +
+	"\x0eTIME_RANGE_ALL\x10\x062\x8e\b\n" +
 	"\vPostService\x12k\n" +
 	"\n" +
 	"CreatePost\x12 .redyx.post.v1.CreatePostRequest\x1a!.redyx.post.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12i\n" +
@@ -1478,8 +1478,8 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\tListPosts\x12\x1f.redyx.post.v1.ListPostsRequest\x1a .redyx.post.v1.ListPostsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/communities/{community_name}/posts\x12m\n" +
 	"\fListHomeFeed\x12\".redyx.post.v1.ListHomeFeedRequest\x1a#.redyx.post.v1.ListHomeFeedResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/feed\x12t\n" +
 	"\bSavePost\x12\x1e.redyx.post.v1.SavePostRequest\x1a\x1f.redyx.post.v1.SavePostResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/posts/{post_id}/save\x12t\n" +
-	"\x0eListSavedPosts\x12$.redyx.post.v1.ListSavedPostsRequest\x1a%.redyx.post.v1.ListSavedPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/saved\x12\x82\x01\n" +
-	"\rListUserPosts\x12#.redyx.post.v1.ListUserPostsRequest\x1a$.redyx.post.v1.ListUserPostsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/users/{username}/postsB\xa5\x01\n" +
+	"\x0eListSavedPosts\x12$.redyx.post.v1.ListSavedPostsRequest\x1a%.redyx.post.v1.ListSavedPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/saved\x12\\\n" +
+	"\rListUserPosts\x12#.redyx.post.v1.ListUserPostsRequest\x1a$.redyx.post.v1.ListUserPostsResponse\"\x00B\xa5\x01\n" +
 	"\x11com.redyx.post.v1B\tPostProtoP\x01Z/github.com/redyx/redyx/gen/redyx/post/v1;postv1\xa2\x02\x03RPX\xaa\x02\rRedyx.Post.V1\xca\x02\rRedyx\\Post\\V1\xe2\x02\x19Redyx\\Post\\V1\\GPBMetadata\xea\x02\x0fRedyx::Post::V1b\x06proto3"
 
 var (

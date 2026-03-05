@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetProfile_FullMethodName      = "/redyx.user.v1.UserService/GetProfile"
-	UserService_UpdateProfile_FullMethodName   = "/redyx.user.v1.UserService/UpdateProfile"
-	UserService_DeleteAccount_FullMethodName   = "/redyx.user.v1.UserService/DeleteAccount"
-	UserService_GetUserPosts_FullMethodName    = "/redyx.user.v1.UserService/GetUserPosts"
-	UserService_GetUserComments_FullMethodName = "/redyx.user.v1.UserService/GetUserComments"
+	UserService_GetProfile_FullMethodName         = "/redyx.user.v1.UserService/GetProfile"
+	UserService_UpdateProfile_FullMethodName      = "/redyx.user.v1.UserService/UpdateProfile"
+	UserService_DeleteAccount_FullMethodName      = "/redyx.user.v1.UserService/DeleteAccount"
+	UserService_GetUserPosts_FullMethodName       = "/redyx.user.v1.UserService/GetUserPosts"
+	UserService_GetUserComments_FullMethodName    = "/redyx.user.v1.UserService/GetUserComments"
+	UserService_GetUserCommunities_FullMethodName = "/redyx.user.v1.UserService/GetUserCommunities"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -42,6 +43,8 @@ type UserServiceClient interface {
 	GetUserPosts(ctx context.Context, in *GetUserPostsRequest, opts ...grpc.CallOption) (*GetUserPostsResponse, error)
 	// GetUserComments returns paginated comments by a specific user.
 	GetUserComments(ctx context.Context, in *GetUserCommentsRequest, opts ...grpc.CallOption) (*GetUserCommentsResponse, error)
+	// GetUserCommunities returns the communities a user has joined.
+	GetUserCommunities(ctx context.Context, in *GetUserCommunitiesRequest, opts ...grpc.CallOption) (*GetUserCommunitiesResponse, error)
 }
 
 type userServiceClient struct {
@@ -102,6 +105,16 @@ func (c *userServiceClient) GetUserComments(ctx context.Context, in *GetUserComm
 	return out, nil
 }
 
+func (c *userServiceClient) GetUserCommunities(ctx context.Context, in *GetUserCommunitiesRequest, opts ...grpc.CallOption) (*GetUserCommunitiesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserCommunitiesResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserCommunities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -118,6 +131,8 @@ type UserServiceServer interface {
 	GetUserPosts(context.Context, *GetUserPostsRequest) (*GetUserPostsResponse, error)
 	// GetUserComments returns paginated comments by a specific user.
 	GetUserComments(context.Context, *GetUserCommentsRequest) (*GetUserCommentsResponse, error)
+	// GetUserCommunities returns the communities a user has joined.
+	GetUserCommunities(context.Context, *GetUserCommunitiesRequest) (*GetUserCommunitiesResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -142,6 +157,9 @@ func (UnimplementedUserServiceServer) GetUserPosts(context.Context, *GetUserPost
 }
 func (UnimplementedUserServiceServer) GetUserComments(context.Context, *GetUserCommentsRequest) (*GetUserCommentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserComments not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserCommunities(context.Context, *GetUserCommunitiesRequest) (*GetUserCommunitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserCommunities not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -254,6 +272,24 @@ func _UserService_GetUserComments_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUserCommunities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserCommunitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserCommunities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserCommunities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserCommunities(ctx, req.(*GetUserCommunitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +316,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserComments",
 			Handler:    _UserService_GetUserComments_Handler,
+		},
+		{
+			MethodName: "GetUserCommunities",
+			Handler:    _UserService_GetUserCommunities_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

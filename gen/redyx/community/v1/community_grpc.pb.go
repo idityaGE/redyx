@@ -56,6 +56,7 @@ type CommunityServiceClient interface {
 	// RevokeModerator removes moderator role from a user (owner only).
 	RevokeModerator(ctx context.Context, in *RevokeModeratorRequest, opts ...grpc.CallOption) (*RevokeModeratorResponse, error)
 	// ListUserCommunities returns the communities a user has joined.
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserCommunities(ctx context.Context, in *ListUserCommunitiesRequest, opts ...grpc.CallOption) (*ListUserCommunitiesResponse, error)
 }
 
@@ -192,6 +193,7 @@ type CommunityServiceServer interface {
 	// RevokeModerator removes moderator role from a user (owner only).
 	RevokeModerator(context.Context, *RevokeModeratorRequest) (*RevokeModeratorResponse, error)
 	// ListUserCommunities returns the communities a user has joined.
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserCommunities(context.Context, *ListUserCommunitiesRequest) (*ListUserCommunitiesResponse, error)
 	mustEmbedUnimplementedCommunityServiceServer()
 }

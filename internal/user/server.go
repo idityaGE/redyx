@@ -16,6 +16,7 @@ import (
 
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	userv1 "github.com/redyx/redyx/gen/redyx/user/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
@@ -25,10 +26,11 @@ import (
 // Server implements the UserServiceServer gRPC interface.
 type Server struct {
 	userv1.UnimplementedUserServiceServer
-	db            *pgxpool.Pool
-	postClient    postv1.PostServiceClient       // gRPC client for post-service
-	commentClient commentv1.CommentServiceClient // gRPC client for comment-service
-	logger        *zap.Logger
+	db              *pgxpool.Pool
+	postClient      postv1.PostServiceClient           // gRPC client for post-service
+	commentClient   commentv1.CommentServiceClient     // gRPC client for comment-service
+	communityClient communityv1.CommunityServiceClient // gRPC client for community-service
+	logger          *zap.Logger
 }
 
 // NewServer creates a new user service server with database and logger dependencies.
@@ -57,6 +59,13 @@ func WithPostClient(client postv1.PostServiceClient) ServerOption {
 func WithCommentClient(client commentv1.CommentServiceClient) ServerOption {
 	return func(s *Server) {
 		s.commentClient = client
+	}
+}
+
+// WithCommunityClient configures the community-service gRPC client for GetUserCommunities.
+func WithCommunityClient(client communityv1.CommunityServiceClient) ServerOption {
+	return func(s *Server) {
+		s.communityClient = client
 	}
 }
 
@@ -391,5 +400,44 @@ func (s *Server) GetUserComments(ctx context.Context, req *userv1.GetUserComment
 	return &userv1.GetUserCommentsResponse{
 		Comments:   comments,
 		Pagination: resp.GetPagination(),
+	}, nil
+}
+
+// GetUserCommunities returns the communities a user has joined.
+// Delegates to community-service via gRPC (ListUserCommunities RPC).
+func (s *Server) GetUserCommunities(ctx context.Context, req *userv1.GetUserCommunitiesRequest) (*userv1.GetUserCommunitiesResponse, error) {
+	userID := req.GetUserId()
+	if userID == "" {
+		return nil, fmt.Errorf("user_id is required: %w", perrors.ErrInvalidInput)
+	}
+
+	if s.communityClient == nil {
+		s.logger.Warn("GetUserCommunities: no community-service client configured, returning empty")
+		return &userv1.GetUserCommunitiesResponse{
+			Communities: []*userv1.CommunitySummary{},
+			Pagination:  &commonv1.PaginationResponse{},
+		}, nil
+	}
+
+	resp, err := s.communityClient.ListUserCommunities(ctx, &communityv1.ListUserCommunitiesRequest{
+		UserId:     userID,
+		Pagination: req.GetPagination(),
+	})
+	if err != nil {
+		s.logger.Error("failed to call community-service ListUserCommunities", zap.Error(err))
+		return nil, fmt.Errorf("list user communities: %w", err)
+	}
+
+	var communities []*userv1.CommunitySummary
+	for _, c := range resp.GetCommunities() {
+		communities = append(communities, &userv1.CommunitySummary{
+			CommunityId: c.CommunityId,
+			Name:        c.Name,
+		})
+	}
+
+	return &userv1.GetUserCommunitiesResponse{
+		Communities: communities,
+		Pagination:  resp.GetPagination(),
 	}, nil
 }

@@ -53,11 +53,8 @@ service CommentService {
   }
 
   // ListCommentsByAuthor returns paginated comments authored by a given user.
-  rpc ListCommentsByAuthor(ListCommentsByAuthorRequest) returns (ListCommentsByAuthorResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/users/{username}/comments"
-    };
-  }
+  // Called internally by user-service via gRPC — no public REST annotation.
+  rpc ListCommentsByAuthor(ListCommentsByAuthorRequest) returns (ListCommentsByAuthorResponse) {}
 }
 
 // CommentSortOrder for comment sorting within a post.

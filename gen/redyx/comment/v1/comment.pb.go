@@ -1121,7 +1121,7 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\x17COMMENT_SORT_ORDER_BEST\x10\x01\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_TOP\x10\x02\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_NEW\x10\x03\x12$\n" +
-	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xf0\a\n" +
+	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xc6\a\n" +
 	"\x0eCommentService\x12\x8d\x01\n" +
 	"\rCreateComment\x12&.redyx.comment.v1.CreateCommentRequest\x1a'.redyx.comment.v1.CreateCommentResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/posts/{post_id}/comments\x12~\n" +
 	"\n" +
@@ -1129,8 +1129,8 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\rUpdateComment\x12&.redyx.comment.v1.UpdateCommentRequest\x1a'.redyx.comment.v1.UpdateCommentResponse\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/api/v1/comments/{comment_id}\x12\x87\x01\n" +
 	"\rDeleteComment\x12&.redyx.comment.v1.DeleteCommentRequest\x1a'.redyx.comment.v1.DeleteCommentResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/comments/{comment_id}\x12\x87\x01\n" +
 	"\fListComments\x12%.redyx.comment.v1.ListCommentsRequest\x1a&.redyx.comment.v1.ListCommentsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/posts/{post_id}/comments\x12\x89\x01\n" +
-	"\vListReplies\x12$.redyx.comment.v1.ListRepliesRequest\x1a%.redyx.comment.v1.ListRepliesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/comments/{comment_id}/replies\x12\xa0\x01\n" +
-	"\x14ListCommentsByAuthor\x12-.redyx.comment.v1.ListCommentsByAuthorRequest\x1a..redyx.comment.v1.ListCommentsByAuthorResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/users/{username}/commentsB\xbd\x01\n" +
+	"\vListReplies\x12$.redyx.comment.v1.ListRepliesRequest\x1a%.redyx.comment.v1.ListRepliesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/comments/{comment_id}/replies\x12w\n" +
+	"\x14ListCommentsByAuthor\x12-.redyx.comment.v1.ListCommentsByAuthorRequest\x1a..redyx.comment.v1.ListCommentsByAuthorResponse\"\x00B\xbd\x01\n" +
 	"\x14com.redyx.comment.v1B\fCommentProtoP\x01Z5github.com/redyx/redyx/gen/redyx/comment/v1;commentv1\xa2\x02\x03RCX\xaa\x02\x10Redyx.Comment.V1\xca\x02\x10Redyx\\Comment\\V1\xe2\x02\x1cRedyx\\Comment\\V1\\GPBMetadata\xea\x02\x12Redyx::Comment::V1b\x06proto3"
 
 var (

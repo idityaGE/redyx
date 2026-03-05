@@ -53,6 +53,7 @@ type PostServiceClient interface {
 	// ListSavedPosts returns the authenticated user's saved posts.
 	ListSavedPosts(ctx context.Context, in *ListSavedPostsRequest, opts ...grpc.CallOption) (*ListSavedPostsResponse, error)
 	// ListUserPosts returns paginated posts by a specific user (public).
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserPosts(ctx context.Context, in *ListUserPostsRequest, opts ...grpc.CallOption) (*ListUserPostsResponse, error)
 }
 
@@ -177,6 +178,7 @@ type PostServiceServer interface {
 	// ListSavedPosts returns the authenticated user's saved posts.
 	ListSavedPosts(context.Context, *ListSavedPostsRequest) (*ListSavedPostsResponse, error)
 	// ListUserPosts returns paginated posts by a specific user (public).
+	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserPosts(context.Context, *ListUserPostsRequest) (*ListUserPostsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }

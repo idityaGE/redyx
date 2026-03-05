@@ -43,6 +43,13 @@ service UserService {
       get: "/api/v1/users/{username}/comments"
     };
   }
+
+  // GetUserCommunities returns the communities a user has joined.
+  rpc GetUserCommunities(GetUserCommunitiesRequest) returns (GetUserCommunitiesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/communities"
+    };
+  }
 }
 
 // User represents a public user profile.
@@ -130,5 +137,23 @@ message CommentSummary {
 
 message GetUserCommentsResponse {
   repeated CommentSummary comments = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// GetUserCommunities
+
+message GetUserCommunitiesRequest {
+  string user_id = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+// CommunitySummary is a lightweight community reference for user membership queries.
+message CommunitySummary {
+  string community_id = 1;
+  string name = 2;
+}
+
+message GetUserCommunitiesResponse {
+  repeated CommunitySummary communities = 1;
   redyx.common.v1.PaginationResponse pagination = 2;
 }
