@@ -20,7 +20,7 @@
     };
   };
 
-  let sortBy = $state<'members' | 'created' | 'activity'>('members');
+  let sortBy = $state<'members' | 'created'>('members');
   let communities = $state<Community[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -28,6 +28,8 @@
   let prevCursor = $state<string | null>(null);
   let authed = $state(isAuthenticated());
   let authLoading = $state(isLoading());
+  let searchQuery = $state('');
+  let debounceTimer: ReturnType<typeof setTimeout>;
 
   const visibilityLabel = (v: number): string => {
     switch (v) {
@@ -54,6 +56,9 @@
     try {
       // Note: sort is client-side only — the proto ListCommunitiesRequest has only pagination + query
       let path = `/communities?pagination.limit=25`;
+      if (searchQuery.trim()) {
+        path += `&query=${encodeURIComponent(searchQuery.trim())}`;
+      }
       if (cursor && direction === 'next') {
         path += `&pagination.cursor=${encodeURIComponent(cursor)}`;
       } else if (cursor && direction === 'prev') {
@@ -76,11 +81,20 @@
     }
   }
 
-  function changeSort(newSort: 'members' | 'created' | 'activity') {
+  function changeSort(newSort: 'members' | 'created') {
     sortBy = newSort;
     nextCursor = null;
     prevCursor = null;
     fetchCommunities();
+  }
+
+  function handleSearchInput() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      nextCursor = null;
+      prevCursor = null;
+      fetchCommunities();
+    }, 300);
   }
 
   onMount(() => {
@@ -99,7 +113,10 @@
   <!-- Header -->
   <div class="box-terminal mb-4">
     <div class="flex items-center justify-between">
-      <div class="text-accent-500 text-sm">~ /communities</div>
+      <div>
+        <div class="text-accent-500 text-sm">~ /communities</div>
+        <div class="text-terminal-dim text-xs">browse all communities</div>
+      </div>
       {#if authed}
         <a href="/communities/create" class="text-xs text-accent-500 hover:text-accent-400 transition-colors">
           [+ create community]
@@ -110,15 +127,27 @@
     </div>
   </div>
 
+  <!-- Search bar -->
+  <div class="flex items-center gap-1 text-xs font-mono mb-3 px-1 border border-terminal-border bg-terminal-surface py-1.5 px-2">
+    <span class="text-terminal-dim">&gt;</span>
+    <input
+      type="text"
+      placeholder="search communities..."
+      bind:value={searchQuery}
+      oninput={handleSearchInput}
+      class="bg-transparent text-terminal-fg placeholder:text-terminal-dim outline-none flex-1 font-mono text-xs"
+    />
+  </div>
+
   <!-- Sort controls -->
   <div class="flex items-center gap-1 text-xs font-mono mb-3 px-1">
     <span class="text-terminal-dim">sort:</span>
-    {#each ['members', 'created', 'activity'] as s}
+    {#each ['members', 'created'] as s}
       <button
         class="px-2 py-0.5 border transition-colors {sortBy === s
           ? 'border-accent-500 text-accent-500 bg-terminal-surface'
           : 'border-terminal-border text-terminal-dim hover:text-terminal-fg hover:border-terminal-fg'}"
-        onclick={() => changeSort(s as 'members' | 'created' | 'activity')}
+        onclick={() => changeSort(s as 'members' | 'created')}
       >
         [{s}]
       </button>
