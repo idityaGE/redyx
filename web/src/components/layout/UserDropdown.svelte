@@ -35,11 +35,11 @@
     <span class="text-accent-500">&gt;</span> profile
   </a>
   <a
-    href="/communities"
+    href="/my-communities"
     class="flex items-center gap-2 px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg transition-colors"
     onclick={onclose}
   >
-    <span class="text-accent-500">&gt;</span> communities
+    <span class="text-accent-500">&gt;</span> my communities
   </a>
   <a
     href="/user/{username}"

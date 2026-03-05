@@ -125,6 +125,16 @@
         {/each}
       {/if}
     </div>
+
+    <!-- Divider + All communities link -->
+    <div class="px-2 text-terminal-border text-xs select-none my-2">────────────────</div>
+    <a
+      href="/communities"
+      class="flex items-center gap-2 px-2 py-0.5 text-accent-600 hover:text-accent-500 transition-colors text-xs"
+    >
+      <span class="w-4 text-center text-terminal-dim">◈</span>
+      <span>all communities</span>
+    </a>
   {:else if !loading}
     <!-- Anonymous: prompt to log in -->
     <div>
