@@ -48,18 +48,22 @@ func NewStore(pool *pgxpool.Pool, logger *zap.Logger) *Store {
 }
 
 // Create inserts a new notification and returns its ID.
+// It also populates n.CreatedAt from the database DEFAULT NOW() so the in-memory
+// struct has the correct timestamp for real-time WebSocket delivery.
 func (s *Store) Create(ctx context.Context, n *Notification) (string, error) {
 	var id string
+	var createdAt time.Time
 	err := s.pool.QueryRow(ctx,
 		`INSERT INTO notifications (user_id, type, actor_id, actor_username, target_id, target_type, post_id, community_name, message)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 RETURNING id`,
+		 RETURNING id, created_at`,
 		n.UserID, n.Type, n.ActorID, n.ActorUsername,
 		n.TargetID, n.TargetType, n.PostID, n.CommunityName, n.Message,
-	).Scan(&id)
+	).Scan(&id, &createdAt)
 	if err != nil {
 		return "", fmt.Errorf("insert notification: %w", err)
 	}
+	n.CreatedAt = createdAt
 	return id, nil
 }
 

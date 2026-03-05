@@ -24,18 +24,16 @@ const (
 // KarmaConsumer processes vote events from Kafka and updates user karma in PostgreSQL.
 // Designed to be embedded in the user-service process.
 type KarmaConsumer struct {
-	client     *kgo.Client
-	rdb        *redis.Client
-	db         *pgxpool.Pool   // user_profiles DB
-	postShards []*pgxpool.Pool // post shard DBs for author_id lookup
-	logger     *zap.Logger
+	client *kgo.Client
+	rdb    *redis.Client
+	db     *pgxpool.Pool // user_profiles DB
+	logger *zap.Logger
 }
 
 // NewKarmaConsumer creates a Kafka consumer for vote events targeting user karma updates.
-// postShards are database pools for looking up author_id from post shard DBs when
-// the vote event has an empty author_id (which is the normal case — vote-service
-// publishes events without author_id for speed).
-func NewKarmaConsumer(brokers []string, rdb *redis.Client, db *pgxpool.Pool, postShards []*pgxpool.Pool, logger *zap.Logger) (*KarmaConsumer, error) {
+// The vote-service now populates author_id in VoteEvents (provided by the frontend),
+// so post shard database pools are no longer needed here.
+func NewKarmaConsumer(brokers []string, rdb *redis.Client, db *pgxpool.Pool, logger *zap.Logger) (*KarmaConsumer, error) {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup(karmaConsumerGroup),
@@ -47,11 +45,10 @@ func NewKarmaConsumer(brokers []string, rdb *redis.Client, db *pgxpool.Pool, pos
 	}
 
 	return &KarmaConsumer{
-		client:     client,
-		rdb:        rdb,
-		db:         db,
-		postShards: postShards,
-		logger:     logger,
+		client: client,
+		rdb:    rdb,
+		db:     db,
+		logger: logger,
 	}, nil
 }
 
@@ -120,19 +117,6 @@ func (c *KarmaConsumer) Run(ctx context.Context) error {
 	}
 }
 
-// lookupAuthorID queries all post shard databases to find the author of a post.
-// Returns empty string if the post is not found in any shard.
-func (c *KarmaConsumer) lookupAuthorID(ctx context.Context, postID string) string {
-	for _, pool := range c.postShards {
-		var authorID string
-		err := pool.QueryRow(ctx, `SELECT author_id FROM posts WHERE id = $1`, postID).Scan(&authorID)
-		if err == nil && authorID != "" {
-			return authorID
-		}
-	}
-	return ""
-}
-
 // processEvent applies a single vote event to the author's karma with deduplication.
 // Deduplication uses Redis SADD on karma:processed:{author_id} with 24h TTL.
 func (c *KarmaConsumer) processEvent(ctx context.Context, event *commonv1.VoteEvent) error {
@@ -140,13 +124,14 @@ func (c *KarmaConsumer) processEvent(ctx context.Context, event *commonv1.VoteEv
 	eventID := event.GetEventId()
 	delta := event.GetScoreDelta()
 
-	// Look up author_id from post shard DBs when the event has empty author_id
-	// (vote-service publishes events without author_id for speed)
+	// author_id is now populated by vote-service (provided by the frontend).
+	// Skip events with empty author_id — these are legacy/malformed events.
 	if authorID == "" {
-		authorID = c.lookupAuthorID(ctx, event.GetTargetId())
-		if authorID == "" {
-			return nil // Cannot determine author — skip silently
-		}
+		c.logger.Debug("skipping vote event with empty author_id",
+			zap.String("event_id", eventID),
+			zap.String("target_id", event.GetTargetId()),
+		)
+		return nil
 	}
 
 	if delta == 0 {

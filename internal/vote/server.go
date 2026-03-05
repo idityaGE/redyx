@@ -81,9 +81,9 @@ func (s *Server) Vote(ctx context.Context, req *votev1.VoteRequest) (*votev1.Vot
 			UserId:      claims.UserID,
 			TargetId:    req.GetTargetId(),
 			TargetType:  targetTypeStr,
-			AuthorId:    "", // Consumer looks up from post data — keeps Vote RPC fast
+			AuthorId:    req.GetAuthorId(), // Provided by frontend; consumer falls back to post DB lookup if empty
 			ScoreDelta:  int32(delta),
-			CommunityId: "", // Consumer looks up from post data
+			CommunityId: "",
 			OccurredAt:  timestamppb.Now(),
 		}
 		s.producer.PublishVoteEvent(ctx, event)

@@ -509,6 +509,53 @@ func (s *Store) UpdateVoteScore(ctx context.Context, commentID string, voteScore
 	return nil
 }
 
+// BackfillCommentsByAuthor scans all non-deleted comments from comments_by_post
+// and inserts them into comments_by_author using INSERT IF NOT EXISTS (idempotent).
+// This handles the case where comments_by_author was created after comments already
+// existed. Safe to run on every startup — it's a no-op for already-backfilled rows.
+func (s *Store) BackfillCommentsByAuthor(ctx context.Context) (int, error) {
+	iter := s.session.Query(
+		`SELECT comment_id, post_id, author_username, body, vote_score, is_deleted, created_at
+		 FROM redyx_comments.comments_by_post`,
+	).WithContext(ctx).Iter()
+
+	var (
+		commentID      gocql.UUID
+		postID         gocql.UUID
+		authorUsername string
+		body           string
+		voteScore      int
+		isDeleted      bool
+		createdAt      time.Time
+		count          int
+	)
+
+	for iter.Scan(&commentID, &postID, &authorUsername, &body, &voteScore, &isDeleted, &createdAt) {
+		if authorUsername == "" || authorUsername == "[deleted]" {
+			continue
+		}
+		// INSERT IF NOT EXISTS is idempotent — won't overwrite existing rows
+		if err := s.session.Query(
+			`INSERT INTO redyx_comments.comments_by_author
+			 (author_username, created_at, comment_id, post_id, body, vote_score, is_deleted)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)
+			 IF NOT EXISTS`,
+			authorUsername, createdAt, commentID, postID, body, voteScore, isDeleted,
+		).WithContext(ctx).Exec(); err != nil {
+			s.logger.Warn("backfill: failed to insert comment into comments_by_author",
+				zap.String("comment_id", commentID.String()),
+				zap.Error(err),
+			)
+			continue
+		}
+		count++
+	}
+	if err := iter.Close(); err != nil {
+		return count, fmt.Errorf("backfill scan: %w", err)
+	}
+	return count, nil
+}
+
 // CommentSortOrder defines how comments are sorted.
 type CommentSortOrder int
 
