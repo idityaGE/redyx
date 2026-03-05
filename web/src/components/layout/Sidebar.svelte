@@ -19,13 +19,9 @@
     { icon: '~', label: 'Home', href: '/' },
     { icon: '\u2605', label: 'Popular', href: '/popular' },
     { icon: '\u25C9', label: 'All', href: '/all' },
+    { icon: '\u25C7', label: 'Communities', href: '/communities' },
     { icon: '\u22A1', label: 'Saved', href: '/saved' },
   ];
-
-  type CommunityDetail = {
-    community: Community;
-    isMember: boolean;
-  };
 
   async function fetchMyCommunities() {
     const user = getUser();
@@ -34,20 +30,10 @@
       return;
     }
     try {
-      const data = await api<{ communities: Community[] }>('/communities?pagination.limit=100');
-      const communities = data.communities ?? [];
-
-      // Check membership for each community in parallel
-      const details = await Promise.all(
-        communities.map(c =>
-          api<CommunityDetail>(`/communities/${encodeURIComponent(c.name)}`)
-            .catch(() => null)
-        )
+      const data = await api<{ communities: { communityId: string; name: string }[] }>(
+        `/users/${user.userId}/communities?pagination.limit=100`
       );
-
-      myCommunities = details
-        .filter((d): d is CommunityDetail => d !== null && d.isMember)
-        .map(d => d.community.name);
+      myCommunities = (data.communities ?? []).map(c => c.name);
     } catch {
       myCommunities = [];
     }
@@ -126,30 +112,5 @@
       {/if}
     </div>
 
-    <!-- Divider + All communities link -->
-    <div class="px-2 text-terminal-border text-xs select-none my-2">────────────────</div>
-    <a
-      href="/communities"
-      class="flex items-center gap-2 px-2 py-0.5 text-accent-600 hover:text-accent-500 transition-colors text-xs"
-    >
-      <span class="w-4 text-center text-terminal-dim">◈</span>
-      <span>all communities</span>
-    </a>
-  {:else if !loading}
-    <!-- Anonymous: prompt to log in -->
-    <div>
-      <div class="px-2 text-terminal-dim text-xs mb-1 uppercase tracking-wide">
-        Communities
-      </div>
-      <div class="px-2 py-1 text-terminal-dim text-xs">
-        <a href="/login" class="text-accent-600 hover:text-accent-500">log in</a> to see your communities
-      </div>
-      <a
-        href="/communities"
-        class="flex items-center px-2 py-0.5 text-accent-600 hover:text-accent-500 transition-colors text-xs"
-      >
-        browse all communities &rarr;
-      </a>
-    </div>
   {/if}
 </nav>

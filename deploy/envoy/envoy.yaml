@@ -49,6 +49,14 @@ static_resources:
                 route:
                   cluster: auth-service
                   timeout: 30s
+              # User communities — route to community-service BEFORE /api/v1/users/ catch-all
+              # ListUserCommunities RPC lives on CommunityService, not UserService
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/users/[^/]+/communities.*"
+                route:
+                  cluster: community-service
+                  timeout: 30s
               - match: { prefix: "/api/v1/users/" }
                 route:
                   cluster: user-service
