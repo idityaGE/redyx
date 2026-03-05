@@ -121,7 +121,7 @@
       </div>
 
       <!-- Posts feed -->
-      <CommunityFeed communityName={community.name} />
+      <CommunityFeed communityName={community.name} {isMember} />
     </div>
 
     <!-- Right sidebar -->

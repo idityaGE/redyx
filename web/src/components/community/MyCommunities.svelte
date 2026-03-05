@@ -81,7 +81,10 @@
     <div class="flex items-center justify-between">
       <div>
         <div class="text-accent-500 text-sm">~ /my-communities</div>
-        <div class="text-terminal-dim text-xs">communities you've joined</div>
+        <div class="text-terminal-dim text-xs mt-0.5">
+          communities you've joined &middot;
+          <a href="/communities" class="text-accent-600 hover:text-accent-500 transition-colors">browse all</a>
+        </div>
       </div>
       {#if authed}
         <a href="/communities/create" class="text-xs text-accent-500 hover:text-accent-400 transition-colors">

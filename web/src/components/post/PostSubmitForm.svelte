@@ -126,9 +126,11 @@
   }
 </script>
 
-<!-- Header -->
+<!-- Header with breadcrumb -->
 <div class="box-terminal mb-4">
-  <div class="text-accent-500 text-sm">~ /community/{communityName}/submit</div>
+  <div class="text-accent-500 text-sm">
+    ~ <a href="/communities" class="hover:text-accent-400 transition-colors">/communities</a>/<a href="/community/{communityName}" class="hover:text-accent-400 transition-colors">{communityName}</a>/submit
+  </div>
 </div>
 
 <div class="border border-terminal-border bg-terminal-surface font-mono max-w-2xl">
