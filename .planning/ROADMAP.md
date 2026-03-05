@@ -35,9 +35,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Proto definitions, buf config, Makefile, Go code generation + Envoy descriptor
-- [ ] 01-02-PLAN.md — Astro SSR + Svelte frontend project with responsive terminal-aesthetic layout shell
-- [ ] 01-03-PLAN.md — Shared Go platform libraries, skeleton gRPC service, Docker Compose, Envoy transcoding
+- [x] 01-01-PLAN.md — Proto definitions, buf config, Makefile, Go code generation + Envoy descriptor ✓
+- [x] 01-02-PLAN.md — Astro SSR + Svelte frontend project with responsive terminal-aesthetic layout shell ✓
+- [x] 01-03-PLAN.md — Shared Go platform libraries, skeleton gRPC service, Docker Compose, Envoy transcoding ✓
 
 ### Phase 2: Auth + User + Community (Full Stack)
 **Goal**: Users can create accounts, log in, manage profiles, and create/join communities — with working frontend pages for all auth flows, profile views, and community management

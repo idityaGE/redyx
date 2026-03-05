@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 complete, ready for Phase 6
+stopped_at: Phase 5 complete + architecture refactoring + housekeeping done, ready for Phase 6
 last_updated: "2026-03-05"
-last_activity: 2026-03-05 — Phase 5 verified and complete (9/9 plans + E2E bug fixes)
+last_activity: 2026-03-05 — Housekeeping complete (commits, debug archive, state update)
 progress:
   total_phases: 7
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 5 complete — ready for Phase 6 (Moderation + Spam)
+**Current focus:** Phase 5 complete + quick tasks done — ready for Phase 6 (Moderation + Spam)
 
 ## Current Position
 
 Phase: 5 of 7 — Complete
 Plan: 9 of 9 complete in Phase 5
-Status: Phase 5 verified and complete. Ready for Phase 6.
-Last activity: 2026-03-05 — Phase 5 E2E verification passed (6/6 must-haves), 9 bug fixes applied
+Status: Phase 5 verified and complete. Architecture refactoring done. Ready for Phase 6.
+Last activity: 2026-03-05 — Housekeeping: committed all outstanding changes, archived debug files, updated state
 
 Progress: [██████████] 100% (Plan 33/33 overall through Phase 5, Phases 1-5 complete)
 
@@ -191,12 +191,13 @@ None.
 |---|-------------|------|--------|-----------|
 | 001 | Categorize frontend components into domain subfolders | 2026-03-03 | d51e48b | [001-categorize-frontend-components](./quick/001-categorize-frontend-components/) |
 | 002 | Fix karma not updating — 3-link bug chain (empty author_id + skip + wrong SQL) | 2026-03-05 | e38e3f5 | [002-fix-karma-not-updating](./quick/002-fix-karma-not-updating/) |
+| 003 | Eliminate all cross-service database access — replace with gRPC calls | 2026-03-05 | 89e0af3 | [003-eliminate-cross-service-db-access](./quick/003-eliminate-cross-service-db-access/) |
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Quick-002 complete, ready for Phase 6
+Stopped at: All housekeeping complete — commits clean, debug archived, state updated. Ready for Phase 6.
 Resume file: None
 
 ---
-*Last updated: 2026-03-05 — Phase 5 complete (9/9 plans, verified 6/6 must-haves, 9 E2E bug fixes)*
+*Last updated: 2026-03-05 — Phase 5 complete, quick-002/003 done, all changes committed, debug files archived*

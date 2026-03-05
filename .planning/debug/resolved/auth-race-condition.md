@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Multiple frontend auth state bugs: create post not showing, infinite pagination, vote score not persisting"
 created: 2026-03-03T00:00:00Z
 updated: 2026-03-03T16:10:00Z
@@ -103,7 +103,7 @@ fix: |
   
   **cmd/post/main.go**: Added ScoreConsumer instantiation + goroutine startup with Kafka brokers
 
-verification: awaiting human verification
+verification: resolved — fixes verified through subsequent sessions (Phase 5 E2E, profile/notification fixes)
 files_changed:
   - web/src/lib/auth.ts
   - web/src/components/CommunityFeed.svelte
