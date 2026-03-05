@@ -190,11 +190,12 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Categorize frontend components into domain subfolders | 2026-03-03 | d51e48b | [001-categorize-frontend-components](./quick/001-categorize-frontend-components/) |
+| 002 | Fix karma not updating — 3-link bug chain (empty author_id + skip + wrong SQL) | 2026-03-05 | e38e3f5 | [002-fix-karma-not-updating](./quick/002-fix-karma-not-updating/) |
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Phase 5 complete, ready for Phase 6
+Stopped at: Quick-002 complete, ready for Phase 6
 Resume file: None
 
 ---
