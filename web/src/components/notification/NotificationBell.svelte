@@ -121,7 +121,11 @@
 
   {#if dropdownOpen && authed}
     <div class="absolute right-0 top-full mt-1 z-50 w-80">
-      <NotificationDropdown {incoming} />
+      <NotificationDropdown
+        {incoming}
+        onmarkallread={() => { unreadCount = 0; }}
+        onmarkread={() => { unreadCount = Math.max(0, unreadCount - 1); }}
+      />
     </div>
   {/if}
 </div>

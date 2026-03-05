@@ -50,7 +50,7 @@
 
 <div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group">
   <!-- Vote column -->
-  <VoteButtons postId={post.postId} initialScore={post.voteScore} initialVote={userVote} />
+  <VoteButtons postId={post.postId} initialScore={post.voteScore} initialVote={userVote} authorId={post.authorId} />
 
   <!-- Content -->
   <div class="flex-1 min-w-0">

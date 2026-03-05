@@ -66,12 +66,13 @@
   <span class="{typeInfo.colorClass} shrink-0 mt-0.5">{typeInfo.label}</span>
   <div class="flex-1 min-w-0">
     <span class="text-terminal-fg">
-      <span class="text-accent-500">u/{notification.actorUsername}</span>
-      {' '}{notification.message}
+      {notification.message}
     </span>
     {#if notification.communityName}
       <span class="text-terminal-dim"> in r/{notification.communityName}</span>
     {/if}
   </div>
-  <span class="text-terminal-dim shrink-0 ml-1">{relativeTime(notification.createdAt)}</span>
+  {#if relativeTime(notification.createdAt)}
+    <span class="text-terminal-dim shrink-0 ml-1">{relativeTime(notification.createdAt)}</span>
+  {/if}
 </a>

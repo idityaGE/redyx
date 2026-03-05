@@ -22,9 +22,13 @@
     incoming?: Notification[];
     /** Full page mode with pagination */
     fullPage?: boolean;
+    /** Callback when all notifications are marked as read */
+    onmarkallread?: () => void;
+    /** Callback when a single notification is marked as read */
+    onmarkread?: (id: string) => void;
   }
 
-  let { incoming = [], fullPage = false }: Props = $props();
+  let { incoming = [], fullPage = false, onmarkallread, onmarkread }: Props = $props();
 
   let notifications = $state<Notification[]>([]);
   let loading = $state(true);
@@ -33,7 +37,7 @@
   let hasMore = $state(false);
   let loadingMore = $state(false);
 
-  const limit = fullPage ? 50 : 20;
+  const limit = fullPage ? 50 : 5;
 
   async function fetchNotifications(cursor?: string) {
     try {
@@ -70,6 +74,7 @@
         method: 'POST',
       });
       notifications = notifications.map((n) => ({ ...n, isRead: true }));
+      onmarkallread?.();
     } catch {
       // Best-effort
     } finally {
@@ -81,6 +86,7 @@
     notifications = notifications.map((n) =>
       n.notificationId === id ? { ...n, isRead: true } : n
     );
+    onmarkread?.(id);
   }
 
   async function loadMore() {
@@ -106,7 +112,7 @@
   });
 </script>
 
-<div class="{fullPage ? '' : 'bg-terminal-bg border border-terminal-border rounded shadow-lg max-h-96 overflow-y-auto'} font-mono">
+<div class="{fullPage ? '' : 'bg-terminal-bg border border-terminal-border rounded shadow-lg'} font-mono">
   <!-- Header -->
   <div class="flex items-center justify-between px-3 py-2 border-b border-terminal-border">
     <span class="text-xs text-terminal-dim">
@@ -132,7 +138,7 @@
     </div>
   {:else}
     <div class="divide-y divide-terminal-border/50">
-      {#each notifications as notification (notification.notificationId)}
+      {#each (fullPage ? notifications : notifications.slice(0, 5)) as notification (notification.notificationId)}
         <NotificationItem {notification} onread={handleRead} />
       {/each}
     </div>

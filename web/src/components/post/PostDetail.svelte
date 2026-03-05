@@ -222,7 +222,7 @@
     <div class="border border-terminal-border bg-terminal-surface">
       <div class="flex gap-3 p-4">
         <!-- Vote column -->
-        <VoteButtons {postId} initialScore={post.voteScore} initialVote={userVote} />
+        <VoteButtons {postId} initialScore={post.voteScore} initialVote={userVote} authorId={post.authorId} />
 
         <!-- Content area -->
         <div class="flex-1 min-w-0">

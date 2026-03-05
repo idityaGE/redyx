@@ -2,7 +2,9 @@
   import { onMount } from 'svelte';
   import { api, ApiError } from '../../lib/api';
   import { getUser, subscribe } from '../../lib/auth';
+  import { relativeTime } from '../../lib/time';
   import ProfileEditor from './ProfileEditor.svelte';
+  import VoteButtons from '../post/VoteButtons.svelte';
 
   interface Props {
     username: string;
@@ -189,10 +191,33 @@
         </div>
       {:else}
         {#each posts as post}
-          <div class="py-1 text-xs border-b border-terminal-border last:border-0">
-            <a href="/post/{post.id}" class="text-terminal-fg hover:text-accent-500 transition-colors">
-              {post.title}
-            </a>
+          <div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group">
+            <VoteButtons postId={post.postId ?? post.id} initialScore={post.voteScore ?? 0} initialVote={0} authorId={post.authorId ?? ''} />
+            <div class="flex-1 min-w-0">
+              <a
+                href="/post/{post.postId ?? post.id}"
+                class="text-terminal-fg group-hover:text-accent-500 transition-colors truncate block text-sm"
+              >
+                {post.title}
+                {#if post.postType === 'POST_TYPE_LINK' && post.url}
+                  <span class="text-terminal-dim text-xs ml-1">({new URL(post.url).hostname})</span>
+                {/if}
+              </a>
+              <div class="text-terminal-dim mt-0.5">
+                {#if post.communityName}
+                  <a href="/community/{post.communityName}" class="text-accent-600 hover:text-accent-500">r/{post.communityName}</a>
+                  <span class="mx-1">&middot;</span>
+                {/if}
+                <span>{relativeTime(post.createdAt)}</span>
+                <span class="mx-1">&middot;</span>
+                <span>{post.commentCount ?? 0} comments</span>
+              </div>
+            </div>
+            {#if post.postType === 'POST_TYPE_MEDIA' && post.thumbnailUrl}
+              <div class="shrink-0">
+                <img src={post.thumbnailUrl} alt="" class="w-8 h-8 object-cover border border-terminal-border rounded-sm" loading="lazy" />
+              </div>
+            {/if}
           </div>
         {/each}
       {/if}
@@ -211,12 +236,33 @@
         </div>
       {:else}
         {#each comments as comment}
-          <div class="py-1 text-xs border-b border-terminal-border last:border-0">
-            <div class="text-terminal-fg">{comment.body}</div>
-            <div class="text-terminal-dim mt-0.5">
-              on <a href="/post/{comment.postId}" class="text-accent-600 hover:text-accent-500">{comment.postTitle ?? 'post'}</a>
+          <a
+            href="/post/{comment.postId}"
+            class="block px-2 py-2 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group"
+          >
+            <!-- Comment context line -->
+            <div class="text-terminal-dim mb-1 flex items-center gap-1">
+              <span class="text-accent-600">&#9654;</span>
+              <span>commented on</span>
+              <span class="text-terminal-fg group-hover:text-accent-500">{comment.postTitle ?? 'a post'}</span>
+              {#if comment.communityName}
+                <span>in</span>
+                <span class="text-accent-600">r/{comment.communityName}</span>
+              {/if}
             </div>
-          </div>
+            <!-- Comment body -->
+            <div class="text-terminal-fg pl-4 border-l-2 border-terminal-border/50 line-clamp-3">
+              {comment.body}
+            </div>
+            <!-- Comment metadata -->
+            <div class="text-terminal-dim mt-1 pl-4 flex items-center gap-2">
+              {#if comment.voteScore !== undefined}
+                <span>{comment.voteScore} pts</span>
+                <span>&middot;</span>
+              {/if}
+              <span>{relativeTime(comment.createdAt)}</span>
+            </div>
+          </a>
         {/each}
       {/if}
 
@@ -234,15 +280,30 @@
         </div>
       {:else}
         {#each savedPosts as post}
-          <div class="py-1 text-xs border-b border-terminal-border last:border-0">
-            <a href="/post/{post.postId ?? post.id}" class="text-terminal-fg hover:text-accent-500 transition-colors">
-              {post.title}
-            </a>
-            {#if post.communityName}
+          <div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group">
+            <VoteButtons postId={post.postId ?? post.id} initialScore={post.voteScore ?? 0} initialVote={0} authorId={post.authorId ?? ''} />
+            <div class="flex-1 min-w-0">
+              <a
+                href="/post/{post.postId ?? post.id}"
+                class="text-terminal-fg group-hover:text-accent-500 transition-colors truncate block text-sm"
+              >
+                {post.title}
+              </a>
               <div class="text-terminal-dim mt-0.5">
-                <a href="/community/{post.communityName}" class="text-accent-600 hover:text-accent-500">
-                  r/{post.communityName}
-                </a>
+                {#if post.communityName}
+                  <a href="/community/{post.communityName}" class="text-accent-600 hover:text-accent-500">r/{post.communityName}</a>
+                  <span class="mx-1">&middot;</span>
+                {/if}
+                <span>{post.isAnonymous ? '[anonymous]' : `u/${post.authorUsername}`}</span>
+                <span class="mx-1">&middot;</span>
+                <span>{relativeTime(post.createdAt)}</span>
+                <span class="mx-1">&middot;</span>
+                <span>{post.commentCount ?? 0} comments</span>
+              </div>
+            </div>
+            {#if post.postType === 'POST_TYPE_MEDIA' && post.thumbnailUrl}
+              <div class="shrink-0">
+                <img src={post.thumbnailUrl} alt="" class="w-8 h-8 object-cover border border-terminal-border rounded-sm" loading="lazy" />
               </div>
             {/if}
           </div>

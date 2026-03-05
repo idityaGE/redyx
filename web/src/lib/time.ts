@@ -4,8 +4,13 @@
  */
 
 export function relativeTime(isoString: string): string {
-  const now = Date.now();
+  if (!isoString) return '';
   const then = new Date(isoString).getTime();
+  if (isNaN(then)) return '';
+  // Treat Go zero time (year 1) and Unix epoch as missing timestamps
+  if (then < 0 || then === 0) return '';
+
+  const now = Date.now();
   const seconds = Math.floor((now - then) / 1000);
 
   if (seconds < 60) return 'just now';

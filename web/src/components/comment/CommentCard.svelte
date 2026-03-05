@@ -154,6 +154,7 @@
           targetType="TARGET_TYPE_COMMENT"
           initialScore={localComment.voteScore}
           initialVote={0}
+          authorId={localComment.authorId}
         />
       {:else}
         <div class="flex flex-col items-center w-10 shrink-0">

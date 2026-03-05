@@ -7,6 +7,8 @@
     targetType?: string;
     initialScore: number;
     initialVote?: number;
+    /** Author of the target content — forwarded to vote API for karma attribution. */
+    authorId?: string;
   }
 
   let {
@@ -14,6 +16,7 @@
     targetType = 'TARGET_TYPE_POST',
     initialScore,
     initialVote = 0,
+    authorId = '',
   }: Props = $props();
 
   let score = $state(initialScore);
@@ -71,6 +74,7 @@
           targetId: postId,
           targetType,
           direction: directionEnum,
+          authorId: authorId || undefined,
         }),
       });
 
