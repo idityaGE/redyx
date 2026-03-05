@@ -1240,6 +1240,110 @@ func (x *ListSavedPostsResponse) GetPagination() *v1.PaginationResponse {
 	return nil
 }
 
+type ListUserPostsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Pagination    *v1.PaginationRequest  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserPostsRequest) Reset() {
+	*x = ListUserPostsRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserPostsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserPostsRequest) ProtoMessage() {}
+
+func (x *ListUserPostsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserPostsRequest.ProtoReflect.Descriptor instead.
+func (*ListUserPostsRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListUserPostsRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *ListUserPostsRequest) GetPagination() *v1.PaginationRequest {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type ListUserPostsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Posts         []*Post                `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`
+	Pagination    *v1.PaginationResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserPostsResponse) Reset() {
+	*x = ListUserPostsResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserPostsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserPostsResponse) ProtoMessage() {}
+
+func (x *ListUserPostsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserPostsResponse.ProtoReflect.Descriptor instead.
+func (*ListUserPostsResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListUserPostsResponse) GetPosts() []*Post {
+	if x != nil {
+		return x.Posts
+	}
+	return nil
+}
+
+func (x *ListUserPostsResponse) GetPagination() *v1.PaginationResponse {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
 var File_redyx_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_redyx_post_v1_post_proto_rawDesc = "" +
@@ -1333,6 +1437,16 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\x05posts\x18\x01 \x03(\v2\x13.redyx.post.v1.PostR\x05posts\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
+	"pagination\"v\n" +
+	"\x14ListUserPostsRequest\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12B\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\".redyx.common.v1.PaginationRequestR\n" +
+	"pagination\"\x87\x01\n" +
+	"\x15ListUserPostsResponse\x12)\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.redyx.post.v1.PostR\x05posts\x12C\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
 	"pagination*b\n" +
 	"\bPostType\x12\x19\n" +
 	"\x15POST_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
@@ -1352,7 +1466,7 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\x0fTIME_RANGE_WEEK\x10\x03\x12\x14\n" +
 	"\x10TIME_RANGE_MONTH\x10\x04\x12\x13\n" +
 	"\x0fTIME_RANGE_YEAR\x10\x05\x12\x12\n" +
-	"\x0eTIME_RANGE_ALL\x10\x062\xb0\a\n" +
+	"\x0eTIME_RANGE_ALL\x10\x062\xb5\b\n" +
 	"\vPostService\x12k\n" +
 	"\n" +
 	"CreatePost\x12 .redyx.post.v1.CreatePostRequest\x1a!.redyx.post.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12i\n" +
@@ -1364,7 +1478,8 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\tListPosts\x12\x1f.redyx.post.v1.ListPostsRequest\x1a .redyx.post.v1.ListPostsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/communities/{community_name}/posts\x12m\n" +
 	"\fListHomeFeed\x12\".redyx.post.v1.ListHomeFeedRequest\x1a#.redyx.post.v1.ListHomeFeedResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/feed\x12t\n" +
 	"\bSavePost\x12\x1e.redyx.post.v1.SavePostRequest\x1a\x1f.redyx.post.v1.SavePostResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/posts/{post_id}/save\x12t\n" +
-	"\x0eListSavedPosts\x12$.redyx.post.v1.ListSavedPostsRequest\x1a%.redyx.post.v1.ListSavedPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/savedB\xa5\x01\n" +
+	"\x0eListSavedPosts\x12$.redyx.post.v1.ListSavedPostsRequest\x1a%.redyx.post.v1.ListSavedPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/saved\x12\x82\x01\n" +
+	"\rListUserPosts\x12#.redyx.post.v1.ListUserPostsRequest\x1a$.redyx.post.v1.ListUserPostsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/users/{username}/postsB\xa5\x01\n" +
 	"\x11com.redyx.post.v1B\tPostProtoP\x01Z/github.com/redyx/redyx/gen/redyx/post/v1;postv1\xa2\x02\x03RPX\xaa\x02\rRedyx.Post.V1\xca\x02\rRedyx\\Post\\V1\xe2\x02\x19Redyx\\Post\\V1\\GPBMetadata\xea\x02\x0fRedyx::Post::V1b\x06proto3"
 
 var (
@@ -1380,7 +1495,7 @@ func file_redyx_post_v1_post_proto_rawDescGZIP() []byte {
 }
 
 var file_redyx_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_redyx_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_redyx_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_redyx_post_v1_post_proto_goTypes = []any{
 	(PostType)(0),                  // 0: redyx.post.v1.PostType
 	(SortOrder)(0),                 // 1: redyx.post.v1.SortOrder
@@ -1402,52 +1517,59 @@ var file_redyx_post_v1_post_proto_goTypes = []any{
 	(*SavePostResponse)(nil),       // 17: redyx.post.v1.SavePostResponse
 	(*ListSavedPostsRequest)(nil),  // 18: redyx.post.v1.ListSavedPostsRequest
 	(*ListSavedPostsResponse)(nil), // 19: redyx.post.v1.ListSavedPostsResponse
-	(*timestamppb.Timestamp)(nil),  // 20: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),   // 21: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil),  // 22: redyx.common.v1.PaginationResponse
+	(*ListUserPostsRequest)(nil),   // 20: redyx.post.v1.ListUserPostsRequest
+	(*ListUserPostsResponse)(nil),  // 21: redyx.post.v1.ListUserPostsResponse
+	(*timestamppb.Timestamp)(nil),  // 22: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),   // 23: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),  // 24: redyx.common.v1.PaginationResponse
 }
 var file_redyx_post_v1_post_proto_depIdxs = []int32{
 	0,  // 0: redyx.post.v1.Post.post_type:type_name -> redyx.post.v1.PostType
-	20, // 1: redyx.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
-	20, // 2: redyx.post.v1.Post.edited_at:type_name -> google.protobuf.Timestamp
+	22, // 1: redyx.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	22, // 2: redyx.post.v1.Post.edited_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: redyx.post.v1.CreatePostRequest.post_type:type_name -> redyx.post.v1.PostType
 	3,  // 4: redyx.post.v1.CreatePostResponse.post:type_name -> redyx.post.v1.Post
 	3,  // 5: redyx.post.v1.GetPostResponse.post:type_name -> redyx.post.v1.Post
 	3,  // 6: redyx.post.v1.UpdatePostResponse.post:type_name -> redyx.post.v1.Post
 	1,  // 7: redyx.post.v1.ListPostsRequest.sort:type_name -> redyx.post.v1.SortOrder
 	2,  // 8: redyx.post.v1.ListPostsRequest.time_range:type_name -> redyx.post.v1.TimeRange
-	21, // 9: redyx.post.v1.ListPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	23, // 9: redyx.post.v1.ListPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 10: redyx.post.v1.ListPostsResponse.posts:type_name -> redyx.post.v1.Post
-	22, // 11: redyx.post.v1.ListPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	24, // 11: redyx.post.v1.ListPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
 	1,  // 12: redyx.post.v1.ListHomeFeedRequest.sort:type_name -> redyx.post.v1.SortOrder
 	2,  // 13: redyx.post.v1.ListHomeFeedRequest.time_range:type_name -> redyx.post.v1.TimeRange
-	21, // 14: redyx.post.v1.ListHomeFeedRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	23, // 14: redyx.post.v1.ListHomeFeedRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 15: redyx.post.v1.ListHomeFeedResponse.posts:type_name -> redyx.post.v1.Post
-	22, // 16: redyx.post.v1.ListHomeFeedResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	21, // 17: redyx.post.v1.ListSavedPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	24, // 16: redyx.post.v1.ListHomeFeedResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	23, // 17: redyx.post.v1.ListSavedPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 18: redyx.post.v1.ListSavedPostsResponse.posts:type_name -> redyx.post.v1.Post
-	22, // 19: redyx.post.v1.ListSavedPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	4,  // 20: redyx.post.v1.PostService.CreatePost:input_type -> redyx.post.v1.CreatePostRequest
-	6,  // 21: redyx.post.v1.PostService.GetPost:input_type -> redyx.post.v1.GetPostRequest
-	8,  // 22: redyx.post.v1.PostService.UpdatePost:input_type -> redyx.post.v1.UpdatePostRequest
-	10, // 23: redyx.post.v1.PostService.DeletePost:input_type -> redyx.post.v1.DeletePostRequest
-	12, // 24: redyx.post.v1.PostService.ListPosts:input_type -> redyx.post.v1.ListPostsRequest
-	14, // 25: redyx.post.v1.PostService.ListHomeFeed:input_type -> redyx.post.v1.ListHomeFeedRequest
-	16, // 26: redyx.post.v1.PostService.SavePost:input_type -> redyx.post.v1.SavePostRequest
-	18, // 27: redyx.post.v1.PostService.ListSavedPosts:input_type -> redyx.post.v1.ListSavedPostsRequest
-	5,  // 28: redyx.post.v1.PostService.CreatePost:output_type -> redyx.post.v1.CreatePostResponse
-	7,  // 29: redyx.post.v1.PostService.GetPost:output_type -> redyx.post.v1.GetPostResponse
-	9,  // 30: redyx.post.v1.PostService.UpdatePost:output_type -> redyx.post.v1.UpdatePostResponse
-	11, // 31: redyx.post.v1.PostService.DeletePost:output_type -> redyx.post.v1.DeletePostResponse
-	13, // 32: redyx.post.v1.PostService.ListPosts:output_type -> redyx.post.v1.ListPostsResponse
-	15, // 33: redyx.post.v1.PostService.ListHomeFeed:output_type -> redyx.post.v1.ListHomeFeedResponse
-	17, // 34: redyx.post.v1.PostService.SavePost:output_type -> redyx.post.v1.SavePostResponse
-	19, // 35: redyx.post.v1.PostService.ListSavedPosts:output_type -> redyx.post.v1.ListSavedPostsResponse
-	28, // [28:36] is the sub-list for method output_type
-	20, // [20:28] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	24, // 19: redyx.post.v1.ListSavedPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	23, // 20: redyx.post.v1.ListUserPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	3,  // 21: redyx.post.v1.ListUserPostsResponse.posts:type_name -> redyx.post.v1.Post
+	24, // 22: redyx.post.v1.ListUserPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	4,  // 23: redyx.post.v1.PostService.CreatePost:input_type -> redyx.post.v1.CreatePostRequest
+	6,  // 24: redyx.post.v1.PostService.GetPost:input_type -> redyx.post.v1.GetPostRequest
+	8,  // 25: redyx.post.v1.PostService.UpdatePost:input_type -> redyx.post.v1.UpdatePostRequest
+	10, // 26: redyx.post.v1.PostService.DeletePost:input_type -> redyx.post.v1.DeletePostRequest
+	12, // 27: redyx.post.v1.PostService.ListPosts:input_type -> redyx.post.v1.ListPostsRequest
+	14, // 28: redyx.post.v1.PostService.ListHomeFeed:input_type -> redyx.post.v1.ListHomeFeedRequest
+	16, // 29: redyx.post.v1.PostService.SavePost:input_type -> redyx.post.v1.SavePostRequest
+	18, // 30: redyx.post.v1.PostService.ListSavedPosts:input_type -> redyx.post.v1.ListSavedPostsRequest
+	20, // 31: redyx.post.v1.PostService.ListUserPosts:input_type -> redyx.post.v1.ListUserPostsRequest
+	5,  // 32: redyx.post.v1.PostService.CreatePost:output_type -> redyx.post.v1.CreatePostResponse
+	7,  // 33: redyx.post.v1.PostService.GetPost:output_type -> redyx.post.v1.GetPostResponse
+	9,  // 34: redyx.post.v1.PostService.UpdatePost:output_type -> redyx.post.v1.UpdatePostResponse
+	11, // 35: redyx.post.v1.PostService.DeletePost:output_type -> redyx.post.v1.DeletePostResponse
+	13, // 36: redyx.post.v1.PostService.ListPosts:output_type -> redyx.post.v1.ListPostsResponse
+	15, // 37: redyx.post.v1.PostService.ListHomeFeed:output_type -> redyx.post.v1.ListHomeFeedResponse
+	17, // 38: redyx.post.v1.PostService.SavePost:output_type -> redyx.post.v1.SavePostResponse
+	19, // 39: redyx.post.v1.PostService.ListSavedPosts:output_type -> redyx.post.v1.ListSavedPostsResponse
+	21, // 40: redyx.post.v1.PostService.ListUserPosts:output_type -> redyx.post.v1.ListUserPostsResponse
+	32, // [32:41] is the sub-list for method output_type
+	23, // [23:32] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_redyx_post_v1_post_proto_init() }
@@ -1461,7 +1583,7 @@ func file_redyx_post_v1_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_post_v1_post_proto_rawDesc), len(file_redyx_post_v1_post_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

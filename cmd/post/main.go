@@ -15,7 +15,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
+	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	"github.com/redyx/redyx/internal/platform/config"
@@ -76,21 +80,26 @@ func main() {
 		defer voteRdb.Close()
 	}
 
-	// Connect to community database for name→UUID resolution
-	communityPool, err := pgxpool.New(context.Background(), cfg.CommunityDatabaseURL)
+	// Connect to community-service via gRPC for name→UUID resolution and membership checks.
+	communityServiceAddr := envStr("COMMUNITY_SERVICE_ADDR", "community-service:50054")
+	communityConn, err := grpc.NewClient(communityServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Fatal("failed to connect to community database", zap.Error(err))
+		logger.Fatal("failed to connect to community-service", zap.Error(err))
 	}
-	defer communityPool.Close()
+	defer communityConn.Close()
+	communityClient := communityv1.NewCommunityServiceClient(communityConn)
+	logger.Info("connected to community-service gRPC", zap.String("addr", communityServiceAddr))
 
-	// Connect to media database for resolving media IDs → URLs
-	mediaPool, err := pgxpool.New(context.Background(), cfg.MediaDatabaseURL)
+	// Connect to media-service via gRPC for resolving media IDs → URLs.
+	mediaServiceAddr := envStr("MEDIA_SERVICE_ADDR", "media-service:50060")
+	var mediaClient mediav1.MediaServiceClient
+	mediaConn, err := grpc.NewClient(mediaServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Warn("failed to connect to media database, media posts disabled", zap.Error(err))
-		mediaPool = nil
-	}
-	if mediaPool != nil {
-		defer mediaPool.Close()
+		logger.Warn("failed to connect to media-service, media posts disabled", zap.Error(err))
+	} else {
+		defer mediaConn.Close()
+		mediaClient = mediav1.NewMediaServiceClient(mediaConn)
+		logger.Info("connected to media-service gRPC", zap.String("addr", mediaServiceAddr))
 	}
 
 	// Create post cache
@@ -128,7 +137,7 @@ func main() {
 	)
 
 	// Create and register post service
-	postServer := post.NewServer(shardRouter, cache, postProducer, communityPool, mediaPool, logger)
+	postServer := post.NewServer(shardRouter, cache, postProducer, communityClient, mediaClient, logger)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 
 	// Start background hot score refresh goroutine
@@ -214,6 +223,14 @@ func redisURL(baseURL string, db int) string {
 		}
 	}
 	return fmt.Sprintf("%s/%d", baseURL, db)
+}
+
+// envStr returns the value of an environment variable or a default.
+func envStr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 // runMigrations executes all .up.sql files from the given directory on the provided pool.

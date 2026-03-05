@@ -51,6 +51,13 @@ service CommentService {
       get: "/api/v1/comments/{comment_id}/replies"
     };
   }
+
+  // ListCommentsByAuthor returns paginated comments authored by a given user.
+  rpc ListCommentsByAuthor(ListCommentsByAuthorRequest) returns (ListCommentsByAuthorResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{username}/comments"
+    };
+  }
 }
 
 // CommentSortOrder for comment sorting within a post.
@@ -151,4 +158,27 @@ message ListRepliesRequest {
 message ListRepliesResponse {
   repeated Comment                   replies    = 1;
   redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ListCommentsByAuthor (comments authored by a user)
+
+message ListCommentsByAuthorRequest {
+  string username = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListCommentsByAuthorResponse {
+  repeated CommentSummary comments = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// CommentSummary is a lightweight comment representation for profile pages.
+message CommentSummary {
+  string comment_id = 1;
+  string post_id = 2;
+  string post_title = 3;
+  string community_name = 4;
+  string body = 5;
+  int32 vote_score = 6;
+  google.protobuf.Timestamp created_at = 7;
 }

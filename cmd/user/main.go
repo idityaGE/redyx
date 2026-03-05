@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,10 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocql/gocql"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
+	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	userv1 "github.com/redyx/redyx/gen/redyx/user/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	"github.com/redyx/redyx/internal/platform/config"
@@ -79,47 +81,41 @@ func main() {
 		),
 	)
 
-	// Connect to post shard databases for GetUserPosts queries and karma consumer
-	var postShards []*pgxpool.Pool
-	for _, dsn := range cfg.PostShardDSNs {
-		shardCtx, shardCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		pool, err := database.NewPostgres(shardCtx, dsn)
-		shardCancel()
-		if err != nil {
-			logger.Warn("failed to connect to post shard, karma author lookup may be limited", zap.Error(err))
-			continue
-		}
-		postShards = append(postShards, pool)
+	// Connect to post-service via gRPC for GetUserPosts and comment enrichment.
+	// This replaces direct post shard DB access — clean service boundaries.
+	postServiceAddr := envStr("POST_SERVICE_ADDR", "post-service:50055")
+	postConn, err := grpc.NewClient(postServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to post-service, user posts will be unavailable", zap.Error(err))
 	}
-	defer func() {
-		for _, pool := range postShards {
-			pool.Close()
-		}
-	}()
-	logger.Info("connected to post shards", zap.Int("shard_count", len(postShards)))
-
-	// Connect to ScyllaDB for GetUserComments queries
-	var scyllaSession *gocql.Session
-	if cfg.ScyllaDBHosts != "" {
-		scyllaSession, err = connectScyllaDB(cfg.ScyllaDBHosts, cfg.ScyllaDBKeyspace, logger)
-		if err != nil {
-			logger.Warn("failed to connect to scylladb, GetUserComments will return empty", zap.Error(err))
-		} else {
-			defer scyllaSession.Close()
-			logger.Info("connected to scylladb for user comments",
-				zap.String("hosts", cfg.ScyllaDBHosts),
-				zap.String("keyspace", cfg.ScyllaDBKeyspace),
-			)
-		}
+	if postConn != nil {
+		defer postConn.Close()
+	}
+	var postClient postv1.PostServiceClient
+	if postConn != nil {
+		postClient = postv1.NewPostServiceClient(postConn)
+		logger.Info("connected to post-service gRPC", zap.String("addr", postServiceAddr))
 	}
 
-	// Register UserService with post shards and ScyllaDB for profile queries
+	// Connect to comment-service via gRPC for GetUserComments.
+	commentServiceAddr := envStr("COMMENT_SERVICE_ADDR", "comment-service:50057")
+	var commentClient commentv1.CommentServiceClient
+	commentConn, err := grpc.NewClient(commentServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to comment-service, GetUserComments will return empty", zap.Error(err))
+	} else {
+		defer commentConn.Close()
+		commentClient = commentv1.NewCommentServiceClient(commentConn)
+		logger.Info("connected to comment-service gRPC", zap.String("addr", commentServiceAddr))
+	}
+
+	// Register UserService with post-service and comment-service gRPC clients
 	var serverOpts []user.ServerOption
-	if len(postShards) > 0 {
-		serverOpts = append(serverOpts, user.WithPostShards(postShards))
+	if postClient != nil {
+		serverOpts = append(serverOpts, user.WithPostClient(postClient))
 	}
-	if scyllaSession != nil {
-		serverOpts = append(serverOpts, user.WithScyllaDB(scyllaSession))
+	if commentClient != nil {
+		serverOpts = append(serverOpts, user.WithCommentClient(commentClient))
 	}
 	userServer := user.NewServer(db, logger, serverOpts...)
 	userv1.RegisterUserServiceServer(srv.Server(), userServer)
@@ -131,7 +127,7 @@ func main() {
 
 	if cfg.KafkaBrokers != "" {
 		brokers := strings.Split(cfg.KafkaBrokers, ",")
-		kc, err := vote.NewKarmaConsumer(brokers, rdb, db, postShards, logger)
+		kc, err := vote.NewKarmaConsumer(brokers, rdb, db, logger)
 		if err != nil {
 			logger.Warn("failed to create karma consumer, karma updates disabled", zap.Error(err))
 		} else {
@@ -143,7 +139,6 @@ func main() {
 			}()
 			logger.Info("karma consumer started",
 				zap.String("brokers", cfg.KafkaBrokers),
-				zap.Int("post_shards", len(postShards)),
 			)
 		}
 	}
@@ -208,33 +203,10 @@ func runMigrations(ctx context.Context, db *pgxpool.Pool, logger *zap.Logger) er
 	return nil
 }
 
-// connectScyllaDB connects to ScyllaDB with a specific keyspace.
-// Retries up to 10 times (2s apart = 20s total) to handle slow ScyllaDB startup.
-func connectScyllaDB(hosts, keyspace string, logger *zap.Logger) (*gocql.Session, error) {
-	hostList := strings.Split(hosts, ",")
-	for i := range hostList {
-		hostList[i] = strings.TrimSpace(hostList[i])
+// envStr returns the value of an environment variable or a default.
+func envStr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
 	}
-
-	cluster := gocql.NewCluster(hostList...)
-	cluster.Consistency = gocql.Quorum
-	cluster.Timeout = 10 * time.Second
-	cluster.ConnectTimeout = 10 * time.Second
-	cluster.Keyspace = keyspace
-
-	var session *gocql.Session
-	var err error
-
-	for attempt := 1; attempt <= 10; attempt++ {
-		session, err = cluster.CreateSession()
-		if err == nil {
-			return session, nil
-		}
-		logger.Warn("scylladb connection attempt failed, retrying...",
-			zap.Int("attempt", attempt),
-			zap.Error(err),
-		)
-		time.Sleep(2 * time.Second)
-	}
-	return nil, fmt.Errorf("scylladb connect failed after 10 retries: %w", err)
+	return fallback
 }

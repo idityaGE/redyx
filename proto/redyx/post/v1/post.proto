@@ -66,6 +66,13 @@ service PostService {
       get: "/api/v1/saved"
     };
   }
+
+  // ListUserPosts returns paginated posts by a specific user (public).
+  rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{username}/posts"
+    };
+  }
 }
 
 // PostType distinguishes between text, link, and media posts.
@@ -219,6 +226,18 @@ message ListSavedPostsRequest {
 }
 
 message ListSavedPostsResponse {
+  repeated Post posts = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ListUserPosts
+
+message ListUserPostsRequest {
+  string username = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListUserPostsResponse {
   repeated Post posts = 1;
   redyx.common.v1.PaginationResponse pagination = 2;
 }

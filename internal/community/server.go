@@ -736,6 +736,48 @@ func protoToCached(c *commv1.Community) *cachedCommunity {
 	return cc
 }
 
+// ListUserCommunities returns the communities a user has joined.
+func (s *Server) ListUserCommunities(ctx context.Context, req *commv1.ListUserCommunitiesRequest) (*commv1.ListUserCommunitiesResponse, error) {
+	userID := req.GetUserId()
+	if userID == "" {
+		return nil, fmt.Errorf("user_id is required: %w", perrors.ErrInvalidInput)
+	}
+
+	rows, err := s.db.Query(ctx,
+		`SELECT c.id, c.name FROM community_members cm
+		 JOIN communities c ON c.id = cm.community_id
+		 WHERE cm.user_id = $1
+		 ORDER BY cm.joined_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list user communities: %w", err)
+	}
+	defer rows.Close()
+
+	var communities []*commv1.UserCommunity
+	for rows.Next() {
+		var communityID, name string
+		if err := rows.Scan(&communityID, &name); err != nil {
+			return nil, fmt.Errorf("scan user community: %w", err)
+		}
+		communities = append(communities, &commv1.UserCommunity{
+			CommunityId: communityID,
+			Name:        name,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("user communities rows: %w", err)
+	}
+
+	return &commv1.ListUserCommunitiesResponse{
+		Communities: communities,
+		Pagination: &commonv1.PaginationResponse{
+			HasMore: false,
+		},
+	}, nil
+}
+
 func cachedToProto(c *cachedCommunity) *commv1.Community {
 	comm := &commv1.Community{
 		CommunityId: c.ID,

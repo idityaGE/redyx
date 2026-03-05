@@ -74,6 +74,13 @@ service CommunityService {
       delete: "/api/v1/communities/{name}/moderators/{user_id}"
     };
   }
+
+  // ListUserCommunities returns the communities a user has joined.
+  rpc ListUserCommunities(ListUserCommunitiesRequest) returns (ListUserCommunitiesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/communities"
+    };
+  }
 }
 
 // Visibility controls who can view and interact with a community.
@@ -213,3 +220,21 @@ message RevokeModeratorRequest {
 }
 
 message RevokeModeratorResponse {}
+
+// ListUserCommunities
+
+message ListUserCommunitiesRequest {
+  string user_id = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListUserCommunitiesResponse {
+  repeated UserCommunity communities = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// UserCommunity is a lightweight community reference for user membership queries.
+message UserCommunity {
+  string community_id = 1;
+  string name = 2;
+}

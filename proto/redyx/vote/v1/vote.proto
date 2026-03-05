@@ -44,6 +44,10 @@ message VoteRequest {
   string target_id = 1;
   TargetType target_type = 2;
   VoteDirection direction = 3;
+  // Author of the target (post or comment). Provided by the frontend so the
+  // vote-service can propagate it in VoteEvent without needing post DB access.
+  // If empty, the karma consumer falls back to looking up the author.
+  string author_id = 4;
 }
 
 message VoteResponse {

@@ -19,12 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CommentService_CreateComment_FullMethodName = "/redyx.comment.v1.CommentService/CreateComment"
-	CommentService_GetComment_FullMethodName    = "/redyx.comment.v1.CommentService/GetComment"
-	CommentService_UpdateComment_FullMethodName = "/redyx.comment.v1.CommentService/UpdateComment"
-	CommentService_DeleteComment_FullMethodName = "/redyx.comment.v1.CommentService/DeleteComment"
-	CommentService_ListComments_FullMethodName  = "/redyx.comment.v1.CommentService/ListComments"
-	CommentService_ListReplies_FullMethodName   = "/redyx.comment.v1.CommentService/ListReplies"
+	CommentService_CreateComment_FullMethodName        = "/redyx.comment.v1.CommentService/CreateComment"
+	CommentService_GetComment_FullMethodName           = "/redyx.comment.v1.CommentService/GetComment"
+	CommentService_UpdateComment_FullMethodName        = "/redyx.comment.v1.CommentService/UpdateComment"
+	CommentService_DeleteComment_FullMethodName        = "/redyx.comment.v1.CommentService/DeleteComment"
+	CommentService_ListComments_FullMethodName         = "/redyx.comment.v1.CommentService/ListComments"
+	CommentService_ListReplies_FullMethodName          = "/redyx.comment.v1.CommentService/ListReplies"
+	CommentService_ListCommentsByAuthor_FullMethodName = "/redyx.comment.v1.CommentService/ListCommentsByAuthor"
 )
 
 // CommentServiceClient is the client API for CommentService service.
@@ -45,6 +46,8 @@ type CommentServiceClient interface {
 	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsResponse, error)
 	// ListReplies returns replies to a specific comment.
 	ListReplies(ctx context.Context, in *ListRepliesRequest, opts ...grpc.CallOption) (*ListRepliesResponse, error)
+	// ListCommentsByAuthor returns paginated comments authored by a given user.
+	ListCommentsByAuthor(ctx context.Context, in *ListCommentsByAuthorRequest, opts ...grpc.CallOption) (*ListCommentsByAuthorResponse, error)
 }
 
 type commentServiceClient struct {
@@ -115,6 +118,16 @@ func (c *commentServiceClient) ListReplies(ctx context.Context, in *ListRepliesR
 	return out, nil
 }
 
+func (c *commentServiceClient) ListCommentsByAuthor(ctx context.Context, in *ListCommentsByAuthorRequest, opts ...grpc.CallOption) (*ListCommentsByAuthorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCommentsByAuthorResponse)
+	err := c.cc.Invoke(ctx, CommentService_ListCommentsByAuthor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommentServiceServer is the server API for CommentService service.
 // All implementations must embed UnimplementedCommentServiceServer
 // for forward compatibility.
@@ -133,6 +146,8 @@ type CommentServiceServer interface {
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsResponse, error)
 	// ListReplies returns replies to a specific comment.
 	ListReplies(context.Context, *ListRepliesRequest) (*ListRepliesResponse, error)
+	// ListCommentsByAuthor returns paginated comments authored by a given user.
+	ListCommentsByAuthor(context.Context, *ListCommentsByAuthorRequest) (*ListCommentsByAuthorResponse, error)
 	mustEmbedUnimplementedCommentServiceServer()
 }
 
@@ -160,6 +175,9 @@ func (UnimplementedCommentServiceServer) ListComments(context.Context, *ListComm
 }
 func (UnimplementedCommentServiceServer) ListReplies(context.Context, *ListRepliesRequest) (*ListRepliesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListReplies not implemented")
+}
+func (UnimplementedCommentServiceServer) ListCommentsByAuthor(context.Context, *ListCommentsByAuthorRequest) (*ListCommentsByAuthorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCommentsByAuthor not implemented")
 }
 func (UnimplementedCommentServiceServer) mustEmbedUnimplementedCommentServiceServer() {}
 func (UnimplementedCommentServiceServer) testEmbeddedByValue()                        {}
@@ -290,6 +308,24 @@ func _CommentService_ListReplies_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommentService_ListCommentsByAuthor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCommentsByAuthorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServiceServer).ListCommentsByAuthor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommentService_ListCommentsByAuthor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServiceServer).ListCommentsByAuthor(ctx, req.(*ListCommentsByAuthorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommentService_ServiceDesc is the grpc.ServiceDesc for CommentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -320,6 +356,10 @@ var CommentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListReplies",
 			Handler:    _CommentService_ListReplies_Handler,
+		},
+		{
+			MethodName: "ListCommentsByAuthor",
+			Handler:    _CommentService_ListCommentsByAuthor_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

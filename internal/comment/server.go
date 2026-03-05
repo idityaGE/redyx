@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/gocql/gocql"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -13,26 +15,43 @@ import (
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
 	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
+	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
+	"github.com/redyx/redyx/internal/platform/pagination"
 )
 
 // Server implements the CommentServiceServer gRPC interface.
 type Server struct {
 	commentv1.UnimplementedCommentServiceServer
-	store     *Store
-	producer  *CommentProducer
-	voteRedis *redis.Client // vote-service Redis DB 5 (read-only for user_vote)
-	logger    *zap.Logger
+	store      *Store
+	producer   *CommentProducer
+	postClient postv1.PostServiceClient // gRPC client for post-service (comment enrichment)
+	voteRedis  *redis.Client            // vote-service Redis DB 5 (read-only for user_vote)
+	logger     *zap.Logger
 }
 
 // NewServer creates a new comment gRPC server.
-func NewServer(store *Store, producer *CommentProducer, voteRedis *redis.Client, logger *zap.Logger) *Server {
-	return &Server{
+func NewServer(store *Store, producer *CommentProducer, voteRedis *redis.Client, logger *zap.Logger, opts ...ServerOption) *Server {
+	s := &Server{
 		store:     store,
 		producer:  producer,
 		voteRedis: voteRedis,
 		logger:    logger,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// ServerOption configures optional dependencies for the comment server.
+type ServerOption func(*Server)
+
+// WithPostClient configures the post-service gRPC client for comment enrichment.
+func WithPostClient(client postv1.PostServiceClient) ServerOption {
+	return func(s *Server) {
+		s.postClient = client
 	}
 }
 
@@ -315,6 +334,136 @@ func mapSortOrder(sort commentv1.CommentSortOrder) CommentSortOrder {
 		return SortControversial
 	default:
 		return SortBest // Default to Best
+	}
+}
+
+// ListCommentsByAuthor returns paginated comments authored by a given user.
+// Queries the comments_by_author ScyllaDB table and enriches with post data.
+func (s *Server) ListCommentsByAuthor(ctx context.Context, req *commentv1.ListCommentsByAuthorRequest) (*commentv1.ListCommentsByAuthorResponse, error) {
+	username := strings.TrimSpace(req.GetUsername())
+	if username == "" {
+		return nil, fmt.Errorf("username is required: %w", perrors.ErrInvalidInput)
+	}
+
+	pag := req.GetPagination()
+	limit := pagination.DefaultLimit(pag.GetLimit(), 25, 100)
+
+	// Decode cursor if provided
+	var cursorTime time.Time
+	if pag.GetCursor() != "" {
+		_, ct, err := pagination.DecodeCursor(pag.GetCursor())
+		if err != nil {
+			return nil, fmt.Errorf("invalid cursor: %w", perrors.ErrInvalidInput)
+		}
+		cursorTime = ct
+	}
+
+	// Query comments_by_author table
+	var iter *gocql.Iter
+	if cursorTime.IsZero() {
+		iter = s.store.session.Query(
+			`SELECT comment_id, post_id, body, vote_score, is_deleted, created_at
+			 FROM redyx_comments.comments_by_author
+			 WHERE author_username = ?
+			 LIMIT ?`,
+			username, limit+1,
+		).WithContext(ctx).Iter()
+	} else {
+		iter = s.store.session.Query(
+			`SELECT comment_id, post_id, body, vote_score, is_deleted, created_at
+			 FROM redyx_comments.comments_by_author
+			 WHERE author_username = ? AND created_at < ?
+			 LIMIT ?`,
+			username, cursorTime, limit+1,
+		).WithContext(ctx).Iter()
+	}
+
+	var comments []*commentv1.CommentSummary
+	var commentID, postID gocql.UUID
+	var body string
+	var voteScore int
+	var isDeleted bool
+	var createdAt time.Time
+
+	for iter.Scan(&commentID, &postID, &body, &voteScore, &isDeleted, &createdAt) {
+		if isDeleted {
+			continue
+		}
+		comments = append(comments, &commentv1.CommentSummary{
+			CommentId: commentID.String(),
+			PostId:    postID.String(),
+			Body:      body,
+			VoteScore: int32(voteScore),
+			CreatedAt: timestamppb.New(createdAt),
+		})
+	}
+	if err := iter.Close(); err != nil {
+		s.logger.Error("failed to query comments_by_author", zap.Error(err))
+		return nil, fmt.Errorf("list comments by author: %w", err)
+	}
+
+	hasMore := len(comments) > int(limit)
+	if hasMore {
+		comments = comments[:limit]
+	}
+
+	// Enrich comments with post title + community name from post-service
+	s.enrichCommentSummaries(ctx, comments)
+
+	var nextCursor string
+	if hasMore && len(comments) > 0 {
+		last := comments[len(comments)-1]
+		nextCursor = pagination.EncodeCursor(last.CommentId, last.CreatedAt.AsTime())
+	}
+
+	return &commentv1.ListCommentsByAuthorResponse{
+		Comments: comments,
+		Pagination: &commonv1.PaginationResponse{
+			NextCursor: nextCursor,
+			HasMore:    hasMore,
+		},
+	}, nil
+}
+
+// enrichCommentSummaries batch-looks up post titles and community names
+// via the post-service gRPC client and fills in the CommentSummary fields.
+func (s *Server) enrichCommentSummaries(ctx context.Context, comments []*commentv1.CommentSummary) {
+	if s.postClient == nil || len(comments) == 0 {
+		return
+	}
+
+	// Collect unique post IDs
+	postIDs := make(map[string]struct{})
+	for _, c := range comments {
+		if c.PostId != "" {
+			postIDs[c.PostId] = struct{}{}
+		}
+	}
+
+	type postInfo struct {
+		title         string
+		communityName string
+	}
+	postMap := make(map[string]postInfo)
+
+	// Call GetPost for each unique post ID
+	for pid := range postIDs {
+		resp, err := s.postClient.GetPost(ctx, &postv1.GetPostRequest{PostId: pid})
+		if err != nil {
+			s.logger.Debug("failed to enrich comment with post data", zap.String("post_id", pid), zap.Error(err))
+			continue
+		}
+		if p := resp.GetPost(); p != nil {
+			postMap[pid] = postInfo{title: p.Title, communityName: p.CommunityName}
+		}
+	}
+
+	// Fill in the comment summaries
+	for _, c := range comments {
+		if info, ok := postMap[c.PostId]; ok {
+			c.PostTitle = info.title
+			c.CommunityName = info.communityName
+		}
 	}
 }
 

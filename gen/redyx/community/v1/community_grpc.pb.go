@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CommunityService_CreateCommunity_FullMethodName = "/redyx.community.v1.CommunityService/CreateCommunity"
-	CommunityService_GetCommunity_FullMethodName    = "/redyx.community.v1.CommunityService/GetCommunity"
-	CommunityService_UpdateCommunity_FullMethodName = "/redyx.community.v1.CommunityService/UpdateCommunity"
-	CommunityService_ListCommunities_FullMethodName = "/redyx.community.v1.CommunityService/ListCommunities"
-	CommunityService_JoinCommunity_FullMethodName   = "/redyx.community.v1.CommunityService/JoinCommunity"
-	CommunityService_LeaveCommunity_FullMethodName  = "/redyx.community.v1.CommunityService/LeaveCommunity"
-	CommunityService_ListMembers_FullMethodName     = "/redyx.community.v1.CommunityService/ListMembers"
-	CommunityService_AssignModerator_FullMethodName = "/redyx.community.v1.CommunityService/AssignModerator"
-	CommunityService_RevokeModerator_FullMethodName = "/redyx.community.v1.CommunityService/RevokeModerator"
+	CommunityService_CreateCommunity_FullMethodName     = "/redyx.community.v1.CommunityService/CreateCommunity"
+	CommunityService_GetCommunity_FullMethodName        = "/redyx.community.v1.CommunityService/GetCommunity"
+	CommunityService_UpdateCommunity_FullMethodName     = "/redyx.community.v1.CommunityService/UpdateCommunity"
+	CommunityService_ListCommunities_FullMethodName     = "/redyx.community.v1.CommunityService/ListCommunities"
+	CommunityService_JoinCommunity_FullMethodName       = "/redyx.community.v1.CommunityService/JoinCommunity"
+	CommunityService_LeaveCommunity_FullMethodName      = "/redyx.community.v1.CommunityService/LeaveCommunity"
+	CommunityService_ListMembers_FullMethodName         = "/redyx.community.v1.CommunityService/ListMembers"
+	CommunityService_AssignModerator_FullMethodName     = "/redyx.community.v1.CommunityService/AssignModerator"
+	CommunityService_RevokeModerator_FullMethodName     = "/redyx.community.v1.CommunityService/RevokeModerator"
+	CommunityService_ListUserCommunities_FullMethodName = "/redyx.community.v1.CommunityService/ListUserCommunities"
 )
 
 // CommunityServiceClient is the client API for CommunityService service.
@@ -54,6 +55,8 @@ type CommunityServiceClient interface {
 	AssignModerator(ctx context.Context, in *AssignModeratorRequest, opts ...grpc.CallOption) (*AssignModeratorResponse, error)
 	// RevokeModerator removes moderator role from a user (owner only).
 	RevokeModerator(ctx context.Context, in *RevokeModeratorRequest, opts ...grpc.CallOption) (*RevokeModeratorResponse, error)
+	// ListUserCommunities returns the communities a user has joined.
+	ListUserCommunities(ctx context.Context, in *ListUserCommunitiesRequest, opts ...grpc.CallOption) (*ListUserCommunitiesResponse, error)
 }
 
 type communityServiceClient struct {
@@ -154,6 +157,16 @@ func (c *communityServiceClient) RevokeModerator(ctx context.Context, in *Revoke
 	return out, nil
 }
 
+func (c *communityServiceClient) ListUserCommunities(ctx context.Context, in *ListUserCommunitiesRequest, opts ...grpc.CallOption) (*ListUserCommunitiesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserCommunitiesResponse)
+	err := c.cc.Invoke(ctx, CommunityService_ListUserCommunities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommunityServiceServer is the server API for CommunityService service.
 // All implementations must embed UnimplementedCommunityServiceServer
 // for forward compatibility.
@@ -178,6 +191,8 @@ type CommunityServiceServer interface {
 	AssignModerator(context.Context, *AssignModeratorRequest) (*AssignModeratorResponse, error)
 	// RevokeModerator removes moderator role from a user (owner only).
 	RevokeModerator(context.Context, *RevokeModeratorRequest) (*RevokeModeratorResponse, error)
+	// ListUserCommunities returns the communities a user has joined.
+	ListUserCommunities(context.Context, *ListUserCommunitiesRequest) (*ListUserCommunitiesResponse, error)
 	mustEmbedUnimplementedCommunityServiceServer()
 }
 
@@ -214,6 +229,9 @@ func (UnimplementedCommunityServiceServer) AssignModerator(context.Context, *Ass
 }
 func (UnimplementedCommunityServiceServer) RevokeModerator(context.Context, *RevokeModeratorRequest) (*RevokeModeratorResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeModerator not implemented")
+}
+func (UnimplementedCommunityServiceServer) ListUserCommunities(context.Context, *ListUserCommunitiesRequest) (*ListUserCommunitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUserCommunities not implemented")
 }
 func (UnimplementedCommunityServiceServer) mustEmbedUnimplementedCommunityServiceServer() {}
 func (UnimplementedCommunityServiceServer) testEmbeddedByValue()                          {}
@@ -398,6 +416,24 @@ func _CommunityService_RevokeModerator_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommunityService_ListUserCommunities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserCommunitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommunityServiceServer).ListUserCommunities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommunityService_ListUserCommunities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommunityServiceServer).ListUserCommunities(ctx, req.(*ListUserCommunitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommunityService_ServiceDesc is the grpc.ServiceDesc for CommunityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -440,6 +476,10 @@ var CommunityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeModerator",
 			Handler:    _CommunityService_RevokeModerator_Handler,
+		},
+		{
+			MethodName: "ListUserCommunities",
+			Handler:    _CommunityService_ListUserCommunities_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

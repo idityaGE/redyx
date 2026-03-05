@@ -827,6 +827,203 @@ func (x *ListRepliesResponse) GetPagination() *v1.PaginationResponse {
 	return nil
 }
 
+type ListCommentsByAuthorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Pagination    *v1.PaginationRequest  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCommentsByAuthorRequest) Reset() {
+	*x = ListCommentsByAuthorRequest{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCommentsByAuthorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCommentsByAuthorRequest) ProtoMessage() {}
+
+func (x *ListCommentsByAuthorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCommentsByAuthorRequest.ProtoReflect.Descriptor instead.
+func (*ListCommentsByAuthorRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListCommentsByAuthorRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *ListCommentsByAuthorRequest) GetPagination() *v1.PaginationRequest {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type ListCommentsByAuthorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Comments      []*CommentSummary      `protobuf:"bytes,1,rep,name=comments,proto3" json:"comments,omitempty"`
+	Pagination    *v1.PaginationResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCommentsByAuthorResponse) Reset() {
+	*x = ListCommentsByAuthorResponse{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCommentsByAuthorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCommentsByAuthorResponse) ProtoMessage() {}
+
+func (x *ListCommentsByAuthorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCommentsByAuthorResponse.ProtoReflect.Descriptor instead.
+func (*ListCommentsByAuthorResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListCommentsByAuthorResponse) GetComments() []*CommentSummary {
+	if x != nil {
+		return x.Comments
+	}
+	return nil
+}
+
+func (x *ListCommentsByAuthorResponse) GetPagination() *v1.PaginationResponse {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+// CommentSummary is a lightweight comment representation for profile pages.
+type CommentSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommentId     string                 `protobuf:"bytes,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
+	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	PostTitle     string                 `protobuf:"bytes,3,opt,name=post_title,json=postTitle,proto3" json:"post_title,omitempty"`
+	CommunityName string                 `protobuf:"bytes,4,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	Body          string                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+	VoteScore     int32                  `protobuf:"varint,6,opt,name=vote_score,json=voteScore,proto3" json:"vote_score,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommentSummary) Reset() {
+	*x = CommentSummary{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommentSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommentSummary) ProtoMessage() {}
+
+func (x *CommentSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommentSummary.ProtoReflect.Descriptor instead.
+func (*CommentSummary) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CommentSummary) GetCommentId() string {
+	if x != nil {
+		return x.CommentId
+	}
+	return ""
+}
+
+func (x *CommentSummary) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *CommentSummary) GetPostTitle() string {
+	if x != nil {
+		return x.PostTitle
+	}
+	return ""
+}
+
+func (x *CommentSummary) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *CommentSummary) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *CommentSummary) GetVoteScore() int32 {
+	if x != nil {
+		return x.VoteScore
+	}
+	return 0
+}
+
+func (x *CommentSummary) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
 var File_redyx_comment_v1_comment_proto protoreflect.FileDescriptor
 
 const file_redyx_comment_v1_comment_proto_rawDesc = "" +
@@ -896,13 +1093,35 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\areplies\x18\x01 \x03(\v2\x19.redyx.comment.v1.CommentR\areplies\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination*\xb1\x01\n" +
+	"pagination\"}\n" +
+	"\x1bListCommentsByAuthorRequest\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12B\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\".redyx.common.v1.PaginationRequestR\n" +
+	"pagination\"\xa1\x01\n" +
+	"\x1cListCommentsByAuthorResponse\x12<\n" +
+	"\bcomments\x18\x01 \x03(\v2 .redyx.comment.v1.CommentSummaryR\bcomments\x12C\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
+	"pagination\"\xfc\x01\n" +
+	"\x0eCommentSummary\x12\x1d\n" +
+	"\n" +
+	"comment_id\x18\x01 \x01(\tR\tcommentId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\x12\x1d\n" +
+	"\n" +
+	"post_title\x18\x03 \x01(\tR\tpostTitle\x12%\n" +
+	"\x0ecommunity_name\x18\x04 \x01(\tR\rcommunityName\x12\x12\n" +
+	"\x04body\x18\x05 \x01(\tR\x04body\x12\x1d\n" +
+	"\n" +
+	"vote_score\x18\x06 \x01(\x05R\tvoteScore\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xb1\x01\n" +
 	"\x10CommentSortOrder\x12\"\n" +
 	"\x1eCOMMENT_SORT_ORDER_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17COMMENT_SORT_ORDER_BEST\x10\x01\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_TOP\x10\x02\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_NEW\x10\x03\x12$\n" +
-	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xcd\x06\n" +
+	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xf0\a\n" +
 	"\x0eCommentService\x12\x8d\x01\n" +
 	"\rCreateComment\x12&.redyx.comment.v1.CreateCommentRequest\x1a'.redyx.comment.v1.CreateCommentResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/posts/{post_id}/comments\x12~\n" +
 	"\n" +
@@ -910,7 +1129,8 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\rUpdateComment\x12&.redyx.comment.v1.UpdateCommentRequest\x1a'.redyx.comment.v1.UpdateCommentResponse\"(\x82\xd3\xe4\x93\x02\":\x01*2\x1d/api/v1/comments/{comment_id}\x12\x87\x01\n" +
 	"\rDeleteComment\x12&.redyx.comment.v1.DeleteCommentRequest\x1a'.redyx.comment.v1.DeleteCommentResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/comments/{comment_id}\x12\x87\x01\n" +
 	"\fListComments\x12%.redyx.comment.v1.ListCommentsRequest\x1a&.redyx.comment.v1.ListCommentsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/posts/{post_id}/comments\x12\x89\x01\n" +
-	"\vListReplies\x12$.redyx.comment.v1.ListRepliesRequest\x1a%.redyx.comment.v1.ListRepliesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/comments/{comment_id}/repliesB\xbd\x01\n" +
+	"\vListReplies\x12$.redyx.comment.v1.ListRepliesRequest\x1a%.redyx.comment.v1.ListRepliesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/comments/{comment_id}/replies\x12\xa0\x01\n" +
+	"\x14ListCommentsByAuthor\x12-.redyx.comment.v1.ListCommentsByAuthorRequest\x1a..redyx.comment.v1.ListCommentsByAuthorResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/users/{username}/commentsB\xbd\x01\n" +
 	"\x14com.redyx.comment.v1B\fCommentProtoP\x01Z5github.com/redyx/redyx/gen/redyx/comment/v1;commentv1\xa2\x02\x03RCX\xaa\x02\x10Redyx.Comment.V1\xca\x02\x10Redyx\\Comment\\V1\xe2\x02\x1cRedyx\\Comment\\V1\\GPBMetadata\xea\x02\x12Redyx::Comment::V1b\x06proto3"
 
 var (
@@ -926,56 +1146,65 @@ func file_redyx_comment_v1_comment_proto_rawDescGZIP() []byte {
 }
 
 var file_redyx_comment_v1_comment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_redyx_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_redyx_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_redyx_comment_v1_comment_proto_goTypes = []any{
-	(CommentSortOrder)(0),         // 0: redyx.comment.v1.CommentSortOrder
-	(*Comment)(nil),               // 1: redyx.comment.v1.Comment
-	(*CreateCommentRequest)(nil),  // 2: redyx.comment.v1.CreateCommentRequest
-	(*CreateCommentResponse)(nil), // 3: redyx.comment.v1.CreateCommentResponse
-	(*GetCommentRequest)(nil),     // 4: redyx.comment.v1.GetCommentRequest
-	(*GetCommentResponse)(nil),    // 5: redyx.comment.v1.GetCommentResponse
-	(*UpdateCommentRequest)(nil),  // 6: redyx.comment.v1.UpdateCommentRequest
-	(*UpdateCommentResponse)(nil), // 7: redyx.comment.v1.UpdateCommentResponse
-	(*DeleteCommentRequest)(nil),  // 8: redyx.comment.v1.DeleteCommentRequest
-	(*DeleteCommentResponse)(nil), // 9: redyx.comment.v1.DeleteCommentResponse
-	(*ListCommentsRequest)(nil),   // 10: redyx.comment.v1.ListCommentsRequest
-	(*ListCommentsResponse)(nil),  // 11: redyx.comment.v1.ListCommentsResponse
-	(*ListRepliesRequest)(nil),    // 12: redyx.comment.v1.ListRepliesRequest
-	(*ListRepliesResponse)(nil),   // 13: redyx.comment.v1.ListRepliesResponse
-	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),  // 15: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil), // 16: redyx.common.v1.PaginationResponse
+	(CommentSortOrder)(0),                // 0: redyx.comment.v1.CommentSortOrder
+	(*Comment)(nil),                      // 1: redyx.comment.v1.Comment
+	(*CreateCommentRequest)(nil),         // 2: redyx.comment.v1.CreateCommentRequest
+	(*CreateCommentResponse)(nil),        // 3: redyx.comment.v1.CreateCommentResponse
+	(*GetCommentRequest)(nil),            // 4: redyx.comment.v1.GetCommentRequest
+	(*GetCommentResponse)(nil),           // 5: redyx.comment.v1.GetCommentResponse
+	(*UpdateCommentRequest)(nil),         // 6: redyx.comment.v1.UpdateCommentRequest
+	(*UpdateCommentResponse)(nil),        // 7: redyx.comment.v1.UpdateCommentResponse
+	(*DeleteCommentRequest)(nil),         // 8: redyx.comment.v1.DeleteCommentRequest
+	(*DeleteCommentResponse)(nil),        // 9: redyx.comment.v1.DeleteCommentResponse
+	(*ListCommentsRequest)(nil),          // 10: redyx.comment.v1.ListCommentsRequest
+	(*ListCommentsResponse)(nil),         // 11: redyx.comment.v1.ListCommentsResponse
+	(*ListRepliesRequest)(nil),           // 12: redyx.comment.v1.ListRepliesRequest
+	(*ListRepliesResponse)(nil),          // 13: redyx.comment.v1.ListRepliesResponse
+	(*ListCommentsByAuthorRequest)(nil),  // 14: redyx.comment.v1.ListCommentsByAuthorRequest
+	(*ListCommentsByAuthorResponse)(nil), // 15: redyx.comment.v1.ListCommentsByAuthorResponse
+	(*CommentSummary)(nil),               // 16: redyx.comment.v1.CommentSummary
+	(*timestamppb.Timestamp)(nil),        // 17: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),         // 18: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),        // 19: redyx.common.v1.PaginationResponse
 }
 var file_redyx_comment_v1_comment_proto_depIdxs = []int32{
-	14, // 0: redyx.comment.v1.Comment.created_at:type_name -> google.protobuf.Timestamp
-	14, // 1: redyx.comment.v1.Comment.edited_at:type_name -> google.protobuf.Timestamp
+	17, // 0: redyx.comment.v1.Comment.created_at:type_name -> google.protobuf.Timestamp
+	17, // 1: redyx.comment.v1.Comment.edited_at:type_name -> google.protobuf.Timestamp
 	1,  // 2: redyx.comment.v1.CreateCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	1,  // 3: redyx.comment.v1.GetCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	1,  // 4: redyx.comment.v1.UpdateCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	0,  // 5: redyx.comment.v1.ListCommentsRequest.sort:type_name -> redyx.comment.v1.CommentSortOrder
-	15, // 6: redyx.comment.v1.ListCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	18, // 6: redyx.comment.v1.ListCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	1,  // 7: redyx.comment.v1.ListCommentsResponse.comments:type_name -> redyx.comment.v1.Comment
-	16, // 8: redyx.comment.v1.ListCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	15, // 9: redyx.comment.v1.ListRepliesRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	19, // 8: redyx.comment.v1.ListCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	18, // 9: redyx.comment.v1.ListRepliesRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	1,  // 10: redyx.comment.v1.ListRepliesResponse.replies:type_name -> redyx.comment.v1.Comment
-	16, // 11: redyx.comment.v1.ListRepliesResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	2,  // 12: redyx.comment.v1.CommentService.CreateComment:input_type -> redyx.comment.v1.CreateCommentRequest
-	4,  // 13: redyx.comment.v1.CommentService.GetComment:input_type -> redyx.comment.v1.GetCommentRequest
-	6,  // 14: redyx.comment.v1.CommentService.UpdateComment:input_type -> redyx.comment.v1.UpdateCommentRequest
-	8,  // 15: redyx.comment.v1.CommentService.DeleteComment:input_type -> redyx.comment.v1.DeleteCommentRequest
-	10, // 16: redyx.comment.v1.CommentService.ListComments:input_type -> redyx.comment.v1.ListCommentsRequest
-	12, // 17: redyx.comment.v1.CommentService.ListReplies:input_type -> redyx.comment.v1.ListRepliesRequest
-	3,  // 18: redyx.comment.v1.CommentService.CreateComment:output_type -> redyx.comment.v1.CreateCommentResponse
-	5,  // 19: redyx.comment.v1.CommentService.GetComment:output_type -> redyx.comment.v1.GetCommentResponse
-	7,  // 20: redyx.comment.v1.CommentService.UpdateComment:output_type -> redyx.comment.v1.UpdateCommentResponse
-	9,  // 21: redyx.comment.v1.CommentService.DeleteComment:output_type -> redyx.comment.v1.DeleteCommentResponse
-	11, // 22: redyx.comment.v1.CommentService.ListComments:output_type -> redyx.comment.v1.ListCommentsResponse
-	13, // 23: redyx.comment.v1.CommentService.ListReplies:output_type -> redyx.comment.v1.ListRepliesResponse
-	18, // [18:24] is the sub-list for method output_type
-	12, // [12:18] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	19, // 11: redyx.comment.v1.ListRepliesResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	18, // 12: redyx.comment.v1.ListCommentsByAuthorRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	16, // 13: redyx.comment.v1.ListCommentsByAuthorResponse.comments:type_name -> redyx.comment.v1.CommentSummary
+	19, // 14: redyx.comment.v1.ListCommentsByAuthorResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	17, // 15: redyx.comment.v1.CommentSummary.created_at:type_name -> google.protobuf.Timestamp
+	2,  // 16: redyx.comment.v1.CommentService.CreateComment:input_type -> redyx.comment.v1.CreateCommentRequest
+	4,  // 17: redyx.comment.v1.CommentService.GetComment:input_type -> redyx.comment.v1.GetCommentRequest
+	6,  // 18: redyx.comment.v1.CommentService.UpdateComment:input_type -> redyx.comment.v1.UpdateCommentRequest
+	8,  // 19: redyx.comment.v1.CommentService.DeleteComment:input_type -> redyx.comment.v1.DeleteCommentRequest
+	10, // 20: redyx.comment.v1.CommentService.ListComments:input_type -> redyx.comment.v1.ListCommentsRequest
+	12, // 21: redyx.comment.v1.CommentService.ListReplies:input_type -> redyx.comment.v1.ListRepliesRequest
+	14, // 22: redyx.comment.v1.CommentService.ListCommentsByAuthor:input_type -> redyx.comment.v1.ListCommentsByAuthorRequest
+	3,  // 23: redyx.comment.v1.CommentService.CreateComment:output_type -> redyx.comment.v1.CreateCommentResponse
+	5,  // 24: redyx.comment.v1.CommentService.GetComment:output_type -> redyx.comment.v1.GetCommentResponse
+	7,  // 25: redyx.comment.v1.CommentService.UpdateComment:output_type -> redyx.comment.v1.UpdateCommentResponse
+	9,  // 26: redyx.comment.v1.CommentService.DeleteComment:output_type -> redyx.comment.v1.DeleteCommentResponse
+	11, // 27: redyx.comment.v1.CommentService.ListComments:output_type -> redyx.comment.v1.ListCommentsResponse
+	13, // 28: redyx.comment.v1.CommentService.ListReplies:output_type -> redyx.comment.v1.ListRepliesResponse
+	15, // 29: redyx.comment.v1.CommentService.ListCommentsByAuthor:output_type -> redyx.comment.v1.ListCommentsByAuthorResponse
+	23, // [23:30] is the sub-list for method output_type
+	16, // [16:23] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_redyx_comment_v1_comment_proto_init() }
@@ -989,7 +1218,7 @@ func file_redyx_comment_v1_comment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_comment_v1_comment_proto_rawDesc), len(file_redyx_comment_v1_comment_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

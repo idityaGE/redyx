@@ -18,7 +18,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
+	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
@@ -28,43 +30,40 @@ import (
 // Server implements the PostServiceServer gRPC interface.
 type Server struct {
 	postv1.UnimplementedPostServiceServer
-	shards      *ShardRouter
-	cache       *Cache
-	producer    *PostProducer
-	communityDB *pgxpool.Pool
-	mediaDB     *pgxpool.Pool
-	logger      *zap.Logger
+	shards          *ShardRouter
+	cache           *Cache
+	producer        *PostProducer
+	communityClient communityv1.CommunityServiceClient
+	mediaClient     mediav1.MediaServiceClient
+	logger          *zap.Logger
 }
 
 // NewServer creates a new post gRPC server.
-func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityDB *pgxpool.Pool, mediaDB *pgxpool.Pool, logger *zap.Logger) *Server {
+func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityClient communityv1.CommunityServiceClient, mediaClient mediav1.MediaServiceClient, logger *zap.Logger) *Server {
 	return &Server{
-		shards:      shards,
-		cache:       cache,
-		producer:    producer,
-		communityDB: communityDB,
-		mediaDB:     mediaDB,
-		logger:      logger,
+		shards:          shards,
+		cache:           cache,
+		producer:        producer,
+		communityClient: communityClient,
+		mediaClient:     mediaClient,
+		logger:          logger,
 	}
 }
 
-// resolveCommunity looks up a community by name and returns its UUID.
-func (s *Server) resolveCommunity(ctx context.Context, name string) (string, error) {
-	if s.communityDB == nil {
-		return "", fmt.Errorf("community database not configured")
+// resolveCommunity looks up a community by name and returns its UUID and membership status.
+func (s *Server) resolveCommunity(ctx context.Context, name string) (communityID string, isMember bool, err error) {
+	if s.communityClient == nil {
+		return "", false, fmt.Errorf("community service not configured")
 	}
-	var id string
-	err := s.communityDB.QueryRow(ctx,
-		`SELECT id FROM communities WHERE name = $1`,
-		name,
-	).Scan(&id)
+	resp, err := s.communityClient.GetCommunity(ctx, &communityv1.GetCommunityRequest{Name: name})
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return "", fmt.Errorf("community %q: %w", name, perrors.ErrNotFound)
-		}
-		return "", fmt.Errorf("resolve community: %w", err)
+		return "", false, fmt.Errorf("resolve community %q: %w", name, err)
 	}
-	return id, nil
+	comm := resp.GetCommunity()
+	if comm == nil {
+		return "", false, fmt.Errorf("community %q: %w", name, perrors.ErrNotFound)
+	}
+	return comm.CommunityId, resp.IsMember, nil
 }
 
 // CreatePost creates a new post in a community shard.
@@ -109,53 +108,39 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 		return nil, fmt.Errorf("unknown post type: %w", perrors.ErrInvalidInput)
 	}
 
-	// Resolve community name → UUID from community database
+	// Resolve community name → UUID via community-service gRPC
 	communityName := req.GetCommunityName()
 	if communityName == "" {
 		return nil, fmt.Errorf("community name is required: %w", perrors.ErrInvalidInput)
 	}
 
-	communityID, err := s.resolveCommunity(ctx, communityName)
+	communityID, isMember, err := s.resolveCommunity(ctx, communityName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify user is a member of the community
-	if s.communityDB != nil {
-		var isMember bool
-		err := s.communityDB.QueryRow(ctx,
-			`SELECT EXISTS(SELECT 1 FROM community_members WHERE community_id = $1 AND user_id = $2)`,
-			communityID, claims.UserID,
-		).Scan(&isMember)
-		if err != nil {
-			return nil, fmt.Errorf("check membership: %w", err)
-		}
-		if !isMember {
-			return nil, fmt.Errorf("you must join the community before posting: %w", perrors.ErrForbidden)
-		}
+	if !isMember {
+		return nil, fmt.Errorf("you must join the community before posting: %w", perrors.ErrForbidden)
 	}
 
-	// Resolve media IDs → URLs for media posts
+	// Resolve media IDs → URLs for media posts via media-service gRPC
 	var mediaURLs []string
 	var thumbnailURL string
-	if postType == postv1.PostType_POST_TYPE_MEDIA && s.mediaDB != nil {
+	if postType == postv1.PostType_POST_TYPE_MEDIA && s.mediaClient != nil {
 		for _, mediaID := range req.GetMediaIds() {
-			var mediaURL, thumbURL, mediaStatus string
-			err := s.mediaDB.QueryRow(ctx,
-				`SELECT COALESCE(url, ''), COALESCE(thumbnail_url, ''), status FROM media_items WHERE id = $1`,
-				mediaID,
-			).Scan(&mediaURL, &thumbURL, &mediaStatus)
+			resp, err := s.mediaClient.GetMedia(ctx, &mediav1.GetMediaRequest{MediaId: mediaID})
 			if err != nil {
 				return nil, fmt.Errorf("media item %q not found: %w", mediaID, perrors.ErrInvalidInput)
 			}
-			if mediaStatus != "ready" {
-				return nil, fmt.Errorf("media item %q is not ready (status: %s): %w", mediaID, mediaStatus, perrors.ErrInvalidInput)
+			if resp.GetStatus() != mediav1.MediaStatus_MEDIA_STATUS_READY {
+				return nil, fmt.Errorf("media item %q is not ready (status: %s): %w", mediaID, resp.GetStatus().String(), perrors.ErrInvalidInput)
 			}
-			if mediaURL != "" {
-				mediaURLs = append(mediaURLs, mediaURL)
+			if resp.GetUrl() != "" {
+				mediaURLs = append(mediaURLs, resp.GetUrl())
 			}
-			if thumbnailURL == "" && thumbURL != "" {
-				thumbnailURL = thumbURL
+			if thumbnailURL == "" && resp.GetThumbnailUrl() != "" {
+				thumbnailURL = resp.GetThumbnailUrl()
 			}
 		}
 		if len(mediaURLs) == 0 {
@@ -1006,8 +991,8 @@ func (s *Server) getPostByID(ctx context.Context, postID string) (*postv1.Post, 
 	return post, err
 }
 
-// getUserCommunityIDs returns the community IDs the user has joined.
-// First checks cache, then queries the community database directly.
+// getUserCommunityIDs returns the community names the user has joined.
+// First checks cache, then queries community-service via gRPC.
 func (s *Server) getUserCommunityIDs(ctx context.Context, userID string) ([]string, error) {
 	// Check cache
 	ids, err := s.cache.GetMembership(ctx, userID)
@@ -1018,31 +1003,21 @@ func (s *Server) getUserCommunityIDs(ctx context.Context, userID string) ([]stri
 		return ids, nil
 	}
 
-	// Query community database for user's joined communities by name
-	if s.communityDB == nil {
-		return nil, fmt.Errorf("community database not configured")
+	// Query community-service for user's joined communities
+	if s.communityClient == nil {
+		return nil, fmt.Errorf("community service not configured")
 	}
 
-	rows, err := s.communityDB.Query(ctx,
-		`SELECT c.name FROM community_members cm
-		 JOIN communities c ON c.id = cm.community_id
-		 WHERE cm.user_id = $1`,
-		userID,
-	)
+	resp, err := s.communityClient.ListUserCommunities(ctx, &communityv1.ListUserCommunitiesRequest{
+		UserId: userID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("query user communities: %w", err)
 	}
-	defer rows.Close()
 
 	var result []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err == nil {
-			result = append(result, name)
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("scan user communities: %w", err)
+	for _, uc := range resp.GetCommunities() {
+		result = append(result, uc.GetName())
 	}
 
 	// Cache for 5min
@@ -1310,6 +1285,118 @@ func scanPosts(rows pgx.Rows) ([]*postWithScore, error) {
 // scanPostsWithScore is an alias for scanPosts for clarity.
 func scanPostsWithScore(rows pgx.Rows) ([]*postWithScore, error) {
 	return scanPosts(rows)
+}
+
+// ListUserPosts returns paginated posts authored by a specific user.
+// Queries all shard databases in parallel, merges by created_at DESC.
+func (s *Server) ListUserPosts(ctx context.Context, req *postv1.ListUserPostsRequest) (*postv1.ListUserPostsResponse, error) {
+	username := req.GetUsername()
+	if username == "" {
+		return nil, fmt.Errorf("username is required: %w", perrors.ErrInvalidInput)
+	}
+
+	pag := req.GetPagination()
+	limit := pagination.DefaultLimit(pag.GetLimit(), 25, 100)
+	fetchLimit := int(limit) + 1
+
+	var cursorTime time.Time
+	var cursorID string
+	if pag.GetCursor() != "" {
+		var err error
+		cursorID, cursorTime, err = pagination.DecodeCursor(pag.GetCursor())
+		if err != nil {
+			return nil, fmt.Errorf("invalid cursor: %w", perrors.ErrInvalidInput)
+		}
+	}
+
+	pools := s.shards.AllPools()
+	type shardResult struct {
+		posts []*postv1.Post
+		err   error
+	}
+	resultsCh := make(chan shardResult, len(pools))
+
+	for _, pool := range pools {
+		go func(p *pgxpool.Pool) {
+			var args []any
+			argIdx := 1
+
+			query := `SELECT id, title, body, url, post_type, author_id, author_username,
+				community_id, community_name, vote_score, comment_count, hot_score,
+				is_edited, is_deleted, is_pinned, is_anonymous, thumbnail_url, media_urls, created_at, edited_at
+				FROM posts WHERE author_username = $1 AND is_deleted = false`
+			args = append(args, username)
+			argIdx++
+
+			if !cursorTime.IsZero() {
+				query += fmt.Sprintf(" AND (created_at, id) < ($%d, $%d)", argIdx, argIdx+1)
+				args = append(args, cursorTime, cursorID)
+				argIdx += 2
+			}
+
+			query += " ORDER BY created_at DESC, id DESC"
+			query += fmt.Sprintf(" LIMIT $%d", argIdx)
+			args = append(args, fetchLimit)
+
+			rows, err := p.Query(ctx, query, args...)
+			if err != nil {
+				resultsCh <- shardResult{err: err}
+				return
+			}
+			defer rows.Close()
+
+			var posts []*postv1.Post
+			for rows.Next() {
+				post, err := scanPostRow(rows)
+				if err != nil {
+					resultsCh <- shardResult{err: err}
+					return
+				}
+				posts = append(posts, post)
+			}
+			resultsCh <- shardResult{posts: posts}
+		}(pool)
+	}
+
+	var allPosts []*postv1.Post
+	for range pools {
+		r := <-resultsCh
+		if r.err != nil {
+			s.logger.Warn("shard query error in ListUserPosts", zap.Error(r.err))
+			continue
+		}
+		allPosts = append(allPosts, r.posts...)
+	}
+
+	// Sort merged results by created_at DESC
+	sort.Slice(allPosts, func(i, j int) bool {
+		ti := allPosts[i].CreatedAt.AsTime()
+		tj := allPosts[j].CreatedAt.AsTime()
+		if ti.Equal(tj) {
+			return allPosts[i].PostId > allPosts[j].PostId
+		}
+		return ti.After(tj)
+	})
+
+	hasMore := len(allPosts) > int(limit)
+	if len(allPosts) > int(limit) {
+		allPosts = allPosts[:limit]
+	}
+
+	var nextCursor string
+	if hasMore && len(allPosts) > 0 {
+		last := allPosts[len(allPosts)-1]
+		nextCursor = pagination.EncodeCursor(last.PostId, last.CreatedAt.AsTime())
+	}
+
+	return &postv1.ListUserPostsResponse{
+		Posts: allPosts,
+		Pagination: &commonv1.PaginationResponse{
+			NextCursor: nextCursor,
+			HasMore:    hasMore,
+			TotalCount: int32(len(allPosts)),
+		},
+	}, nil
 }
 
 // Ensure we import encoding/json for the home feed cache serialization

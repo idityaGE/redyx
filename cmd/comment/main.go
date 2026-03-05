@@ -8,13 +8,17 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gocql/gocql"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
+	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	"github.com/redyx/redyx/internal/comment"
 	"github.com/redyx/redyx/internal/platform/auth"
 	"github.com/redyx/redyx/internal/platform/config"
@@ -95,6 +99,18 @@ func main() {
 	// Create comment store with ScyllaDB session
 	store := comment.NewStore(session, logger)
 
+	// Backfill comments_by_author table from existing comments_by_post data.
+	// This is idempotent (INSERT IF NOT EXISTS) and handles the case where
+	// comments_by_author was created after comments already existed.
+	backfillCtx, backfillCancel := context.WithTimeout(context.Background(), 60*time.Second)
+	backfillCount, err := store.BackfillCommentsByAuthor(backfillCtx)
+	backfillCancel()
+	if err != nil {
+		logger.Warn("comments_by_author backfill completed with errors", zap.Int("inserted", backfillCount), zap.Error(err))
+	} else if backfillCount > 0 {
+		logger.Info("comments_by_author backfill complete", zap.Int("inserted", backfillCount))
+	}
+
 	// Create Kafka CommentProducer for publishing comment events
 	brokers := strings.Split(cfg.KafkaBrokers, ",")
 	commentProducer, err := comment.NewCommentProducer(brokers, logger)
@@ -108,8 +124,24 @@ func main() {
 		logger.Fatal("failed to ensure comments topic", zap.Error(err))
 	}
 
+	// Connect to post-service via gRPC for comment enrichment (post_title, community_name).
+	postServiceAddr := envStr("POST_SERVICE_ADDR", "post-service:50055")
+	var postClient postv1.PostServiceClient
+	postConn, err := grpc.NewClient(postServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to post-service, comment enrichment disabled", zap.Error(err))
+	} else {
+		defer postConn.Close()
+		postClient = postv1.NewPostServiceClient(postConn)
+		logger.Info("connected to post-service gRPC", zap.String("addr", postServiceAddr))
+	}
+
 	// Create and register comment service
-	commentServer := comment.NewServer(store, commentProducer, voteRedis, logger)
+	var serverOpts []comment.ServerOption
+	if postClient != nil {
+		serverOpts = append(serverOpts, comment.WithPostClient(postClient))
+	}
+	commentServer := comment.NewServer(store, commentProducer, voteRedis, logger, serverOpts...)
 	commentv1.RegisterCommentServiceServer(srv.Server(), commentServer)
 
 	// Start Kafka VoteConsumer goroutine
@@ -211,6 +243,14 @@ func connectScyllaDBWithKeyspace(hosts, keyspace string, logger *zap.Logger) (*g
 		time.Sleep(2 * time.Second)
 	}
 	return nil, fmt.Errorf("scylladb keyspace connect failed after 30 retries: %w", err)
+}
+
+// envStr returns the value of an environment variable or a default.
+func envStr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 // redisURL adjusts a Redis URL to use a specific database number.

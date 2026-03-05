@@ -27,6 +27,7 @@ const (
 	PostService_ListHomeFeed_FullMethodName   = "/redyx.post.v1.PostService/ListHomeFeed"
 	PostService_SavePost_FullMethodName       = "/redyx.post.v1.PostService/SavePost"
 	PostService_ListSavedPosts_FullMethodName = "/redyx.post.v1.PostService/ListSavedPosts"
+	PostService_ListUserPosts_FullMethodName  = "/redyx.post.v1.PostService/ListUserPosts"
 )
 
 // PostServiceClient is the client API for PostService service.
@@ -51,6 +52,8 @@ type PostServiceClient interface {
 	SavePost(ctx context.Context, in *SavePostRequest, opts ...grpc.CallOption) (*SavePostResponse, error)
 	// ListSavedPosts returns the authenticated user's saved posts.
 	ListSavedPosts(ctx context.Context, in *ListSavedPostsRequest, opts ...grpc.CallOption) (*ListSavedPostsResponse, error)
+	// ListUserPosts returns paginated posts by a specific user (public).
+	ListUserPosts(ctx context.Context, in *ListUserPostsRequest, opts ...grpc.CallOption) (*ListUserPostsResponse, error)
 }
 
 type postServiceClient struct {
@@ -141,6 +144,16 @@ func (c *postServiceClient) ListSavedPosts(ctx context.Context, in *ListSavedPos
 	return out, nil
 }
 
+func (c *postServiceClient) ListUserPosts(ctx context.Context, in *ListUserPostsRequest, opts ...grpc.CallOption) (*ListUserPostsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserPostsResponse)
+	err := c.cc.Invoke(ctx, PostService_ListUserPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostServiceServer is the server API for PostService service.
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility.
@@ -163,6 +176,8 @@ type PostServiceServer interface {
 	SavePost(context.Context, *SavePostRequest) (*SavePostResponse, error)
 	// ListSavedPosts returns the authenticated user's saved posts.
 	ListSavedPosts(context.Context, *ListSavedPostsRequest) (*ListSavedPostsResponse, error)
+	// ListUserPosts returns paginated posts by a specific user (public).
+	ListUserPosts(context.Context, *ListUserPostsRequest) (*ListUserPostsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
 
@@ -196,6 +211,9 @@ func (UnimplementedPostServiceServer) SavePost(context.Context, *SavePostRequest
 }
 func (UnimplementedPostServiceServer) ListSavedPosts(context.Context, *ListSavedPostsRequest) (*ListSavedPostsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSavedPosts not implemented")
+}
+func (UnimplementedPostServiceServer) ListUserPosts(context.Context, *ListUserPostsRequest) (*ListUserPostsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUserPosts not implemented")
 }
 func (UnimplementedPostServiceServer) mustEmbedUnimplementedPostServiceServer() {}
 func (UnimplementedPostServiceServer) testEmbeddedByValue()                     {}
@@ -362,6 +380,24 @@ func _PostService_ListSavedPosts_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostService_ListUserPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).ListUserPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_ListUserPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).ListUserPosts(ctx, req.(*ListUserPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostService_ServiceDesc is the grpc.ServiceDesc for PostService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -400,6 +436,10 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSavedPosts",
 			Handler:    _PostService_ListSavedPosts_Handler,
+		},
+		{
+			MethodName: "ListUserPosts",
+			Handler:    _PostService_ListUserPosts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

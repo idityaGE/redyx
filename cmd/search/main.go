@@ -8,12 +8,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	searchv1 "github.com/redyx/redyx/gen/redyx/search/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	"github.com/redyx/redyx/internal/platform/config"
@@ -53,12 +57,22 @@ func main() {
 	}
 	defer searchRedis.Close()
 
-	// Seed community autocomplete from community database.
-	go seedCommunityAutocomplete(cfg, meili, searchRedis, logger)
+	// Connect to community-service via gRPC for seeding community autocomplete.
+	communityServiceAddr := envStr("COMMUNITY_SERVICE_ADDR", "community-service:50054")
+	communityConn, err := grpc.NewClient(communityServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to community-service, community autocomplete seeding skipped", zap.Error(err))
+	} else {
+		communityClient := communityv1.NewCommunityServiceClient(communityConn)
+		defer communityConn.Close()
+		logger.Info("connected to community-service gRPC for autocomplete seeding", zap.String("addr", communityServiceAddr))
 
-	// Backfill existing posts into Meilisearch from post shard databases.
-	// This ensures posts created before the Kafka producer was active are searchable.
-	go seedPostsFromShards(cfg, meili, logger)
+		// Seed community autocomplete via community-service gRPC.
+		go seedCommunityAutocomplete(communityClient, meili, searchRedis, logger)
+	}
+
+	// NOTE: seedPostsFromShards removed — the Kafka indexer handles post indexing.
+	// Posts created before the indexer existed won't be searchable (acceptable for v1).
 
 	// Create rate limiter with search Redis client.
 	limiter := ratelimit.New(searchRedis)
@@ -111,114 +125,63 @@ func main() {
 }
 
 // seedCommunityAutocomplete populates the Redis sorted set and Meilisearch communities
-// index from the community database. Runs once on startup in a goroutine.
-func seedCommunityAutocomplete(cfg *config.Config, meili *search.MeiliClient, redisClient *goredis.Client, logger *zap.Logger) {
+// index from community-service via gRPC. Runs once on startup in a goroutine.
+func seedCommunityAutocomplete(communityClient communityv1.CommunityServiceClient, meili *search.MeiliClient, redisClient *goredis.Client, logger *zap.Logger) {
 	ctx := context.Background()
-
-	// Connect to community database (read-only).
-	pool, err := pgxpool.New(ctx, cfg.CommunityDatabaseURL)
-	if err != nil {
-		logger.Warn("failed to connect to community database for seeding", zap.Error(err))
-		return
-	}
-	defer pool.Close()
-
-	// Query community names and member counts.
-	rows, err := pool.Query(ctx, "SELECT name, member_count FROM communities ORDER BY member_count DESC")
-	if err != nil {
-		logger.Warn("failed to query communities for seeding", zap.Error(err))
-		return
-	}
-	defer rows.Close()
 
 	var seeded int
-	for rows.Next() {
-		var name string
-		var memberCount int32
-		if err := rows.Scan(&name, &memberCount); err != nil {
-			logger.Warn("failed to scan community row", zap.Error(err))
-			continue
+	var cursor string
+
+	for {
+		resp, err := communityClient.ListCommunities(ctx, &communityv1.ListCommunitiesRequest{
+			Pagination: &commonv1.PaginationRequest{
+				Cursor: cursor,
+				Limit:  100,
+			},
+		})
+		if err != nil {
+			logger.Warn("failed to list communities for seeding", zap.Error(err))
+			break
 		}
 
-		// Add to Redis sorted set for ZRANGEBYLEX prefix matching.
-		// Score is 0 for lexicographic ordering.
-		if err := redisClient.ZAdd(ctx, "communities:autocomplete", goredis.Z{
-			Score:  0,
-			Member: strings.ToLower(name),
-		}).Err(); err != nil {
-			logger.Warn("failed to add community to redis autocomplete",
-				zap.String("name", name), zap.Error(err))
+		for _, comm := range resp.GetCommunities() {
+			name := comm.GetName()
+			memberCount := comm.GetMemberCount()
+
+			// Add to Redis sorted set for ZRANGEBYLEX prefix matching.
+			if err := redisClient.ZAdd(ctx, "communities:autocomplete", goredis.Z{
+				Score:  0,
+				Member: strings.ToLower(name),
+			}).Err(); err != nil {
+				logger.Warn("failed to add community to redis autocomplete",
+					zap.String("name", name), zap.Error(err))
+			}
+
+			// Add to Meilisearch communities index.
+			if err := meili.IndexCommunity(name, comm.GetIconUrl(), memberCount); err != nil {
+				logger.Warn("failed to index community in meilisearch",
+					zap.String("name", name), zap.Error(err))
+			}
+
+			seeded++
 		}
 
-		// Add to Meilisearch communities index.
-		if err := meili.IndexCommunity(name, "", memberCount); err != nil {
-			logger.Warn("failed to index community in meilisearch",
-				zap.String("name", name), zap.Error(err))
+		pag := resp.GetPagination()
+		if !pag.GetHasMore() || pag.GetNextCursor() == "" {
+			break
 		}
-
-		seeded++
+		cursor = pag.GetNextCursor()
 	}
 
-	if err := rows.Err(); err != nil {
-		logger.Warn("community rows iteration error", zap.Error(err))
-	}
-
-	logger.Info("seeded community autocomplete", zap.Int("count", seeded))
+	logger.Info("seeded community autocomplete via gRPC", zap.Int("count", seeded))
 }
 
-// seedPostsFromShards queries all post shard databases and indexes every non-deleted
-// post into Meilisearch. Meilisearch upserts by document ID, so re-running is safe.
-// This backfills posts that were created before the Kafka producer existed.
-func seedPostsFromShards(cfg *config.Config, meili *search.MeiliClient, logger *zap.Logger) {
-	ctx := context.Background()
-	var total int
-
-	for i, dsn := range cfg.PostShardDSNs {
-		pool, err := pgxpool.New(ctx, dsn)
-		if err != nil {
-			logger.Warn("failed to connect to post shard for seeding",
-				zap.Int("shard", i), zap.Error(err))
-			continue
-		}
-
-		rows, err := pool.Query(ctx,
-			`SELECT id, title, body, author_username, community_name, vote_score, comment_count,
-				EXTRACT(EPOCH FROM created_at)::bigint
-			 FROM posts WHERE is_deleted = false ORDER BY created_at DESC`)
-		if err != nil {
-			logger.Warn("failed to query posts from shard", zap.Int("shard", i), zap.Error(err))
-			pool.Close()
-			continue
-		}
-
-		for rows.Next() {
-			var (
-				id, title, body, authorUsername, communityName string
-				voteScore, commentCount                        int32
-				createdAt                                      int64
-			)
-			if err := rows.Scan(&id, &title, &body, &authorUsername, &communityName, &voteScore, &commentCount, &createdAt); err != nil {
-				logger.Warn("failed to scan post row", zap.Error(err))
-				continue
-			}
-
-			if err := meili.IndexPost(id, title, body, authorUsername, communityName, voteScore, commentCount, createdAt); err != nil {
-				logger.Warn("failed to seed post into meilisearch",
-					zap.String("post_id", id), zap.Error(err))
-				continue
-			}
-			total++
-		}
-
-		if err := rows.Err(); err != nil {
-			logger.Warn("post rows iteration error", zap.Int("shard", i), zap.Error(err))
-		}
-
-		rows.Close()
-		pool.Close()
+// envStr returns the value of an environment variable or a default.
+func envStr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
 	}
-
-	logger.Info("seeded posts from database shards", zap.Int("count", total))
+	return fallback
 }
 
 // redisURL adjusts a Redis URL to use a specific database number.

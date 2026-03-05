@@ -7,29 +7,28 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/gocql/gocql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
 	userv1 "github.com/redyx/redyx/gen/redyx/user/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
-	"github.com/redyx/redyx/internal/platform/pagination"
 )
 
 // Server implements the UserServiceServer gRPC interface.
 type Server struct {
 	userv1.UnimplementedUserServiceServer
-	db         *pgxpool.Pool
-	postShards []*pgxpool.Pool // post shard databases for GetUserPosts
-	scyllaDB   *gocql.Session  // ScyllaDB session for GetUserComments
-	logger     *zap.Logger
+	db            *pgxpool.Pool
+	postClient    postv1.PostServiceClient       // gRPC client for post-service
+	commentClient commentv1.CommentServiceClient // gRPC client for comment-service
+	logger        *zap.Logger
 }
 
 // NewServer creates a new user service server with database and logger dependencies.
@@ -47,17 +46,17 @@ func NewServer(db *pgxpool.Pool, logger *zap.Logger, opts ...ServerOption) *Serv
 // ServerOption configures optional dependencies for the user server.
 type ServerOption func(*Server)
 
-// WithPostShards configures the post shard database pools for GetUserPosts.
-func WithPostShards(pools []*pgxpool.Pool) ServerOption {
+// WithPostClient configures the post-service gRPC client for user posts and comment enrichment.
+func WithPostClient(client postv1.PostServiceClient) ServerOption {
 	return func(s *Server) {
-		s.postShards = pools
+		s.postClient = client
 	}
 }
 
-// WithScyllaDB configures the ScyllaDB session for GetUserComments.
-func WithScyllaDB(session *gocql.Session) ServerOption {
+// WithCommentClient configures the comment-service gRPC client for GetUserComments.
+func WithCommentClient(client commentv1.CommentServiceClient) ServerOption {
 	return func(s *Server) {
-		s.scyllaDB = session
+		s.commentClient = client
 	}
 }
 
@@ -305,244 +304,92 @@ func (s *Server) DeleteAccount(ctx context.Context, req *userv1.DeleteAccountReq
 }
 
 // GetUserPosts returns paginated posts authored by the given user.
-// Queries all post shard databases in parallel and merges results by created_at DESC.
+// Delegates to post-service via gRPC client (ListUserPosts RPC).
 func (s *Server) GetUserPosts(ctx context.Context, req *userv1.GetUserPostsRequest) (*userv1.GetUserPostsResponse, error) {
 	username := req.GetUsername()
 	if username == "" {
 		return nil, fmt.Errorf("username is required: %w", perrors.ErrInvalidInput)
 	}
 
-	if len(s.postShards) == 0 {
-		s.logger.Warn("GetUserPosts: no post shard pools configured, returning empty")
+	if s.postClient == nil {
+		s.logger.Warn("GetUserPosts: no post-service client configured, returning empty")
 		return &userv1.GetUserPostsResponse{
 			Posts:      []*userv1.PostSummary{},
 			Pagination: &commonv1.PaginationResponse{},
 		}, nil
 	}
 
-	pag := req.GetPagination()
-	limit := pagination.DefaultLimit(pag.GetLimit(), 25, 100)
-	fetchLimit := limit + 1
-
-	// Decode cursor if provided
-	var cursorTime time.Time
-	var cursorID string
-	if pag.GetCursor() != "" {
-		var err error
-		cursorID, cursorTime, err = pagination.DecodeCursor(pag.GetCursor())
-		if err != nil {
-			return nil, fmt.Errorf("invalid cursor: %w", perrors.ErrInvalidInput)
-		}
+	// Call post-service ListUserPosts RPC
+	resp, err := s.postClient.ListUserPosts(ctx, &postv1.ListUserPostsRequest{
+		Username:   username,
+		Pagination: req.GetPagination(),
+	})
+	if err != nil {
+		s.logger.Error("failed to call post-service ListUserPosts", zap.Error(err))
+		return nil, fmt.Errorf("list user posts: %w", err)
 	}
 
-	// Query all shards in parallel
-	type shardResult struct {
-		posts []*userv1.PostSummary
-		err   error
-	}
-
-	var wg sync.WaitGroup
-	resultsCh := make(chan shardResult, len(s.postShards))
-
-	for _, pool := range s.postShards {
-		wg.Add(1)
-		go func(p *pgxpool.Pool) {
-			defer wg.Done()
-			var args []any
-			argIdx := 1
-
-			query := `SELECT id, title, community_name, vote_score, comment_count, created_at
-				FROM posts WHERE author_username = $1 AND is_deleted = false`
-			args = append(args, username)
-			argIdx++
-
-			if !cursorTime.IsZero() {
-				query += fmt.Sprintf(" AND (created_at, id) < ($%d, $%d)", argIdx, argIdx+1)
-				args = append(args, cursorTime, cursorID)
-				argIdx += 2
-			}
-
-			query += " ORDER BY created_at DESC, id DESC"
-			query += fmt.Sprintf(" LIMIT $%d", argIdx)
-			args = append(args, fetchLimit)
-
-			rows, err := p.Query(ctx, query, args...)
-			if err != nil {
-				resultsCh <- shardResult{err: err}
-				return
-			}
-			defer rows.Close()
-
-			var posts []*userv1.PostSummary
-			for rows.Next() {
-				var postID, title, communityName string
-				var voteScore, commentCount int32
-				var createdAt time.Time
-				if err := rows.Scan(&postID, &title, &communityName, &voteScore, &commentCount, &createdAt); err != nil {
-					resultsCh <- shardResult{err: err}
-					return
-				}
-				posts = append(posts, &userv1.PostSummary{
-					PostId:        postID,
-					Title:         title,
-					CommunityName: communityName,
-					VoteScore:     voteScore,
-					CommentCount:  commentCount,
-					CreatedAt:     timestamppb.New(createdAt),
-				})
-			}
-			resultsCh <- shardResult{posts: posts}
-		}(pool)
-	}
-
-	wg.Wait()
-	close(resultsCh)
-
-	// Merge results from all shards
-	var allPosts []*userv1.PostSummary
-	for r := range resultsCh {
-		if r.err != nil {
-			s.logger.Warn("shard query error in GetUserPosts", zap.Error(r.err))
-			continue
-		}
-		allPosts = append(allPosts, r.posts...)
-	}
-
-	// Sort merged results by created_at DESC, then by post_id DESC
-	sortPostSummaries(allPosts)
-
-	// Count total (approximate — from merged shards before pagination)
-	totalCount := int32(len(allPosts))
-
-	// Apply pagination
-	hasMore := len(allPosts) > int(limit)
-	if len(allPosts) > int(limit) {
-		allPosts = allPosts[:limit]
-	}
-
-	var nextCursor string
-	if hasMore && len(allPosts) > 0 {
-		last := allPosts[len(allPosts)-1]
-		nextCursor = pagination.EncodeCursor(last.PostId, last.CreatedAt.AsTime())
+	// Convert full Post objects to PostSummary for the user-service response
+	var summaries []*userv1.PostSummary
+	for _, p := range resp.GetPosts() {
+		summaries = append(summaries, &userv1.PostSummary{
+			PostId:        p.PostId,
+			Title:         p.Title,
+			CommunityName: p.CommunityName,
+			VoteScore:     p.VoteScore,
+			CommentCount:  p.CommentCount,
+			CreatedAt:     p.CreatedAt,
+		})
 	}
 
 	return &userv1.GetUserPostsResponse{
-		Posts: allPosts,
-		Pagination: &commonv1.PaginationResponse{
-			NextCursor: nextCursor,
-			HasMore:    hasMore,
-			TotalCount: totalCount,
-		},
+		Posts:      summaries,
+		Pagination: resp.GetPagination(),
 	}, nil
 }
 
-// sortPostSummaries sorts post summaries by created_at DESC, post_id DESC.
-func sortPostSummaries(posts []*userv1.PostSummary) {
-	for i := 1; i < len(posts); i++ {
-		for j := i; j > 0; j-- {
-			ti := posts[j].CreatedAt.AsTime()
-			tj := posts[j-1].CreatedAt.AsTime()
-			if ti.After(tj) || (ti.Equal(tj) && posts[j].PostId > posts[j-1].PostId) {
-				posts[j], posts[j-1] = posts[j-1], posts[j]
-			} else {
-				break
-			}
-		}
-	}
-}
-
 // GetUserComments returns paginated comments authored by the given user.
-// Queries the comments_by_author ScyllaDB table.
+// Delegates to comment-service via gRPC (ListCommentsByAuthor RPC).
 func (s *Server) GetUserComments(ctx context.Context, req *userv1.GetUserCommentsRequest) (*userv1.GetUserCommentsResponse, error) {
 	username := req.GetUsername()
 	if username == "" {
 		return nil, fmt.Errorf("username is required: %w", perrors.ErrInvalidInput)
 	}
 
-	if s.scyllaDB == nil {
-		s.logger.Warn("GetUserComments: no ScyllaDB session configured, returning empty")
+	if s.commentClient == nil {
+		s.logger.Warn("GetUserComments: no comment-service client configured, returning empty")
 		return &userv1.GetUserCommentsResponse{
 			Comments:   []*userv1.CommentSummary{},
 			Pagination: &commonv1.PaginationResponse{},
 		}, nil
 	}
 
-	pag := req.GetPagination()
-	limit := pagination.DefaultLimit(pag.GetLimit(), 25, 100)
-
-	// Decode cursor if provided
-	var cursorTime time.Time
-	if pag.GetCursor() != "" {
-		_, ct, err := pagination.DecodeCursor(pag.GetCursor())
-		if err != nil {
-			return nil, fmt.Errorf("invalid cursor: %w", perrors.ErrInvalidInput)
-		}
-		cursorTime = ct
-	}
-
-	// Query comments_by_author table
-	var iter *gocql.Iter
-	if cursorTime.IsZero() {
-		iter = s.scyllaDB.Query(
-			`SELECT comment_id, post_id, body, vote_score, is_deleted, created_at
-			 FROM redyx_comments.comments_by_author
-			 WHERE author_username = ?
-			 LIMIT ?`,
-			username, limit+1,
-		).WithContext(ctx).Iter()
-	} else {
-		iter = s.scyllaDB.Query(
-			`SELECT comment_id, post_id, body, vote_score, is_deleted, created_at
-			 FROM redyx_comments.comments_by_author
-			 WHERE author_username = ? AND created_at < ?
-			 LIMIT ?`,
-			username, cursorTime, limit+1,
-		).WithContext(ctx).Iter()
-	}
-
-	var comments []*userv1.CommentSummary
-	var commentID, postID gocql.UUID
-	var body string
-	var voteScore int
-	var isDeleted bool
-	var createdAt time.Time
-
-	for iter.Scan(&commentID, &postID, &body, &voteScore, &isDeleted, &createdAt) {
-		if isDeleted {
-			continue
-		}
-		comments = append(comments, &userv1.CommentSummary{
-			CommentId:     commentID.String(),
-			PostId:        postID.String(),
-			CommunityName: "", // Not stored in comments_by_author; frontend can resolve if needed
-			Body:          body,
-			VoteScore:     int32(voteScore),
-			CreatedAt:     timestamppb.New(createdAt),
-		})
-	}
-	if err := iter.Close(); err != nil {
-		s.logger.Error("failed to query comments_by_author", zap.Error(err))
+	// Delegate to comment-service ListCommentsByAuthor RPC
+	resp, err := s.commentClient.ListCommentsByAuthor(ctx, &commentv1.ListCommentsByAuthorRequest{
+		Username:   username,
+		Pagination: req.GetPagination(),
+	})
+	if err != nil {
+		s.logger.Error("failed to call comment-service ListCommentsByAuthor", zap.Error(err))
 		return nil, fmt.Errorf("list user comments: %w", err)
 	}
 
-	totalCount := int32(len(comments))
-	hasMore := len(comments) > int(limit)
-	if hasMore {
-		comments = comments[:limit]
-	}
-
-	var nextCursor string
-	if hasMore && len(comments) > 0 {
-		last := comments[len(comments)-1]
-		nextCursor = pagination.EncodeCursor(last.CommentId, last.CreatedAt.AsTime())
+	// Convert comment-service CommentSummary to user-service CommentSummary
+	var comments []*userv1.CommentSummary
+	for _, c := range resp.GetComments() {
+		comments = append(comments, &userv1.CommentSummary{
+			CommentId:     c.CommentId,
+			PostId:        c.PostId,
+			PostTitle:     c.PostTitle,
+			CommunityName: c.CommunityName,
+			Body:          c.Body,
+			VoteScore:     c.VoteScore,
+			CreatedAt:     c.CreatedAt,
+		})
 	}
 
 	return &userv1.GetUserCommentsResponse{
-		Comments: comments,
-		Pagination: &commonv1.PaginationResponse{
-			NextCursor: nextCursor,
-			HasMore:    hasMore,
-			TotalCount: totalCount,
-		},
+		Comments:   comments,
+		Pagination: resp.GetPagination(),
 	}, nil
 }

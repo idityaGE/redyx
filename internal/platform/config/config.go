@@ -38,12 +38,6 @@ type Config struct {
 	// Post shard fields (Phase 3)
 	PostShardDSNs []string
 
-	// Community DB for cross-service lookups (Phase 3)
-	CommunityDatabaseURL string
-
-	// Media DB for cross-service lookups (Phase 5 — resolving media IDs to URLs)
-	MediaDatabaseURL string
-
 	// ScyllaDB fields (Phase 4 — comments)
 	ScyllaDBHosts    string
 	ScyllaDBKeyspace string
@@ -98,12 +92,6 @@ func Load(serviceName string) *Config {
 		// Post shards
 		PostShardDSNs: envStringSlice("POST_SHARD_DSNS",
 			"postgres://redyx:dev@postgres:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgres:5432/posts_shard_1?sslmode=disable"),
-
-		// Community DB
-		CommunityDatabaseURL: envStr("COMMUNITY_DATABASE_URL", "postgres://redyx:dev@postgres:5432/community?sslmode=disable"),
-
-		// Media DB
-		MediaDatabaseURL: envStr("MEDIA_DATABASE_URL", "postgres://redyx:dev@postgres:5432/media?sslmode=disable"),
 
 		// ScyllaDB
 		ScyllaDBHosts:    envStr("SCYLLADB_HOSTS", "localhost:9042"),

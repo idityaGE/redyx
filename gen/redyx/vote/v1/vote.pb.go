@@ -127,10 +127,14 @@ func (VoteDirection) EnumDescriptor() ([]byte, []int) {
 }
 
 type VoteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
-	TargetType    TargetType             `protobuf:"varint,2,opt,name=target_type,json=targetType,proto3,enum=redyx.vote.v1.TargetType" json:"target_type,omitempty"`
-	Direction     VoteDirection          `protobuf:"varint,3,opt,name=direction,proto3,enum=redyx.vote.v1.VoteDirection" json:"direction,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	TargetId   string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	TargetType TargetType             `protobuf:"varint,2,opt,name=target_type,json=targetType,proto3,enum=redyx.vote.v1.TargetType" json:"target_type,omitempty"`
+	Direction  VoteDirection          `protobuf:"varint,3,opt,name=direction,proto3,enum=redyx.vote.v1.VoteDirection" json:"direction,omitempty"`
+	// Author of the target (post or comment). Provided by the frontend so the
+	// vote-service can propagate it in VoteEvent without needing post DB access.
+	// If empty, the karma consumer falls back to looking up the author.
+	AuthorId      string `protobuf:"bytes,4,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,6 +188,13 @@ func (x *VoteRequest) GetDirection() VoteDirection {
 		return x.Direction
 	}
 	return VoteDirection_VOTE_DIRECTION_UNSPECIFIED
+}
+
+func (x *VoteRequest) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
 }
 
 type VoteResponse struct {
@@ -332,12 +343,13 @@ var File_redyx_vote_v1_vote_proto protoreflect.FileDescriptor
 
 const file_redyx_vote_v1_vote_proto_rawDesc = "" +
 	"\n" +
-	"\x18redyx/vote/v1/vote.proto\x12\rredyx.vote.v1\x1a\x1cgoogle/api/annotations.proto\"\xa2\x01\n" +
+	"\x18redyx/vote/v1/vote.proto\x12\rredyx.vote.v1\x1a\x1cgoogle/api/annotations.proto\"\xbf\x01\n" +
 	"\vVoteRequest\x12\x1b\n" +
 	"\ttarget_id\x18\x01 \x01(\tR\btargetId\x12:\n" +
 	"\vtarget_type\x18\x02 \x01(\x0e2\x19.redyx.vote.v1.TargetTypeR\n" +
 	"targetType\x12:\n" +
-	"\tdirection\x18\x03 \x01(\x0e2\x1c.redyx.vote.v1.VoteDirectionR\tdirection\"+\n" +
+	"\tdirection\x18\x03 \x01(\x0e2\x1c.redyx.vote.v1.VoteDirectionR\tdirection\x12\x1b\n" +
+	"\tauthor_id\x18\x04 \x01(\tR\bauthorId\"+\n" +
 	"\fVoteResponse\x12\x1b\n" +
 	"\tnew_score\x18\x01 \x01(\x05R\bnewScore\"n\n" +
 	"\x13GetVoteStateRequest\x12\x1b\n" +
