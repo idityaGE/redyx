@@ -192,12 +192,13 @@ None.
 | 001 | Categorize frontend components into domain subfolders | 2026-03-03 | d51e48b | [001-categorize-frontend-components](./quick/001-categorize-frontend-components/) |
 | 002 | Fix karma not updating — 3-link bug chain (empty author_id + skip + wrong SQL) | 2026-03-05 | e38e3f5 | [002-fix-karma-not-updating](./quick/002-fix-karma-not-updating/) |
 | 003 | Eliminate all cross-service database access — replace with gRPC calls | 2026-03-05 | 89e0af3 | [003-eliminate-cross-service-db-access](./quick/003-eliminate-cross-service-db-access/) |
+| 004 | Fix frontend communities — separate /communities and /my-communities pages | 2026-03-05 | 89bc29c | [004-fix-frontend-communities](./quick/004-fix-frontend-communities/) |
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: All housekeeping complete — commits clean, debug archived, state updated. Ready for Phase 6.
+Stopped at: Quick task 004 complete — frontend communities pages separated. Ready for Phase 6.
 Resume file: None
 
 ---
-*Last updated: 2026-03-05 — Phase 5 complete, quick-002/003 done, all changes committed, debug files archived*
+*Last updated: 2026-03-05 — Phase 5 complete, quick-002/003/004 done, all changes committed*
