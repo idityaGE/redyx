@@ -137,11 +137,16 @@ Plans:
   3. Content is checked against keyword blocklist and known-bad URL list before publishing, and duplicate content from the same user is rejected
   4. Async behavior analysis via Kafka detects rapid posting and link spam patterns across communities
   5. Frontend includes: report dialog on posts/comments, mod dashboard with report queue and action buttons, mod log page, ban management UI, and pinned post controls — all accessible only to users with moderator role
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md — Moderation proto extensions + moderation backend service (all RPCs, store, migrations)
+- [ ] 06-02-PLAN.md — Spam service backend (blocklist, dedup, Kafka behavior consumer)
+- [ ] 06-03-PLAN.md — Post/comment moderator internal RPCs + spam/ban integration
+- [ ] 06-04-PLAN.md — Docker Compose + Envoy wiring for moderation and spam services
+- [ ] 06-05-PLAN.md — Frontend mod dashboard: ReportDialog, ReportQueue, ModLog, BanList, BanDialog + CommunitySettings tabs
+- [ ] 06-06-PLAN.md — Frontend integration: three-dot menus, ban banner, pinned posts, form disabling
+- [ ] 06-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
 
 ### Phase 7: Deployment + Observability
 **Goal**: The platform runs in Kubernetes with full observability, and frontend performance is optimized to meet load time targets
@@ -170,5 +175,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
 | 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
 | 5. Search + Notifications + Media (Full Stack) | 9/9 | ✓ Complete | 2026-03-05 |
-| 6. Moderation + Spam (Full Stack) | 0/? | Not started | - |
+| 6. Moderation + Spam (Full Stack) | 0/7 | Planning complete | - |
 | 7. Deployment + Observability | 0/? | Not started | - |
