@@ -19,15 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PostService_CreatePost_FullMethodName     = "/redyx.post.v1.PostService/CreatePost"
-	PostService_GetPost_FullMethodName        = "/redyx.post.v1.PostService/GetPost"
-	PostService_UpdatePost_FullMethodName     = "/redyx.post.v1.PostService/UpdatePost"
-	PostService_DeletePost_FullMethodName     = "/redyx.post.v1.PostService/DeletePost"
-	PostService_ListPosts_FullMethodName      = "/redyx.post.v1.PostService/ListPosts"
-	PostService_ListHomeFeed_FullMethodName   = "/redyx.post.v1.PostService/ListHomeFeed"
-	PostService_SavePost_FullMethodName       = "/redyx.post.v1.PostService/SavePost"
-	PostService_ListSavedPosts_FullMethodName = "/redyx.post.v1.PostService/ListSavedPosts"
-	PostService_ListUserPosts_FullMethodName  = "/redyx.post.v1.PostService/ListUserPosts"
+	PostService_CreatePost_FullMethodName           = "/redyx.post.v1.PostService/CreatePost"
+	PostService_GetPost_FullMethodName              = "/redyx.post.v1.PostService/GetPost"
+	PostService_UpdatePost_FullMethodName           = "/redyx.post.v1.PostService/UpdatePost"
+	PostService_DeletePost_FullMethodName           = "/redyx.post.v1.PostService/DeletePost"
+	PostService_ListPosts_FullMethodName            = "/redyx.post.v1.PostService/ListPosts"
+	PostService_ListHomeFeed_FullMethodName         = "/redyx.post.v1.PostService/ListHomeFeed"
+	PostService_SavePost_FullMethodName             = "/redyx.post.v1.PostService/SavePost"
+	PostService_ListSavedPosts_FullMethodName       = "/redyx.post.v1.PostService/ListSavedPosts"
+	PostService_ListUserPosts_FullMethodName        = "/redyx.post.v1.PostService/ListUserPosts"
+	PostService_ModeratorRemovePost_FullMethodName  = "/redyx.post.v1.PostService/ModeratorRemovePost"
+	PostService_ModeratorRestorePost_FullMethodName = "/redyx.post.v1.PostService/ModeratorRestorePost"
+	PostService_SetPostPinned_FullMethodName        = "/redyx.post.v1.PostService/SetPostPinned"
+	PostService_CountPinnedPosts_FullMethodName     = "/redyx.post.v1.PostService/CountPinnedPosts"
+	PostService_RemovePostsByUser_FullMethodName    = "/redyx.post.v1.PostService/RemovePostsByUser"
 )
 
 // PostServiceClient is the client API for PostService service.
@@ -55,6 +60,12 @@ type PostServiceClient interface {
 	// ListUserPosts returns paginated posts by a specific user (public).
 	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserPosts(ctx context.Context, in *ListUserPostsRequest, opts ...grpc.CallOption) (*ListUserPostsResponse, error)
+	// Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+	ModeratorRemovePost(ctx context.Context, in *ModeratorRemovePostRequest, opts ...grpc.CallOption) (*ModeratorRemovePostResponse, error)
+	ModeratorRestorePost(ctx context.Context, in *ModeratorRestorePostRequest, opts ...grpc.CallOption) (*ModeratorRestorePostResponse, error)
+	SetPostPinned(ctx context.Context, in *SetPostPinnedRequest, opts ...grpc.CallOption) (*SetPostPinnedResponse, error)
+	CountPinnedPosts(ctx context.Context, in *CountPinnedPostsRequest, opts ...grpc.CallOption) (*CountPinnedPostsResponse, error)
+	RemovePostsByUser(ctx context.Context, in *RemovePostsByUserRequest, opts ...grpc.CallOption) (*RemovePostsByUserResponse, error)
 }
 
 type postServiceClient struct {
@@ -155,6 +166,56 @@ func (c *postServiceClient) ListUserPosts(ctx context.Context, in *ListUserPosts
 	return out, nil
 }
 
+func (c *postServiceClient) ModeratorRemovePost(ctx context.Context, in *ModeratorRemovePostRequest, opts ...grpc.CallOption) (*ModeratorRemovePostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModeratorRemovePostResponse)
+	err := c.cc.Invoke(ctx, PostService_ModeratorRemovePost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) ModeratorRestorePost(ctx context.Context, in *ModeratorRestorePostRequest, opts ...grpc.CallOption) (*ModeratorRestorePostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModeratorRestorePostResponse)
+	err := c.cc.Invoke(ctx, PostService_ModeratorRestorePost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) SetPostPinned(ctx context.Context, in *SetPostPinnedRequest, opts ...grpc.CallOption) (*SetPostPinnedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetPostPinnedResponse)
+	err := c.cc.Invoke(ctx, PostService_SetPostPinned_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) CountPinnedPosts(ctx context.Context, in *CountPinnedPostsRequest, opts ...grpc.CallOption) (*CountPinnedPostsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CountPinnedPostsResponse)
+	err := c.cc.Invoke(ctx, PostService_CountPinnedPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) RemovePostsByUser(ctx context.Context, in *RemovePostsByUserRequest, opts ...grpc.CallOption) (*RemovePostsByUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemovePostsByUserResponse)
+	err := c.cc.Invoke(ctx, PostService_RemovePostsByUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostServiceServer is the server API for PostService service.
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility.
@@ -180,6 +241,12 @@ type PostServiceServer interface {
 	// ListUserPosts returns paginated posts by a specific user (public).
 	// Called internally by user-service via gRPC — no public REST annotation.
 	ListUserPosts(context.Context, *ListUserPostsRequest) (*ListUserPostsResponse, error)
+	// Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+	ModeratorRemovePost(context.Context, *ModeratorRemovePostRequest) (*ModeratorRemovePostResponse, error)
+	ModeratorRestorePost(context.Context, *ModeratorRestorePostRequest) (*ModeratorRestorePostResponse, error)
+	SetPostPinned(context.Context, *SetPostPinnedRequest) (*SetPostPinnedResponse, error)
+	CountPinnedPosts(context.Context, *CountPinnedPostsRequest) (*CountPinnedPostsResponse, error)
+	RemovePostsByUser(context.Context, *RemovePostsByUserRequest) (*RemovePostsByUserResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
 
@@ -216,6 +283,21 @@ func (UnimplementedPostServiceServer) ListSavedPosts(context.Context, *ListSaved
 }
 func (UnimplementedPostServiceServer) ListUserPosts(context.Context, *ListUserPostsRequest) (*ListUserPostsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListUserPosts not implemented")
+}
+func (UnimplementedPostServiceServer) ModeratorRemovePost(context.Context, *ModeratorRemovePostRequest) (*ModeratorRemovePostResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ModeratorRemovePost not implemented")
+}
+func (UnimplementedPostServiceServer) ModeratorRestorePost(context.Context, *ModeratorRestorePostRequest) (*ModeratorRestorePostResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ModeratorRestorePost not implemented")
+}
+func (UnimplementedPostServiceServer) SetPostPinned(context.Context, *SetPostPinnedRequest) (*SetPostPinnedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetPostPinned not implemented")
+}
+func (UnimplementedPostServiceServer) CountPinnedPosts(context.Context, *CountPinnedPostsRequest) (*CountPinnedPostsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CountPinnedPosts not implemented")
+}
+func (UnimplementedPostServiceServer) RemovePostsByUser(context.Context, *RemovePostsByUserRequest) (*RemovePostsByUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemovePostsByUser not implemented")
 }
 func (UnimplementedPostServiceServer) mustEmbedUnimplementedPostServiceServer() {}
 func (UnimplementedPostServiceServer) testEmbeddedByValue()                     {}
@@ -400,6 +482,96 @@ func _PostService_ListUserPosts_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostService_ModeratorRemovePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModeratorRemovePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).ModeratorRemovePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_ModeratorRemovePost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).ModeratorRemovePost(ctx, req.(*ModeratorRemovePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_ModeratorRestorePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModeratorRestorePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).ModeratorRestorePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_ModeratorRestorePost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).ModeratorRestorePost(ctx, req.(*ModeratorRestorePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_SetPostPinned_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPostPinnedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).SetPostPinned(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_SetPostPinned_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).SetPostPinned(ctx, req.(*SetPostPinnedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_CountPinnedPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountPinnedPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).CountPinnedPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_CountPinnedPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).CountPinnedPosts(ctx, req.(*CountPinnedPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_RemovePostsByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemovePostsByUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).RemovePostsByUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostService_RemovePostsByUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).RemovePostsByUser(ctx, req.(*RemovePostsByUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostService_ServiceDesc is the grpc.ServiceDesc for PostService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -442,6 +614,26 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListUserPosts",
 			Handler:    _PostService_ListUserPosts_Handler,
+		},
+		{
+			MethodName: "ModeratorRemovePost",
+			Handler:    _PostService_ModeratorRemovePost_Handler,
+		},
+		{
+			MethodName: "ModeratorRestorePost",
+			Handler:    _PostService_ModeratorRestorePost_Handler,
+		},
+		{
+			MethodName: "SetPostPinned",
+			Handler:    _PostService_SetPostPinned_Handler,
+		},
+		{
+			MethodName: "CountPinnedPosts",
+			Handler:    _PostService_CountPinnedPosts_Handler,
+		},
+		{
+			MethodName: "RemovePostsByUser",
+			Handler:    _PostService_RemovePostsByUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

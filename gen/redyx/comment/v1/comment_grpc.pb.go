@@ -19,13 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CommentService_CreateComment_FullMethodName        = "/redyx.comment.v1.CommentService/CreateComment"
-	CommentService_GetComment_FullMethodName           = "/redyx.comment.v1.CommentService/GetComment"
-	CommentService_UpdateComment_FullMethodName        = "/redyx.comment.v1.CommentService/UpdateComment"
-	CommentService_DeleteComment_FullMethodName        = "/redyx.comment.v1.CommentService/DeleteComment"
-	CommentService_ListComments_FullMethodName         = "/redyx.comment.v1.CommentService/ListComments"
-	CommentService_ListReplies_FullMethodName          = "/redyx.comment.v1.CommentService/ListReplies"
-	CommentService_ListCommentsByAuthor_FullMethodName = "/redyx.comment.v1.CommentService/ListCommentsByAuthor"
+	CommentService_CreateComment_FullMethodName           = "/redyx.comment.v1.CommentService/CreateComment"
+	CommentService_GetComment_FullMethodName              = "/redyx.comment.v1.CommentService/GetComment"
+	CommentService_UpdateComment_FullMethodName           = "/redyx.comment.v1.CommentService/UpdateComment"
+	CommentService_DeleteComment_FullMethodName           = "/redyx.comment.v1.CommentService/DeleteComment"
+	CommentService_ListComments_FullMethodName            = "/redyx.comment.v1.CommentService/ListComments"
+	CommentService_ListReplies_FullMethodName             = "/redyx.comment.v1.CommentService/ListReplies"
+	CommentService_ListCommentsByAuthor_FullMethodName    = "/redyx.comment.v1.CommentService/ListCommentsByAuthor"
+	CommentService_ModeratorRemoveComment_FullMethodName  = "/redyx.comment.v1.CommentService/ModeratorRemoveComment"
+	CommentService_ModeratorRestoreComment_FullMethodName = "/redyx.comment.v1.CommentService/ModeratorRestoreComment"
+	CommentService_RemoveCommentsByUser_FullMethodName    = "/redyx.comment.v1.CommentService/RemoveCommentsByUser"
 )
 
 // CommentServiceClient is the client API for CommentService service.
@@ -49,6 +52,10 @@ type CommentServiceClient interface {
 	// ListCommentsByAuthor returns paginated comments authored by a given user.
 	// Called internally by user-service via gRPC — no public REST annotation.
 	ListCommentsByAuthor(ctx context.Context, in *ListCommentsByAuthorRequest, opts ...grpc.CallOption) (*ListCommentsByAuthorResponse, error)
+	// Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+	ModeratorRemoveComment(ctx context.Context, in *ModeratorRemoveCommentRequest, opts ...grpc.CallOption) (*ModeratorRemoveCommentResponse, error)
+	ModeratorRestoreComment(ctx context.Context, in *ModeratorRestoreCommentRequest, opts ...grpc.CallOption) (*ModeratorRestoreCommentResponse, error)
+	RemoveCommentsByUser(ctx context.Context, in *RemoveCommentsByUserRequest, opts ...grpc.CallOption) (*RemoveCommentsByUserResponse, error)
 }
 
 type commentServiceClient struct {
@@ -129,6 +136,36 @@ func (c *commentServiceClient) ListCommentsByAuthor(ctx context.Context, in *Lis
 	return out, nil
 }
 
+func (c *commentServiceClient) ModeratorRemoveComment(ctx context.Context, in *ModeratorRemoveCommentRequest, opts ...grpc.CallOption) (*ModeratorRemoveCommentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModeratorRemoveCommentResponse)
+	err := c.cc.Invoke(ctx, CommentService_ModeratorRemoveComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *commentServiceClient) ModeratorRestoreComment(ctx context.Context, in *ModeratorRestoreCommentRequest, opts ...grpc.CallOption) (*ModeratorRestoreCommentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModeratorRestoreCommentResponse)
+	err := c.cc.Invoke(ctx, CommentService_ModeratorRestoreComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *commentServiceClient) RemoveCommentsByUser(ctx context.Context, in *RemoveCommentsByUserRequest, opts ...grpc.CallOption) (*RemoveCommentsByUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveCommentsByUserResponse)
+	err := c.cc.Invoke(ctx, CommentService_RemoveCommentsByUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommentServiceServer is the server API for CommentService service.
 // All implementations must embed UnimplementedCommentServiceServer
 // for forward compatibility.
@@ -150,6 +187,10 @@ type CommentServiceServer interface {
 	// ListCommentsByAuthor returns paginated comments authored by a given user.
 	// Called internally by user-service via gRPC — no public REST annotation.
 	ListCommentsByAuthor(context.Context, *ListCommentsByAuthorRequest) (*ListCommentsByAuthorResponse, error)
+	// Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+	ModeratorRemoveComment(context.Context, *ModeratorRemoveCommentRequest) (*ModeratorRemoveCommentResponse, error)
+	ModeratorRestoreComment(context.Context, *ModeratorRestoreCommentRequest) (*ModeratorRestoreCommentResponse, error)
+	RemoveCommentsByUser(context.Context, *RemoveCommentsByUserRequest) (*RemoveCommentsByUserResponse, error)
 	mustEmbedUnimplementedCommentServiceServer()
 }
 
@@ -180,6 +221,15 @@ func (UnimplementedCommentServiceServer) ListReplies(context.Context, *ListRepli
 }
 func (UnimplementedCommentServiceServer) ListCommentsByAuthor(context.Context, *ListCommentsByAuthorRequest) (*ListCommentsByAuthorResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCommentsByAuthor not implemented")
+}
+func (UnimplementedCommentServiceServer) ModeratorRemoveComment(context.Context, *ModeratorRemoveCommentRequest) (*ModeratorRemoveCommentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ModeratorRemoveComment not implemented")
+}
+func (UnimplementedCommentServiceServer) ModeratorRestoreComment(context.Context, *ModeratorRestoreCommentRequest) (*ModeratorRestoreCommentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ModeratorRestoreComment not implemented")
+}
+func (UnimplementedCommentServiceServer) RemoveCommentsByUser(context.Context, *RemoveCommentsByUserRequest) (*RemoveCommentsByUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveCommentsByUser not implemented")
 }
 func (UnimplementedCommentServiceServer) mustEmbedUnimplementedCommentServiceServer() {}
 func (UnimplementedCommentServiceServer) testEmbeddedByValue()                        {}
@@ -328,6 +378,60 @@ func _CommentService_ListCommentsByAuthor_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommentService_ModeratorRemoveComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModeratorRemoveCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServiceServer).ModeratorRemoveComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommentService_ModeratorRemoveComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServiceServer).ModeratorRemoveComment(ctx, req.(*ModeratorRemoveCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CommentService_ModeratorRestoreComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ModeratorRestoreCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServiceServer).ModeratorRestoreComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommentService_ModeratorRestoreComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServiceServer).ModeratorRestoreComment(ctx, req.(*ModeratorRestoreCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CommentService_RemoveCommentsByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveCommentsByUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServiceServer).RemoveCommentsByUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommentService_RemoveCommentsByUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServiceServer).RemoveCommentsByUser(ctx, req.(*RemoveCommentsByUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommentService_ServiceDesc is the grpc.ServiceDesc for CommentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +466,18 @@ var CommentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCommentsByAuthor",
 			Handler:    _CommentService_ListCommentsByAuthor_Handler,
+		},
+		{
+			MethodName: "ModeratorRemoveComment",
+			Handler:    _CommentService_ModeratorRemoveComment_Handler,
+		},
+		{
+			MethodName: "ModeratorRestoreComment",
+			Handler:    _CommentService_ModeratorRestoreComment_Handler,
+		},
+		{
+			MethodName: "RemoveCommentsByUser",
+			Handler:    _CommentService_RemoveCommentsByUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

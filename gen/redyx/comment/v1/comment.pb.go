@@ -1024,6 +1024,278 @@ func (x *CommentSummary) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type ModeratorRemoveCommentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommentId     string                 `protobuf:"bytes,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
+	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRemoveCommentRequest) Reset() {
+	*x = ModeratorRemoveCommentRequest{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRemoveCommentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRemoveCommentRequest) ProtoMessage() {}
+
+func (x *ModeratorRemoveCommentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRemoveCommentRequest.ProtoReflect.Descriptor instead.
+func (*ModeratorRemoveCommentRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ModeratorRemoveCommentRequest) GetCommentId() string {
+	if x != nil {
+		return x.CommentId
+	}
+	return ""
+}
+
+func (x *ModeratorRemoveCommentRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+type ModeratorRemoveCommentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRemoveCommentResponse) Reset() {
+	*x = ModeratorRemoveCommentResponse{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRemoveCommentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRemoveCommentResponse) ProtoMessage() {}
+
+func (x *ModeratorRemoveCommentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRemoveCommentResponse.ProtoReflect.Descriptor instead.
+func (*ModeratorRemoveCommentResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{17}
+}
+
+type ModeratorRestoreCommentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommentId     string                 `protobuf:"bytes,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
+	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRestoreCommentRequest) Reset() {
+	*x = ModeratorRestoreCommentRequest{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRestoreCommentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRestoreCommentRequest) ProtoMessage() {}
+
+func (x *ModeratorRestoreCommentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRestoreCommentRequest.ProtoReflect.Descriptor instead.
+func (*ModeratorRestoreCommentRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ModeratorRestoreCommentRequest) GetCommentId() string {
+	if x != nil {
+		return x.CommentId
+	}
+	return ""
+}
+
+func (x *ModeratorRestoreCommentRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+type ModeratorRestoreCommentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRestoreCommentResponse) Reset() {
+	*x = ModeratorRestoreCommentResponse{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRestoreCommentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRestoreCommentResponse) ProtoMessage() {}
+
+func (x *ModeratorRestoreCommentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRestoreCommentResponse.ProtoReflect.Descriptor instead.
+func (*ModeratorRestoreCommentResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{19}
+}
+
+type RemoveCommentsByUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CommunityName string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveCommentsByUserRequest) Reset() {
+	*x = RemoveCommentsByUserRequest{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveCommentsByUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveCommentsByUserRequest) ProtoMessage() {}
+
+func (x *RemoveCommentsByUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveCommentsByUserRequest.ProtoReflect.Descriptor instead.
+func (*RemoveCommentsByUserRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RemoveCommentsByUserRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *RemoveCommentsByUserRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+type RemoveCommentsByUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RemovedCount  int32                  `protobuf:"varint,1,opt,name=removed_count,json=removedCount,proto3" json:"removed_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveCommentsByUserResponse) Reset() {
+	*x = RemoveCommentsByUserResponse{}
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveCommentsByUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveCommentsByUserResponse) ProtoMessage() {}
+
+func (x *RemoveCommentsByUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_comment_v1_comment_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveCommentsByUserResponse.ProtoReflect.Descriptor instead.
+func (*RemoveCommentsByUserResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_comment_v1_comment_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RemoveCommentsByUserResponse) GetRemovedCount() int32 {
+	if x != nil {
+		return x.RemovedCount
+	}
+	return 0
+}
+
 var File_redyx_comment_v1_comment_proto protoreflect.FileDescriptor
 
 const file_redyx_comment_v1_comment_proto_rawDesc = "" +
@@ -1115,13 +1387,29 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\n" +
 	"vote_score\x18\x06 \x01(\x05R\tvoteScore\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xb1\x01\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"W\n" +
+	"\x1dModeratorRemoveCommentRequest\x12\x1d\n" +
+	"\n" +
+	"comment_id\x18\x01 \x01(\tR\tcommentId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\" \n" +
+	"\x1eModeratorRemoveCommentResponse\"X\n" +
+	"\x1eModeratorRestoreCommentRequest\x12\x1d\n" +
+	"\n" +
+	"comment_id\x18\x01 \x01(\tR\tcommentId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\"!\n" +
+	"\x1fModeratorRestoreCommentResponse\"]\n" +
+	"\x1bRemoveCommentsByUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12%\n" +
+	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\"C\n" +
+	"\x1cRemoveCommentsByUserResponse\x12#\n" +
+	"\rremoved_count\x18\x01 \x01(\x05R\fremovedCount*\xb1\x01\n" +
 	"\x10CommentSortOrder\x12\"\n" +
 	"\x1eCOMMENT_SORT_ORDER_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17COMMENT_SORT_ORDER_BEST\x10\x01\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_TOP\x10\x02\x12\x1a\n" +
 	"\x16COMMENT_SORT_ORDER_NEW\x10\x03\x12$\n" +
-	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xc6\a\n" +
+	" COMMENT_SORT_ORDER_CONTROVERSIAL\x10\x042\xc1\n" +
+	"\n" +
 	"\x0eCommentService\x12\x8d\x01\n" +
 	"\rCreateComment\x12&.redyx.comment.v1.CreateCommentRequest\x1a'.redyx.comment.v1.CreateCommentResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/posts/{post_id}/comments\x12~\n" +
 	"\n" +
@@ -1130,7 +1418,10 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\rDeleteComment\x12&.redyx.comment.v1.DeleteCommentRequest\x1a'.redyx.comment.v1.DeleteCommentResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/comments/{comment_id}\x12\x87\x01\n" +
 	"\fListComments\x12%.redyx.comment.v1.ListCommentsRequest\x1a&.redyx.comment.v1.ListCommentsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/posts/{post_id}/comments\x12\x89\x01\n" +
 	"\vListReplies\x12$.redyx.comment.v1.ListRepliesRequest\x1a%.redyx.comment.v1.ListRepliesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/comments/{comment_id}/replies\x12w\n" +
-	"\x14ListCommentsByAuthor\x12-.redyx.comment.v1.ListCommentsByAuthorRequest\x1a..redyx.comment.v1.ListCommentsByAuthorResponse\"\x00B\xbd\x01\n" +
+	"\x14ListCommentsByAuthor\x12-.redyx.comment.v1.ListCommentsByAuthorRequest\x1a..redyx.comment.v1.ListCommentsByAuthorResponse\"\x00\x12}\n" +
+	"\x16ModeratorRemoveComment\x12/.redyx.comment.v1.ModeratorRemoveCommentRequest\x1a0.redyx.comment.v1.ModeratorRemoveCommentResponse\"\x00\x12\x80\x01\n" +
+	"\x17ModeratorRestoreComment\x120.redyx.comment.v1.ModeratorRestoreCommentRequest\x1a1.redyx.comment.v1.ModeratorRestoreCommentResponse\"\x00\x12w\n" +
+	"\x14RemoveCommentsByUser\x12-.redyx.comment.v1.RemoveCommentsByUserRequest\x1a..redyx.comment.v1.RemoveCommentsByUserResponse\"\x00B\xbd\x01\n" +
 	"\x14com.redyx.comment.v1B\fCommentProtoP\x01Z5github.com/redyx/redyx/gen/redyx/comment/v1;commentv1\xa2\x02\x03RCX\xaa\x02\x10Redyx.Comment.V1\xca\x02\x10Redyx\\Comment\\V1\xe2\x02\x1cRedyx\\Comment\\V1\\GPBMetadata\xea\x02\x12Redyx::Comment::V1b\x06proto3"
 
 var (
@@ -1146,46 +1437,52 @@ func file_redyx_comment_v1_comment_proto_rawDescGZIP() []byte {
 }
 
 var file_redyx_comment_v1_comment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_redyx_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_redyx_comment_v1_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_redyx_comment_v1_comment_proto_goTypes = []any{
-	(CommentSortOrder)(0),                // 0: redyx.comment.v1.CommentSortOrder
-	(*Comment)(nil),                      // 1: redyx.comment.v1.Comment
-	(*CreateCommentRequest)(nil),         // 2: redyx.comment.v1.CreateCommentRequest
-	(*CreateCommentResponse)(nil),        // 3: redyx.comment.v1.CreateCommentResponse
-	(*GetCommentRequest)(nil),            // 4: redyx.comment.v1.GetCommentRequest
-	(*GetCommentResponse)(nil),           // 5: redyx.comment.v1.GetCommentResponse
-	(*UpdateCommentRequest)(nil),         // 6: redyx.comment.v1.UpdateCommentRequest
-	(*UpdateCommentResponse)(nil),        // 7: redyx.comment.v1.UpdateCommentResponse
-	(*DeleteCommentRequest)(nil),         // 8: redyx.comment.v1.DeleteCommentRequest
-	(*DeleteCommentResponse)(nil),        // 9: redyx.comment.v1.DeleteCommentResponse
-	(*ListCommentsRequest)(nil),          // 10: redyx.comment.v1.ListCommentsRequest
-	(*ListCommentsResponse)(nil),         // 11: redyx.comment.v1.ListCommentsResponse
-	(*ListRepliesRequest)(nil),           // 12: redyx.comment.v1.ListRepliesRequest
-	(*ListRepliesResponse)(nil),          // 13: redyx.comment.v1.ListRepliesResponse
-	(*ListCommentsByAuthorRequest)(nil),  // 14: redyx.comment.v1.ListCommentsByAuthorRequest
-	(*ListCommentsByAuthorResponse)(nil), // 15: redyx.comment.v1.ListCommentsByAuthorResponse
-	(*CommentSummary)(nil),               // 16: redyx.comment.v1.CommentSummary
-	(*timestamppb.Timestamp)(nil),        // 17: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),         // 18: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil),        // 19: redyx.common.v1.PaginationResponse
+	(CommentSortOrder)(0),                   // 0: redyx.comment.v1.CommentSortOrder
+	(*Comment)(nil),                         // 1: redyx.comment.v1.Comment
+	(*CreateCommentRequest)(nil),            // 2: redyx.comment.v1.CreateCommentRequest
+	(*CreateCommentResponse)(nil),           // 3: redyx.comment.v1.CreateCommentResponse
+	(*GetCommentRequest)(nil),               // 4: redyx.comment.v1.GetCommentRequest
+	(*GetCommentResponse)(nil),              // 5: redyx.comment.v1.GetCommentResponse
+	(*UpdateCommentRequest)(nil),            // 6: redyx.comment.v1.UpdateCommentRequest
+	(*UpdateCommentResponse)(nil),           // 7: redyx.comment.v1.UpdateCommentResponse
+	(*DeleteCommentRequest)(nil),            // 8: redyx.comment.v1.DeleteCommentRequest
+	(*DeleteCommentResponse)(nil),           // 9: redyx.comment.v1.DeleteCommentResponse
+	(*ListCommentsRequest)(nil),             // 10: redyx.comment.v1.ListCommentsRequest
+	(*ListCommentsResponse)(nil),            // 11: redyx.comment.v1.ListCommentsResponse
+	(*ListRepliesRequest)(nil),              // 12: redyx.comment.v1.ListRepliesRequest
+	(*ListRepliesResponse)(nil),             // 13: redyx.comment.v1.ListRepliesResponse
+	(*ListCommentsByAuthorRequest)(nil),     // 14: redyx.comment.v1.ListCommentsByAuthorRequest
+	(*ListCommentsByAuthorResponse)(nil),    // 15: redyx.comment.v1.ListCommentsByAuthorResponse
+	(*CommentSummary)(nil),                  // 16: redyx.comment.v1.CommentSummary
+	(*ModeratorRemoveCommentRequest)(nil),   // 17: redyx.comment.v1.ModeratorRemoveCommentRequest
+	(*ModeratorRemoveCommentResponse)(nil),  // 18: redyx.comment.v1.ModeratorRemoveCommentResponse
+	(*ModeratorRestoreCommentRequest)(nil),  // 19: redyx.comment.v1.ModeratorRestoreCommentRequest
+	(*ModeratorRestoreCommentResponse)(nil), // 20: redyx.comment.v1.ModeratorRestoreCommentResponse
+	(*RemoveCommentsByUserRequest)(nil),     // 21: redyx.comment.v1.RemoveCommentsByUserRequest
+	(*RemoveCommentsByUserResponse)(nil),    // 22: redyx.comment.v1.RemoveCommentsByUserResponse
+	(*timestamppb.Timestamp)(nil),           // 23: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),            // 24: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),           // 25: redyx.common.v1.PaginationResponse
 }
 var file_redyx_comment_v1_comment_proto_depIdxs = []int32{
-	17, // 0: redyx.comment.v1.Comment.created_at:type_name -> google.protobuf.Timestamp
-	17, // 1: redyx.comment.v1.Comment.edited_at:type_name -> google.protobuf.Timestamp
+	23, // 0: redyx.comment.v1.Comment.created_at:type_name -> google.protobuf.Timestamp
+	23, // 1: redyx.comment.v1.Comment.edited_at:type_name -> google.protobuf.Timestamp
 	1,  // 2: redyx.comment.v1.CreateCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	1,  // 3: redyx.comment.v1.GetCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	1,  // 4: redyx.comment.v1.UpdateCommentResponse.comment:type_name -> redyx.comment.v1.Comment
 	0,  // 5: redyx.comment.v1.ListCommentsRequest.sort:type_name -> redyx.comment.v1.CommentSortOrder
-	18, // 6: redyx.comment.v1.ListCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	24, // 6: redyx.comment.v1.ListCommentsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	1,  // 7: redyx.comment.v1.ListCommentsResponse.comments:type_name -> redyx.comment.v1.Comment
-	19, // 8: redyx.comment.v1.ListCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	18, // 9: redyx.comment.v1.ListRepliesRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	25, // 8: redyx.comment.v1.ListCommentsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	24, // 9: redyx.comment.v1.ListRepliesRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	1,  // 10: redyx.comment.v1.ListRepliesResponse.replies:type_name -> redyx.comment.v1.Comment
-	19, // 11: redyx.comment.v1.ListRepliesResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	18, // 12: redyx.comment.v1.ListCommentsByAuthorRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	25, // 11: redyx.comment.v1.ListRepliesResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	24, // 12: redyx.comment.v1.ListCommentsByAuthorRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	16, // 13: redyx.comment.v1.ListCommentsByAuthorResponse.comments:type_name -> redyx.comment.v1.CommentSummary
-	19, // 14: redyx.comment.v1.ListCommentsByAuthorResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	17, // 15: redyx.comment.v1.CommentSummary.created_at:type_name -> google.protobuf.Timestamp
+	25, // 14: redyx.comment.v1.ListCommentsByAuthorResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	23, // 15: redyx.comment.v1.CommentSummary.created_at:type_name -> google.protobuf.Timestamp
 	2,  // 16: redyx.comment.v1.CommentService.CreateComment:input_type -> redyx.comment.v1.CreateCommentRequest
 	4,  // 17: redyx.comment.v1.CommentService.GetComment:input_type -> redyx.comment.v1.GetCommentRequest
 	6,  // 18: redyx.comment.v1.CommentService.UpdateComment:input_type -> redyx.comment.v1.UpdateCommentRequest
@@ -1193,15 +1490,21 @@ var file_redyx_comment_v1_comment_proto_depIdxs = []int32{
 	10, // 20: redyx.comment.v1.CommentService.ListComments:input_type -> redyx.comment.v1.ListCommentsRequest
 	12, // 21: redyx.comment.v1.CommentService.ListReplies:input_type -> redyx.comment.v1.ListRepliesRequest
 	14, // 22: redyx.comment.v1.CommentService.ListCommentsByAuthor:input_type -> redyx.comment.v1.ListCommentsByAuthorRequest
-	3,  // 23: redyx.comment.v1.CommentService.CreateComment:output_type -> redyx.comment.v1.CreateCommentResponse
-	5,  // 24: redyx.comment.v1.CommentService.GetComment:output_type -> redyx.comment.v1.GetCommentResponse
-	7,  // 25: redyx.comment.v1.CommentService.UpdateComment:output_type -> redyx.comment.v1.UpdateCommentResponse
-	9,  // 26: redyx.comment.v1.CommentService.DeleteComment:output_type -> redyx.comment.v1.DeleteCommentResponse
-	11, // 27: redyx.comment.v1.CommentService.ListComments:output_type -> redyx.comment.v1.ListCommentsResponse
-	13, // 28: redyx.comment.v1.CommentService.ListReplies:output_type -> redyx.comment.v1.ListRepliesResponse
-	15, // 29: redyx.comment.v1.CommentService.ListCommentsByAuthor:output_type -> redyx.comment.v1.ListCommentsByAuthorResponse
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
+	17, // 23: redyx.comment.v1.CommentService.ModeratorRemoveComment:input_type -> redyx.comment.v1.ModeratorRemoveCommentRequest
+	19, // 24: redyx.comment.v1.CommentService.ModeratorRestoreComment:input_type -> redyx.comment.v1.ModeratorRestoreCommentRequest
+	21, // 25: redyx.comment.v1.CommentService.RemoveCommentsByUser:input_type -> redyx.comment.v1.RemoveCommentsByUserRequest
+	3,  // 26: redyx.comment.v1.CommentService.CreateComment:output_type -> redyx.comment.v1.CreateCommentResponse
+	5,  // 27: redyx.comment.v1.CommentService.GetComment:output_type -> redyx.comment.v1.GetCommentResponse
+	7,  // 28: redyx.comment.v1.CommentService.UpdateComment:output_type -> redyx.comment.v1.UpdateCommentResponse
+	9,  // 29: redyx.comment.v1.CommentService.DeleteComment:output_type -> redyx.comment.v1.DeleteCommentResponse
+	11, // 30: redyx.comment.v1.CommentService.ListComments:output_type -> redyx.comment.v1.ListCommentsResponse
+	13, // 31: redyx.comment.v1.CommentService.ListReplies:output_type -> redyx.comment.v1.ListRepliesResponse
+	15, // 32: redyx.comment.v1.CommentService.ListCommentsByAuthor:output_type -> redyx.comment.v1.ListCommentsByAuthorResponse
+	18, // 33: redyx.comment.v1.CommentService.ModeratorRemoveComment:output_type -> redyx.comment.v1.ModeratorRemoveCommentResponse
+	20, // 34: redyx.comment.v1.CommentService.ModeratorRestoreComment:output_type -> redyx.comment.v1.ModeratorRestoreCommentResponse
+	22, // 35: redyx.comment.v1.CommentService.RemoveCommentsByUser:output_type -> redyx.comment.v1.RemoveCommentsByUserResponse
+	26, // [26:36] is the sub-list for method output_type
+	16, // [16:26] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
 	16, // [16:16] is the sub-list for extension extendee
 	0,  // [0:16] is the sub-list for field type_name
@@ -1218,7 +1521,7 @@ func file_redyx_comment_v1_comment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_comment_v1_comment_proto_rawDesc), len(file_redyx_comment_v1_comment_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

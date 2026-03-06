@@ -70,6 +70,13 @@ service PostService {
   // ListUserPosts returns paginated posts by a specific user (public).
   // Called internally by user-service via gRPC — no public REST annotation.
   rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {}
+
+  // Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+  rpc ModeratorRemovePost(ModeratorRemovePostRequest) returns (ModeratorRemovePostResponse) {}
+  rpc ModeratorRestorePost(ModeratorRestorePostRequest) returns (ModeratorRestorePostResponse) {}
+  rpc SetPostPinned(SetPostPinnedRequest) returns (SetPostPinnedResponse) {}
+  rpc CountPinnedPosts(CountPinnedPostsRequest) returns (CountPinnedPostsResponse) {}
+  rpc RemovePostsByUser(RemovePostsByUserRequest) returns (RemovePostsByUserResponse) {}
 }
 
 // PostType distinguishes between text, link, and media posts.
@@ -237,4 +244,53 @@ message ListUserPostsRequest {
 message ListUserPostsResponse {
   repeated Post posts = 1;
   redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// ModeratorRemovePost — internal RPC for moderation-service
+
+message ModeratorRemovePostRequest {
+  string post_id = 1;
+  string community_name = 2;
+}
+
+message ModeratorRemovePostResponse {}
+
+// ModeratorRestorePost — internal RPC for moderation-service
+
+message ModeratorRestorePostRequest {
+  string post_id = 1;
+  string community_name = 2;
+}
+
+message ModeratorRestorePostResponse {}
+
+// SetPostPinned — internal RPC for moderation-service
+
+message SetPostPinnedRequest {
+  string post_id = 1;
+  string community_name = 2;
+  bool pinned = 3;
+}
+
+message SetPostPinnedResponse {}
+
+// CountPinnedPosts — internal RPC for moderation-service
+
+message CountPinnedPostsRequest {
+  string community_name = 1;
+}
+
+message CountPinnedPostsResponse {
+  int32 count = 1;
+}
+
+// RemovePostsByUser — internal RPC for moderation-service
+
+message RemovePostsByUserRequest {
+  string user_id = 1;
+  string community_name = 2;
+}
+
+message RemovePostsByUserResponse {
+  int32 removed_count = 1;
 }

@@ -55,6 +55,11 @@ service CommentService {
   // ListCommentsByAuthor returns paginated comments authored by a given user.
   // Called internally by user-service via gRPC — no public REST annotation.
   rpc ListCommentsByAuthor(ListCommentsByAuthorRequest) returns (ListCommentsByAuthorResponse) {}
+
+  // Internal RPCs for moderation-service cross-service calls (no HTTP annotations).
+  rpc ModeratorRemoveComment(ModeratorRemoveCommentRequest) returns (ModeratorRemoveCommentResponse) {}
+  rpc ModeratorRestoreComment(ModeratorRestoreCommentRequest) returns (ModeratorRestoreCommentResponse) {}
+  rpc RemoveCommentsByUser(RemoveCommentsByUserRequest) returns (RemoveCommentsByUserResponse) {}
 }
 
 // CommentSortOrder for comment sorting within a post.
@@ -178,4 +183,33 @@ message CommentSummary {
   string body = 5;
   int32 vote_score = 6;
   google.protobuf.Timestamp created_at = 7;
+}
+
+// ModeratorRemoveComment — internal RPC for moderation-service
+
+message ModeratorRemoveCommentRequest {
+  string comment_id = 1;
+  string post_id = 2;
+}
+
+message ModeratorRemoveCommentResponse {}
+
+// ModeratorRestoreComment — internal RPC for moderation-service
+
+message ModeratorRestoreCommentRequest {
+  string comment_id = 1;
+  string post_id = 2;
+}
+
+message ModeratorRestoreCommentResponse {}
+
+// RemoveCommentsByUser — internal RPC for moderation-service
+
+message RemoveCommentsByUserRequest {
+  string user_id = 1;
+  string community_name = 2;
+}
+
+message RemoveCommentsByUserResponse {
+  int32 removed_count = 1;
 }

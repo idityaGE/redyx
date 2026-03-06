@@ -1344,6 +1344,462 @@ func (x *ListUserPostsResponse) GetPagination() *v1.PaginationResponse {
 	return nil
 }
 
+type ModeratorRemovePostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	CommunityName string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRemovePostRequest) Reset() {
+	*x = ModeratorRemovePostRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRemovePostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRemovePostRequest) ProtoMessage() {}
+
+func (x *ModeratorRemovePostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRemovePostRequest.ProtoReflect.Descriptor instead.
+func (*ModeratorRemovePostRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ModeratorRemovePostRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *ModeratorRemovePostRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+type ModeratorRemovePostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRemovePostResponse) Reset() {
+	*x = ModeratorRemovePostResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRemovePostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRemovePostResponse) ProtoMessage() {}
+
+func (x *ModeratorRemovePostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRemovePostResponse.ProtoReflect.Descriptor instead.
+func (*ModeratorRemovePostResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{20}
+}
+
+type ModeratorRestorePostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	CommunityName string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRestorePostRequest) Reset() {
+	*x = ModeratorRestorePostRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRestorePostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRestorePostRequest) ProtoMessage() {}
+
+func (x *ModeratorRestorePostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRestorePostRequest.ProtoReflect.Descriptor instead.
+func (*ModeratorRestorePostRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ModeratorRestorePostRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *ModeratorRestorePostRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+type ModeratorRestorePostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModeratorRestorePostResponse) Reset() {
+	*x = ModeratorRestorePostResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModeratorRestorePostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModeratorRestorePostResponse) ProtoMessage() {}
+
+func (x *ModeratorRestorePostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModeratorRestorePostResponse.ProtoReflect.Descriptor instead.
+func (*ModeratorRestorePostResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{22}
+}
+
+type SetPostPinnedRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	CommunityName string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	Pinned        bool                   `protobuf:"varint,3,opt,name=pinned,proto3" json:"pinned,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetPostPinnedRequest) Reset() {
+	*x = SetPostPinnedRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPostPinnedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPostPinnedRequest) ProtoMessage() {}
+
+func (x *SetPostPinnedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetPostPinnedRequest.ProtoReflect.Descriptor instead.
+func (*SetPostPinnedRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetPostPinnedRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *SetPostPinnedRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *SetPostPinnedRequest) GetPinned() bool {
+	if x != nil {
+		return x.Pinned
+	}
+	return false
+}
+
+type SetPostPinnedResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetPostPinnedResponse) Reset() {
+	*x = SetPostPinnedResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPostPinnedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPostPinnedResponse) ProtoMessage() {}
+
+func (x *SetPostPinnedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetPostPinnedResponse.ProtoReflect.Descriptor instead.
+func (*SetPostPinnedResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{24}
+}
+
+type CountPinnedPostsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CountPinnedPostsRequest) Reset() {
+	*x = CountPinnedPostsRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CountPinnedPostsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CountPinnedPostsRequest) ProtoMessage() {}
+
+func (x *CountPinnedPostsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CountPinnedPostsRequest.ProtoReflect.Descriptor instead.
+func (*CountPinnedPostsRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *CountPinnedPostsRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+type CountPinnedPostsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CountPinnedPostsResponse) Reset() {
+	*x = CountPinnedPostsResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CountPinnedPostsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CountPinnedPostsResponse) ProtoMessage() {}
+
+func (x *CountPinnedPostsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CountPinnedPostsResponse.ProtoReflect.Descriptor instead.
+func (*CountPinnedPostsResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *CountPinnedPostsResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type RemovePostsByUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CommunityName string                 `protobuf:"bytes,2,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemovePostsByUserRequest) Reset() {
+	*x = RemovePostsByUserRequest{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemovePostsByUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemovePostsByUserRequest) ProtoMessage() {}
+
+func (x *RemovePostsByUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemovePostsByUserRequest.ProtoReflect.Descriptor instead.
+func (*RemovePostsByUserRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *RemovePostsByUserRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *RemovePostsByUserRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+type RemovePostsByUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RemovedCount  int32                  `protobuf:"varint,1,opt,name=removed_count,json=removedCount,proto3" json:"removed_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemovePostsByUserResponse) Reset() {
+	*x = RemovePostsByUserResponse{}
+	mi := &file_redyx_post_v1_post_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemovePostsByUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemovePostsByUserResponse) ProtoMessage() {}
+
+func (x *RemovePostsByUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_post_v1_post_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemovePostsByUserResponse.ProtoReflect.Descriptor instead.
+func (*RemovePostsByUserResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_post_v1_post_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *RemovePostsByUserResponse) GetRemovedCount() int32 {
+	if x != nil {
+		return x.RemovedCount
+	}
+	return 0
+}
+
 var File_redyx_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_redyx_post_v1_post_proto_rawDesc = "" +
@@ -1447,7 +1903,29 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\x05posts\x18\x01 \x03(\v2\x13.redyx.post.v1.PostR\x05posts\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination*b\n" +
+	"pagination\"\\\n" +
+	"\x1aModeratorRemovePostRequest\x12\x17\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12%\n" +
+	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\"\x1d\n" +
+	"\x1bModeratorRemovePostResponse\"]\n" +
+	"\x1bModeratorRestorePostRequest\x12\x17\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12%\n" +
+	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\"\x1e\n" +
+	"\x1cModeratorRestorePostResponse\"n\n" +
+	"\x14SetPostPinnedRequest\x12\x17\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12%\n" +
+	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\x12\x16\n" +
+	"\x06pinned\x18\x03 \x01(\bR\x06pinned\"\x17\n" +
+	"\x15SetPostPinnedResponse\"@\n" +
+	"\x17CountPinnedPostsRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\"0\n" +
+	"\x18CountPinnedPostsResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"Z\n" +
+	"\x18RemovePostsByUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12%\n" +
+	"\x0ecommunity_name\x18\x02 \x01(\tR\rcommunityName\"@\n" +
+	"\x19RemovePostsByUserResponse\x12#\n" +
+	"\rremoved_count\x18\x01 \x01(\x05R\fremovedCount*b\n" +
 	"\bPostType\x12\x19\n" +
 	"\x15POST_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0ePOST_TYPE_TEXT\x10\x01\x12\x12\n" +
@@ -1466,7 +1944,7 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\x0fTIME_RANGE_WEEK\x10\x03\x12\x14\n" +
 	"\x10TIME_RANGE_MONTH\x10\x04\x12\x13\n" +
 	"\x0fTIME_RANGE_YEAR\x10\x05\x12\x12\n" +
-	"\x0eTIME_RANGE_ALL\x10\x062\x8e\b\n" +
+	"\x0eTIME_RANGE_ALL\x10\x062\xa0\f\n" +
 	"\vPostService\x12k\n" +
 	"\n" +
 	"CreatePost\x12 .redyx.post.v1.CreatePostRequest\x1a!.redyx.post.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12i\n" +
@@ -1479,7 +1957,12 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\fListHomeFeed\x12\".redyx.post.v1.ListHomeFeedRequest\x1a#.redyx.post.v1.ListHomeFeedResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/feed\x12t\n" +
 	"\bSavePost\x12\x1e.redyx.post.v1.SavePostRequest\x1a\x1f.redyx.post.v1.SavePostResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/posts/{post_id}/save\x12t\n" +
 	"\x0eListSavedPosts\x12$.redyx.post.v1.ListSavedPostsRequest\x1a%.redyx.post.v1.ListSavedPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/saved\x12\\\n" +
-	"\rListUserPosts\x12#.redyx.post.v1.ListUserPostsRequest\x1a$.redyx.post.v1.ListUserPostsResponse\"\x00B\xa5\x01\n" +
+	"\rListUserPosts\x12#.redyx.post.v1.ListUserPostsRequest\x1a$.redyx.post.v1.ListUserPostsResponse\"\x00\x12n\n" +
+	"\x13ModeratorRemovePost\x12).redyx.post.v1.ModeratorRemovePostRequest\x1a*.redyx.post.v1.ModeratorRemovePostResponse\"\x00\x12q\n" +
+	"\x14ModeratorRestorePost\x12*.redyx.post.v1.ModeratorRestorePostRequest\x1a+.redyx.post.v1.ModeratorRestorePostResponse\"\x00\x12\\\n" +
+	"\rSetPostPinned\x12#.redyx.post.v1.SetPostPinnedRequest\x1a$.redyx.post.v1.SetPostPinnedResponse\"\x00\x12e\n" +
+	"\x10CountPinnedPosts\x12&.redyx.post.v1.CountPinnedPostsRequest\x1a'.redyx.post.v1.CountPinnedPostsResponse\"\x00\x12h\n" +
+	"\x11RemovePostsByUser\x12'.redyx.post.v1.RemovePostsByUserRequest\x1a(.redyx.post.v1.RemovePostsByUserResponse\"\x00B\xa5\x01\n" +
 	"\x11com.redyx.post.v1B\tPostProtoP\x01Z/github.com/redyx/redyx/gen/redyx/post/v1;postv1\xa2\x02\x03RPX\xaa\x02\rRedyx.Post.V1\xca\x02\rRedyx\\Post\\V1\xe2\x02\x19Redyx\\Post\\V1\\GPBMetadata\xea\x02\x0fRedyx::Post::V1b\x06proto3"
 
 var (
@@ -1495,58 +1978,68 @@ func file_redyx_post_v1_post_proto_rawDescGZIP() []byte {
 }
 
 var file_redyx_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_redyx_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_redyx_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_redyx_post_v1_post_proto_goTypes = []any{
-	(PostType)(0),                  // 0: redyx.post.v1.PostType
-	(SortOrder)(0),                 // 1: redyx.post.v1.SortOrder
-	(TimeRange)(0),                 // 2: redyx.post.v1.TimeRange
-	(*Post)(nil),                   // 3: redyx.post.v1.Post
-	(*CreatePostRequest)(nil),      // 4: redyx.post.v1.CreatePostRequest
-	(*CreatePostResponse)(nil),     // 5: redyx.post.v1.CreatePostResponse
-	(*GetPostRequest)(nil),         // 6: redyx.post.v1.GetPostRequest
-	(*GetPostResponse)(nil),        // 7: redyx.post.v1.GetPostResponse
-	(*UpdatePostRequest)(nil),      // 8: redyx.post.v1.UpdatePostRequest
-	(*UpdatePostResponse)(nil),     // 9: redyx.post.v1.UpdatePostResponse
-	(*DeletePostRequest)(nil),      // 10: redyx.post.v1.DeletePostRequest
-	(*DeletePostResponse)(nil),     // 11: redyx.post.v1.DeletePostResponse
-	(*ListPostsRequest)(nil),       // 12: redyx.post.v1.ListPostsRequest
-	(*ListPostsResponse)(nil),      // 13: redyx.post.v1.ListPostsResponse
-	(*ListHomeFeedRequest)(nil),    // 14: redyx.post.v1.ListHomeFeedRequest
-	(*ListHomeFeedResponse)(nil),   // 15: redyx.post.v1.ListHomeFeedResponse
-	(*SavePostRequest)(nil),        // 16: redyx.post.v1.SavePostRequest
-	(*SavePostResponse)(nil),       // 17: redyx.post.v1.SavePostResponse
-	(*ListSavedPostsRequest)(nil),  // 18: redyx.post.v1.ListSavedPostsRequest
-	(*ListSavedPostsResponse)(nil), // 19: redyx.post.v1.ListSavedPostsResponse
-	(*ListUserPostsRequest)(nil),   // 20: redyx.post.v1.ListUserPostsRequest
-	(*ListUserPostsResponse)(nil),  // 21: redyx.post.v1.ListUserPostsResponse
-	(*timestamppb.Timestamp)(nil),  // 22: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),   // 23: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil),  // 24: redyx.common.v1.PaginationResponse
+	(PostType)(0),                        // 0: redyx.post.v1.PostType
+	(SortOrder)(0),                       // 1: redyx.post.v1.SortOrder
+	(TimeRange)(0),                       // 2: redyx.post.v1.TimeRange
+	(*Post)(nil),                         // 3: redyx.post.v1.Post
+	(*CreatePostRequest)(nil),            // 4: redyx.post.v1.CreatePostRequest
+	(*CreatePostResponse)(nil),           // 5: redyx.post.v1.CreatePostResponse
+	(*GetPostRequest)(nil),               // 6: redyx.post.v1.GetPostRequest
+	(*GetPostResponse)(nil),              // 7: redyx.post.v1.GetPostResponse
+	(*UpdatePostRequest)(nil),            // 8: redyx.post.v1.UpdatePostRequest
+	(*UpdatePostResponse)(nil),           // 9: redyx.post.v1.UpdatePostResponse
+	(*DeletePostRequest)(nil),            // 10: redyx.post.v1.DeletePostRequest
+	(*DeletePostResponse)(nil),           // 11: redyx.post.v1.DeletePostResponse
+	(*ListPostsRequest)(nil),             // 12: redyx.post.v1.ListPostsRequest
+	(*ListPostsResponse)(nil),            // 13: redyx.post.v1.ListPostsResponse
+	(*ListHomeFeedRequest)(nil),          // 14: redyx.post.v1.ListHomeFeedRequest
+	(*ListHomeFeedResponse)(nil),         // 15: redyx.post.v1.ListHomeFeedResponse
+	(*SavePostRequest)(nil),              // 16: redyx.post.v1.SavePostRequest
+	(*SavePostResponse)(nil),             // 17: redyx.post.v1.SavePostResponse
+	(*ListSavedPostsRequest)(nil),        // 18: redyx.post.v1.ListSavedPostsRequest
+	(*ListSavedPostsResponse)(nil),       // 19: redyx.post.v1.ListSavedPostsResponse
+	(*ListUserPostsRequest)(nil),         // 20: redyx.post.v1.ListUserPostsRequest
+	(*ListUserPostsResponse)(nil),        // 21: redyx.post.v1.ListUserPostsResponse
+	(*ModeratorRemovePostRequest)(nil),   // 22: redyx.post.v1.ModeratorRemovePostRequest
+	(*ModeratorRemovePostResponse)(nil),  // 23: redyx.post.v1.ModeratorRemovePostResponse
+	(*ModeratorRestorePostRequest)(nil),  // 24: redyx.post.v1.ModeratorRestorePostRequest
+	(*ModeratorRestorePostResponse)(nil), // 25: redyx.post.v1.ModeratorRestorePostResponse
+	(*SetPostPinnedRequest)(nil),         // 26: redyx.post.v1.SetPostPinnedRequest
+	(*SetPostPinnedResponse)(nil),        // 27: redyx.post.v1.SetPostPinnedResponse
+	(*CountPinnedPostsRequest)(nil),      // 28: redyx.post.v1.CountPinnedPostsRequest
+	(*CountPinnedPostsResponse)(nil),     // 29: redyx.post.v1.CountPinnedPostsResponse
+	(*RemovePostsByUserRequest)(nil),     // 30: redyx.post.v1.RemovePostsByUserRequest
+	(*RemovePostsByUserResponse)(nil),    // 31: redyx.post.v1.RemovePostsByUserResponse
+	(*timestamppb.Timestamp)(nil),        // 32: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),         // 33: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),        // 34: redyx.common.v1.PaginationResponse
 }
 var file_redyx_post_v1_post_proto_depIdxs = []int32{
 	0,  // 0: redyx.post.v1.Post.post_type:type_name -> redyx.post.v1.PostType
-	22, // 1: redyx.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
-	22, // 2: redyx.post.v1.Post.edited_at:type_name -> google.protobuf.Timestamp
+	32, // 1: redyx.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	32, // 2: redyx.post.v1.Post.edited_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: redyx.post.v1.CreatePostRequest.post_type:type_name -> redyx.post.v1.PostType
 	3,  // 4: redyx.post.v1.CreatePostResponse.post:type_name -> redyx.post.v1.Post
 	3,  // 5: redyx.post.v1.GetPostResponse.post:type_name -> redyx.post.v1.Post
 	3,  // 6: redyx.post.v1.UpdatePostResponse.post:type_name -> redyx.post.v1.Post
 	1,  // 7: redyx.post.v1.ListPostsRequest.sort:type_name -> redyx.post.v1.SortOrder
 	2,  // 8: redyx.post.v1.ListPostsRequest.time_range:type_name -> redyx.post.v1.TimeRange
-	23, // 9: redyx.post.v1.ListPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	33, // 9: redyx.post.v1.ListPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 10: redyx.post.v1.ListPostsResponse.posts:type_name -> redyx.post.v1.Post
-	24, // 11: redyx.post.v1.ListPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	34, // 11: redyx.post.v1.ListPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
 	1,  // 12: redyx.post.v1.ListHomeFeedRequest.sort:type_name -> redyx.post.v1.SortOrder
 	2,  // 13: redyx.post.v1.ListHomeFeedRequest.time_range:type_name -> redyx.post.v1.TimeRange
-	23, // 14: redyx.post.v1.ListHomeFeedRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	33, // 14: redyx.post.v1.ListHomeFeedRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 15: redyx.post.v1.ListHomeFeedResponse.posts:type_name -> redyx.post.v1.Post
-	24, // 16: redyx.post.v1.ListHomeFeedResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	23, // 17: redyx.post.v1.ListSavedPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	34, // 16: redyx.post.v1.ListHomeFeedResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	33, // 17: redyx.post.v1.ListSavedPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 18: redyx.post.v1.ListSavedPostsResponse.posts:type_name -> redyx.post.v1.Post
-	24, // 19: redyx.post.v1.ListSavedPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	23, // 20: redyx.post.v1.ListUserPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	34, // 19: redyx.post.v1.ListSavedPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	33, // 20: redyx.post.v1.ListUserPostsRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	3,  // 21: redyx.post.v1.ListUserPostsResponse.posts:type_name -> redyx.post.v1.Post
-	24, // 22: redyx.post.v1.ListUserPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	34, // 22: redyx.post.v1.ListUserPostsResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
 	4,  // 23: redyx.post.v1.PostService.CreatePost:input_type -> redyx.post.v1.CreatePostRequest
 	6,  // 24: redyx.post.v1.PostService.GetPost:input_type -> redyx.post.v1.GetPostRequest
 	8,  // 25: redyx.post.v1.PostService.UpdatePost:input_type -> redyx.post.v1.UpdatePostRequest
@@ -1556,17 +2049,27 @@ var file_redyx_post_v1_post_proto_depIdxs = []int32{
 	16, // 29: redyx.post.v1.PostService.SavePost:input_type -> redyx.post.v1.SavePostRequest
 	18, // 30: redyx.post.v1.PostService.ListSavedPosts:input_type -> redyx.post.v1.ListSavedPostsRequest
 	20, // 31: redyx.post.v1.PostService.ListUserPosts:input_type -> redyx.post.v1.ListUserPostsRequest
-	5,  // 32: redyx.post.v1.PostService.CreatePost:output_type -> redyx.post.v1.CreatePostResponse
-	7,  // 33: redyx.post.v1.PostService.GetPost:output_type -> redyx.post.v1.GetPostResponse
-	9,  // 34: redyx.post.v1.PostService.UpdatePost:output_type -> redyx.post.v1.UpdatePostResponse
-	11, // 35: redyx.post.v1.PostService.DeletePost:output_type -> redyx.post.v1.DeletePostResponse
-	13, // 36: redyx.post.v1.PostService.ListPosts:output_type -> redyx.post.v1.ListPostsResponse
-	15, // 37: redyx.post.v1.PostService.ListHomeFeed:output_type -> redyx.post.v1.ListHomeFeedResponse
-	17, // 38: redyx.post.v1.PostService.SavePost:output_type -> redyx.post.v1.SavePostResponse
-	19, // 39: redyx.post.v1.PostService.ListSavedPosts:output_type -> redyx.post.v1.ListSavedPostsResponse
-	21, // 40: redyx.post.v1.PostService.ListUserPosts:output_type -> redyx.post.v1.ListUserPostsResponse
-	32, // [32:41] is the sub-list for method output_type
-	23, // [23:32] is the sub-list for method input_type
+	22, // 32: redyx.post.v1.PostService.ModeratorRemovePost:input_type -> redyx.post.v1.ModeratorRemovePostRequest
+	24, // 33: redyx.post.v1.PostService.ModeratorRestorePost:input_type -> redyx.post.v1.ModeratorRestorePostRequest
+	26, // 34: redyx.post.v1.PostService.SetPostPinned:input_type -> redyx.post.v1.SetPostPinnedRequest
+	28, // 35: redyx.post.v1.PostService.CountPinnedPosts:input_type -> redyx.post.v1.CountPinnedPostsRequest
+	30, // 36: redyx.post.v1.PostService.RemovePostsByUser:input_type -> redyx.post.v1.RemovePostsByUserRequest
+	5,  // 37: redyx.post.v1.PostService.CreatePost:output_type -> redyx.post.v1.CreatePostResponse
+	7,  // 38: redyx.post.v1.PostService.GetPost:output_type -> redyx.post.v1.GetPostResponse
+	9,  // 39: redyx.post.v1.PostService.UpdatePost:output_type -> redyx.post.v1.UpdatePostResponse
+	11, // 40: redyx.post.v1.PostService.DeletePost:output_type -> redyx.post.v1.DeletePostResponse
+	13, // 41: redyx.post.v1.PostService.ListPosts:output_type -> redyx.post.v1.ListPostsResponse
+	15, // 42: redyx.post.v1.PostService.ListHomeFeed:output_type -> redyx.post.v1.ListHomeFeedResponse
+	17, // 43: redyx.post.v1.PostService.SavePost:output_type -> redyx.post.v1.SavePostResponse
+	19, // 44: redyx.post.v1.PostService.ListSavedPosts:output_type -> redyx.post.v1.ListSavedPostsResponse
+	21, // 45: redyx.post.v1.PostService.ListUserPosts:output_type -> redyx.post.v1.ListUserPostsResponse
+	23, // 46: redyx.post.v1.PostService.ModeratorRemovePost:output_type -> redyx.post.v1.ModeratorRemovePostResponse
+	25, // 47: redyx.post.v1.PostService.ModeratorRestorePost:output_type -> redyx.post.v1.ModeratorRestorePostResponse
+	27, // 48: redyx.post.v1.PostService.SetPostPinned:output_type -> redyx.post.v1.SetPostPinnedResponse
+	29, // 49: redyx.post.v1.PostService.CountPinnedPosts:output_type -> redyx.post.v1.CountPinnedPostsResponse
+	31, // 50: redyx.post.v1.PostService.RemovePostsByUser:output_type -> redyx.post.v1.RemovePostsByUserResponse
+	37, // [37:51] is the sub-list for method output_type
+	23, // [23:37] is the sub-list for method input_type
 	23, // [23:23] is the sub-list for extension type_name
 	23, // [23:23] is the sub-list for extension extendee
 	0,  // [0:23] is the sub-list for field type_name
@@ -1583,7 +2086,7 @@ func file_redyx_post_v1_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_post_v1_post_proto_rawDesc), len(file_redyx_post_v1_post_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   19,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
