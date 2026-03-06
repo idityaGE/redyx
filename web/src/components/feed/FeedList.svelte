@@ -35,9 +35,10 @@
     endpoint: string;
     sort: string;
     timeRange?: string;
+    isModerator?: boolean;
   }
 
-  let { endpoint, sort, timeRange }: Props = $props();
+  let { endpoint, sort, timeRange, isModerator = false }: Props = $props();
 
   let posts = $state<Post[]>([]);
   let nextCursor = $state<string | null>(null);
@@ -119,7 +120,7 @@
   <div class="text-xs text-terminal-dim p-4 font-mono">no posts yet</div>
 {:else}
   {#each posts as post (post.postId)}
-    <FeedRow {post} />
+    <FeedRow {post} {isModerator} />
   {/each}
 {/if}
 

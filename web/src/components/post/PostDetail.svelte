@@ -5,6 +5,7 @@
   import VoteButtons from './VoteButtons.svelte';
   import PostBody from './PostBody.svelte';
   import MediaGallery from '../media/MediaGallery.svelte';
+  import ReportDialog from '../moderation/ReportDialog.svelte';
   import { relativeTime } from '../../lib/time';
 
   interface Props {
@@ -60,6 +61,13 @@
   // Delete state
   let confirmingDelete = $state(false);
 
+  // Overflow menu state
+  let showMenu = $state(false);
+  let showReportDialog = $state(false);
+  let confirmingRemove = $state(false);
+  let pinning = $state(false);
+  let isModerator = $state(false);
+
   // Reactive auth state
   let authed = $state(isAuthenticated());
 
@@ -88,6 +96,16 @@
       post = data.post;
       userVote = data.userVote ?? 0;
       isSaved = data.isSaved ?? false;
+
+      // Check moderator status for the community
+      if (post.communityName && authed) {
+        try {
+          const communityData = await api<{ isModerator?: boolean }>(`/communities/${encodeURIComponent(post.communityName)}`);
+          isModerator = communityData.isModerator ?? false;
+        } catch {
+          // Fail silently — non-critical
+        }
+      }
     } catch (e) {
       if (e instanceof ApiError) {
         errorStatus = e.status;
@@ -175,6 +193,61 @@
     }
   }
 
+  function toggleMenu() {
+    showMenu = !showMenu;
+    confirmingRemove = false;
+  }
+
+  function closeMenu() {
+    showMenu = false;
+    confirmingRemove = false;
+  }
+
+  function openReport() {
+    showMenu = false;
+    showReportDialog = true;
+  }
+
+  async function handleRemove() {
+    if (!post) return;
+    if (!confirmingRemove) {
+      confirmingRemove = true;
+      return;
+    }
+    try {
+      await api(`/communities/${encodeURIComponent(post.communityName)}/moderation/remove`, {
+        method: 'POST',
+        body: JSON.stringify({ contentId: post.postId, contentType: 1 }),
+      });
+      closeMenu();
+      post = { ...post, isDeleted: true };
+    } catch {
+      // Silently fail
+    }
+  }
+
+  async function handlePin() {
+    if (!post || pinning) return;
+    pinning = true;
+    const action = post.isPinned ? 'unpin' : 'pin';
+    try {
+      await api(`/communities/${encodeURIComponent(post.communityName)}/moderation/${action}`, {
+        method: 'POST',
+        body: JSON.stringify({ postId: post.postId }),
+      });
+      post = { ...post, isPinned: !post.isPinned };
+    } catch {
+      // Silently fail
+    } finally {
+      pinning = false;
+      closeMenu();
+    }
+  }
+
+  function handleWindowClick() {
+    if (showMenu) closeMenu();
+  }
+
   onMount(() => {
     // Wait for auth initialization so the request includes the access token
     // (needed for user_vote and is_saved in GetPostResponse)
@@ -186,6 +259,8 @@
     return unsub;
   });
 </script>
+
+<svelte:window onclick={handleWindowClick} />
 
 {#if loading}
   <div class="flex items-center justify-center min-h-[40vh]">
@@ -367,9 +442,63 @@
                 </button>
               {/if}
             {/if}
+
+            <!-- Three-dot overflow menu -->
+            {#if authed}
+              <div class="relative ml-auto">
+                <button
+                  onclick={(e) => { e.stopPropagation(); toggleMenu(); }}
+                  class="text-terminal-dim hover:text-terminal-fg transition-colors cursor-pointer"
+                  title="More actions"
+                >
+                  [...]
+                </button>
+
+                {#if showMenu}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div
+                    class="absolute right-0 bottom-full mb-1 bg-terminal-bg border border-terminal-border text-xs font-mono z-20 min-w-[140px]"
+                    onclick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onclick={openReport}
+                      class="w-full text-left px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-surface transition-colors cursor-pointer"
+                    >
+                      [report]
+                    </button>
+
+                    {#if isModerator}
+                      <div class="border-t border-terminal-border"></div>
+                      <button
+                        onclick={handlePin}
+                        disabled={pinning}
+                        class="w-full text-left px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-surface transition-colors cursor-pointer disabled:text-terminal-dim"
+                      >
+                        {post.isPinned ? '[unpin]' : '[pin]'}
+                      </button>
+                      <button
+                        onclick={handleRemove}
+                        class="w-full text-left px-3 py-1.5 transition-colors cursor-pointer {confirmingRemove ? 'text-red-500 bg-red-500/10' : 'text-terminal-fg hover:text-red-500 hover:bg-terminal-surface'}"
+                      >
+                        {confirmingRemove ? '[confirm remove?]' : '[remove]'}
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  {#if showReportDialog && post}
+    <ReportDialog
+      communityName={post.communityName}
+      contentId={post.postId}
+      contentType="post"
+      onClose={() => (showReportDialog = false)}
+    />
+  {/if}
 {/if}

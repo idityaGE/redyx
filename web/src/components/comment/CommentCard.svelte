@@ -4,6 +4,7 @@
   import VoteButtons from '../post/VoteButtons.svelte';
   import PostBody from '../post/PostBody.svelte';
   import CommentForm from './CommentForm.svelte';
+  import ReportDialog from '../moderation/ReportDialog.svelte';
   import { relativeTime } from '../../lib/time';
 
   type Comment = {
@@ -27,6 +28,8 @@
     comment: Comment;
     postId: string;
     depth: number;
+    communityName?: string;
+    isModerator?: boolean;
     onReplySubmitted?: (comment: Comment, parentPath: string) => void;
     onDeleted?: (commentId: string) => void;
   }
@@ -35,6 +38,8 @@
     comment,
     postId,
     depth,
+    communityName = '',
+    isModerator = false,
     onReplySubmitted,
     onDeleted,
   }: Props = $props();
@@ -48,6 +53,11 @@
   let editSaving = $state(false);
   let confirmingDelete = $state(false);
   let localComment = $state<Comment>({ ...comment });
+
+  // Overflow menu state
+  let showMenu = $state(false);
+  let showReportDialog = $state(false);
+  let confirmingModRemove = $state(false);
 
   let isOwnComment = $derived((() => {
     const user = getUser();
@@ -101,6 +111,38 @@
     }
   }
 
+  function toggleCommentMenu() {
+    showMenu = !showMenu;
+    confirmingModRemove = false;
+  }
+
+  function closeCommentMenu() {
+    showMenu = false;
+    confirmingModRemove = false;
+  }
+
+  function openCommentReport() {
+    showMenu = false;
+    showReportDialog = true;
+  }
+
+  async function handleModRemove() {
+    if (!confirmingModRemove) {
+      confirmingModRemove = true;
+      return;
+    }
+    try {
+      await api(`/communities/${encodeURIComponent(communityName)}/moderation/remove`, {
+        method: 'POST',
+        body: JSON.stringify({ contentId: localComment.commentId, contentType: 2 }),
+      });
+      localComment = { ...localComment, body: '[removed]', isDeleted: true };
+      closeCommentMenu();
+    } catch {
+      // Silently fail
+    }
+  }
+
   function handleReplySubmitted(newComment: Comment) {
     if (onReplySubmitted) {
       onReplySubmitted(newComment, localComment.path);
@@ -109,6 +151,8 @@
     replying = false;
   }
 </script>
+
+<svelte:window onclick={() => { if (showMenu) closeCommentMenu(); }} />
 
 <div class="relative py-1.5" style="padding-left: {indentPx}rem">
   {#if depth > 1}
@@ -232,10 +276,55 @@
                   </span>
                 {/if}
               {/if}
+
+              <!-- Three-dot overflow menu -->
+              <div class="relative">
+                <button
+                  onclick={(e) => { e.stopPropagation(); toggleCommentMenu(); }}
+                  class="hover:text-terminal-fg transition-colors cursor-pointer"
+                  title="More actions"
+                >
+                  [...]
+                </button>
+
+                {#if showMenu}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div
+                    class="absolute left-0 bottom-full mb-1 bg-terminal-bg border border-terminal-border text-xs font-mono z-20 min-w-[140px]"
+                    onclick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onclick={openCommentReport}
+                      class="w-full text-left px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-surface transition-colors cursor-pointer"
+                    >
+                      [report]
+                    </button>
+
+                    {#if isModerator}
+                      <div class="border-t border-terminal-border"></div>
+                      <button
+                        onclick={handleModRemove}
+                        class="w-full text-left px-3 py-1.5 transition-colors cursor-pointer {confirmingModRemove ? 'text-red-500 bg-red-500/10' : 'text-terminal-fg hover:text-red-500 hover:bg-terminal-surface'}"
+                      >
+                        {confirmingModRemove ? '[confirm remove?]' : '[remove]'}
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
             {/if}
 
             <span>{localComment.replyCount} {localComment.replyCount === 1 ? 'reply' : 'replies'}</span>
           </div>
+        {/if}
+
+        {#if showReportDialog && communityName}
+          <ReportDialog
+            {communityName}
+            contentId={localComment.commentId}
+            contentType="comment"
+            onClose={() => (showReportDialog = false)}
+          />
         {/if}
 
         <!-- Inline reply form -->

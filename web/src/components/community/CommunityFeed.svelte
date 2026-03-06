@@ -5,9 +5,10 @@
   interface Props {
     communityName: string;
     isMember?: boolean;
+    isModerator?: boolean;
   }
 
-  let { communityName, isMember = false }: Props = $props();
+  let { communityName, isMember = false, isModerator = false }: Props = $props();
 
   let sort = $state('SORT_ORDER_HOT');
   let timeRange = $state<string | undefined>(undefined);
@@ -33,4 +34,4 @@
   <SortBar {sort} {timeRange} onSortChange={handleSortChange} />
 </div>
 
-<FeedList endpoint={`/communities/${communityName}/posts`} {sort} {timeRange} />
+<FeedList endpoint={`/communities/${communityName}/posts`} {sort} {timeRange} {isModerator} />

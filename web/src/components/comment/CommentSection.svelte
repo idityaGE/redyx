@@ -36,9 +36,14 @@
 
   interface Props {
     postId: string;
+    communityName?: string;
+    isModerator?: boolean;
   }
 
-  let { postId }: Props = $props();
+  let { postId, communityName: propCommunityName = '', isModerator: propIsModerator = false }: Props = $props();
+
+  let communityName = $state(propCommunityName);
+  let isModerator = $state(propIsModerator);
 
   // Read stored sort preference from localStorage
   const storedSort = typeof window !== 'undefined' ? localStorage.getItem('commentSort') : null;
@@ -204,7 +209,26 @@
   }
 
   onMount(() => {
-    whenReady().then(() => fetchComments());
+    whenReady().then(async () => {
+      // Fetch community context for moderation features
+      if (!communityName) {
+        try {
+          const postData = await api<{ post: { communityName: string } }>(`/posts/${postId}`);
+          communityName = postData.post.communityName;
+        } catch {
+          // Non-critical — moderation features won't be available
+        }
+      }
+      if (communityName) {
+        try {
+          const communityData = await api<{ isModerator?: boolean }>(`/communities/${encodeURIComponent(communityName)}`);
+          isModerator = communityData.isModerator ?? false;
+        } catch {
+          // Non-critical
+        }
+      }
+      fetchComments();
+    });
   });
 </script>
 
@@ -235,6 +259,8 @@
         {comment}
         {postId}
         depth={comment.depth}
+        {communityName}
+        {isModerator}
         onReplySubmitted={handleReplySubmitted}
         onDeleted={handleCommentDeleted}
       />
