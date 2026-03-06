@@ -135,6 +135,21 @@ func UnaryInterceptor(validator *JWTValidator) grpc.UnaryServerInterceptor {
 	}
 }
 
+// ForwardAuthUnaryInterceptor is a gRPC client interceptor that copies the
+// "authorization" metadata from the incoming server context to the outgoing
+// client context, enabling service-to-service auth propagation.
+func ForwardAuthUnaryInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if ok {
+			if authVals := md.Get("authorization"); len(authVals) > 0 {
+				ctx = metadata.AppendToOutgoingContext(ctx, "authorization", authVals[0])
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
 // extractToken gets the bearer token from gRPC metadata "authorization" header.
 func extractToken(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)

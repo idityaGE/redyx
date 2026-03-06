@@ -198,7 +198,7 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	}
 
 	// Resolve media IDs → URLs for media posts via media-service gRPC
-	var mediaURLs []string
+	mediaURLs := []string{}
 	var thumbnailURL string
 	if postType == postv1.PostType_POST_TYPE_MEDIA && s.mediaClient != nil {
 		for _, mediaID := range req.GetMediaIds() {

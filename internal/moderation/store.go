@@ -110,10 +110,10 @@ func (s *Store) ListReports(ctx context.Context, communityID, status, source str
 
 	// Build main query with GROUP BY
 	query := `SELECT
-		MIN(id) as report_id,
+		MIN(id::text) as report_id,
 		content_id,
 		content_type,
-		MIN(reporter_id) as reporter_id,
+		MIN(reporter_id::text) as reporter_id,
 		MIN(reason) as reason,
 		COUNT(*) as report_count,
 		MAX(created_at) as latest_report,

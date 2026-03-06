@@ -38,8 +38,7 @@ CREATE TABLE IF NOT EXISTS bans (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bans_community_active
-    ON bans (community_id)
-    WHERE expires_at IS NULL OR expires_at > now();
+    ON bans (community_id, expires_at);
 CREATE INDEX IF NOT EXISTS idx_bans_user
     ON bans (user_id);
 

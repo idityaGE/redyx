@@ -84,7 +84,10 @@ func main() {
 
 	// Connect to community-service via gRPC for name→UUID resolution and membership checks.
 	communityServiceAddr := envStr("COMMUNITY_SERVICE_ADDR", "community-service:50054")
-	communityConn, err := grpc.NewClient(communityServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	communityConn, err := grpc.NewClient(communityServiceAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(auth.ForwardAuthUnaryInterceptor()),
+	)
 	if err != nil {
 		logger.Fatal("failed to connect to community-service", zap.Error(err))
 	}
