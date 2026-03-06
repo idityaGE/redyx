@@ -93,6 +93,12 @@ var publicMethods = map[string]bool{
 	"/redyx.search.v1.SearchService/AutocompleteCommunities": true,
 	// Media service — public metadata viewing
 	"/redyx.media.v1.MediaService/GetMedia": true,
+	// Moderation service — service-to-service calls (no JWT from internal callers)
+	"/redyx.moderation.v1.ModerationService/CheckBan":     true,
+	"/redyx.moderation.v1.ModerationService/SubmitReport": true,
+	// Spam service — service-to-service calls (no JWT from internal callers)
+	"/redyx.spam.v1.SpamService/CheckContent": true,
+	"/redyx.spam.v1.SpamService/ReportSpam":   true,
 	// Health check
 	"/grpc.health.v1.Health/Check": true,
 }

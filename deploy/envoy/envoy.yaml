@@ -107,6 +107,19 @@ static_resources:
                 route:
                   cluster: post-service
                   timeout: 30s
+              # Moderation routes — BEFORE community catch-all (Pitfall 1: first-match routing)
+              # Matches /api/v1/communities/{name}/moderation*
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/communities/[^/]+/moderation.*"
+                route:
+                  cluster: moderation-service
+                  timeout: 30s
+              # Spam routes
+              - match: { prefix: "/api/v1/spam" }
+                route:
+                  cluster: spam-service
+                  timeout: 30s
               - match: { prefix: "/api/v1/communities" }
                 route:
                   cluster: community-service
@@ -133,6 +146,8 @@ static_resources:
                 - redyx.search.v1.SearchService
                 - redyx.notification.v1.NotificationService
                 - redyx.media.v1.MediaService
+                - redyx.moderation.v1.ModerationService
+                - redyx.spam.v1.SpamService
               # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
               match_incoming_request_route: true
               print_options:
@@ -318,3 +333,35 @@ static_resources:
         - endpoint:
             address:
               socket_address: { address: media-service, port_value: 50060 }
+
+  - name: moderation-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: moderation-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: moderation-service, port_value: 50061 }
+
+  - name: spam-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: spam-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: spam-service, port_value: 50062 }
