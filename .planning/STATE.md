@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-05-PLAN.md
-last_updated: "2026-03-06T10:53:22.109Z"
-last_activity: "2026-03-06 — Executed Plan 06-05: Moderation dashboard frontend (ReportDialog, ReportQueue, ModLog, BanList, BanDialog)"
+stopped_at: Completed 06-06-PLAN.md
+last_updated: "2026-03-06T11:00:11.269Z"
+last_activity: "2026-03-06 — Executed Plan 06-06: Content integration (overflow menus, ban banner, pinned posts)"
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 40
-  completed_plans: 38
-  percent: 95
+  completed_plans: 39
+  percent: 98
 ---
 
 # State: Redyx
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 6 of 7 — In Progress
-Plan: 5 of 7 complete in Phase 6
-Status: Executing Phase 6 (Moderation + Spam). Plans 01-05 complete.
-Last activity: 2026-03-06 — Executed Plan 06-05: Moderation dashboard frontend (ReportDialog, ReportQueue, ModLog, BanList, BanDialog)
+Plan: 6 of 7 complete in Phase 6
+Status: Executing Phase 6 (Moderation + Spam). Plans 01-06 complete.
+Last activity: 2026-03-06 — Executed Plan 06-06: Content integration (overflow menus, ban banner, pinned posts)
 
-Progress: [██████████] 95% (Plan 38/40 overall, Phases 1-5 complete, Phase 6 in progress)
+Progress: [██████████] 98% (Plan 39/40 overall, Phases 1-5 complete, Phase 6 in progress)
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [██████████] 95% (Plan 38/40 overall, Phases 1-5 c
 *Phase 5 included extensive E2E bug fixing (9 fixes) during verification*
 | Phase 06 P03 | 10 min | 2 tasks | 14 files |
 | Phase 06 P05 | 4 min | 2 tasks | 6 files |
+| Phase 06 P06 | 10 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,9 @@ Recent decisions affecting current work:
 - [06-02]: Redis sliding window (INCR + EXPIRE) for rapid posting and link spam detection
 - [Phase 06-03]: Fail-open service integration for spam/ban checks in content creation
 - [Phase 06-03]: ServerOption pattern for optional gRPC clients (spam, moderation) in post/comment services
+- [Phase 06]: Overflow menu uses svelte:window onclick for click-outside-close
+- [Phase 06]: Ban check uses fail-open pattern — service unavailable allows access
+- [Phase 06]: Pinned posts sorted client-side via $derived in FeedList (server provides isPinned flag)
 
 ### Context from Init
 
@@ -206,8 +210,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06T10:52:25Z
-Stopped at: Completed 06-05-PLAN.md
+Last session: 2026-03-06T10:59:46.604Z
+Stopped at: Completed 06-06-PLAN.md
 Resume file: None
 
 ---
