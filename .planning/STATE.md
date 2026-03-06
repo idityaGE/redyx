@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-03-06T10:32:08.145Z"
-last_activity: "2026-03-06 — Executed Plan 06-01: Moderation gRPC service with 12 RPCs, store, Redis ban cache"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-03-06T10:43:55.798Z"
+last_activity: "2026-03-06 — Executed Plan 06-04: Docker Compose, Envoy routing, auth interceptor for moderation/spam"
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 40
-  completed_plans: 35
-  percent: 88
+  completed_plans: 36
+  percent: 90
 ---
 
 # State: Redyx
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 6 in progress — Moderation + Spam (Plans 01-02 of 7 complete)
+**Current focus:** Phase 6 in progress — Moderation + Spam (Plans 01-04 of 7 complete)
 
 ## Current Position
 
 Phase: 6 of 7 — In Progress
-Plan: 2 of 7 complete in Phase 6
-Status: Executing Phase 6 (Moderation + Spam). Plans 01 (moderation service) and 02 (spam service) complete.
-Last activity: 2026-03-06 — Executed Plan 06-01: Moderation gRPC service with 12 RPCs, store, Redis ban cache
+Plan: 4 of 7 complete in Phase 6
+Status: Executing Phase 6 (Moderation + Spam). Plans 01-04 complete.
+Last activity: 2026-03-06 — Executed Plan 06-04: Docker Compose, Envoy routing, auth interceptor for moderation/spam
 
-Progress: [████████░░] 88% (Plan 35/40 overall, Phases 1-5 complete, Phase 6 in progress)
+Progress: [█████████░] 90% (Plan 37/40 overall, Phases 1-5 complete, Phase 6 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
+- Total plans completed: 37
 - Average duration: ~10 min
 - Total execution time: ~5.5 hours
 
@@ -48,7 +48,7 @@ Progress: [████████░░] 88% (Plan 35/40 overall, Phases 1-5 c
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 | 04-comments | 4/4 | ~34 min | ~9 min |
 | 05-search-notifications-media | 9/9 | ~95 min | ~11 min |
-| 06-moderation-spam-full-stack | 2/7 | ~8 min | ~4 min |
+| 06-moderation-spam-full-stack | 4/7 | ~13 min | ~3 min |
 
 *Phase 5 included extensive E2E bug fixing (9 fixes) during verification*
 
@@ -202,9 +202,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06T10:32:08.142Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-03-06T10:43:55.795Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-06 — Phase 6 Plan 02 complete (spam detection service)*
+*Last updated: 2026-03-06 — Phase 6 Plan 04 complete (infrastructure wiring for moderation/spam)*
