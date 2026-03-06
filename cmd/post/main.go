@@ -20,7 +20,9 @@ import (
 
 	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
+	modv1 "github.com/redyx/redyx/gen/redyx/moderation/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
+	spamv1 "github.com/redyx/redyx/gen/redyx/spam/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	"github.com/redyx/redyx/internal/platform/config"
 	"github.com/redyx/redyx/internal/platform/grpcserver"
@@ -102,6 +104,30 @@ func main() {
 		logger.Info("connected to media-service gRPC", zap.String("addr", mediaServiceAddr))
 	}
 
+	// Connect to spam-service via gRPC for content spam checks.
+	spamServiceAddr := envStr("SPAM_SERVICE_ADDR", "spam-service:50062")
+	var spamClient spamv1.SpamServiceClient
+	spamConn, err := grpc.NewClient(spamServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to spam-service, spam checks disabled", zap.Error(err))
+	} else {
+		defer spamConn.Close()
+		spamClient = spamv1.NewSpamServiceClient(spamConn)
+		logger.Info("connected to spam-service gRPC", zap.String("addr", spamServiceAddr))
+	}
+
+	// Connect to moderation-service via gRPC for ban checks.
+	moderationServiceAddr := envStr("MODERATION_SERVICE_ADDR", "moderation-service:50061")
+	var moderationClient modv1.ModerationServiceClient
+	moderationConn, err := grpc.NewClient(moderationServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Warn("failed to connect to moderation-service, ban checks disabled", zap.Error(err))
+	} else {
+		defer moderationConn.Close()
+		moderationClient = modv1.NewModerationServiceClient(moderationConn)
+		logger.Info("connected to moderation-service gRPC", zap.String("addr", moderationServiceAddr))
+	}
+
 	// Create post cache
 	cache := post.NewCache(rdb, voteRdb)
 
@@ -137,7 +163,14 @@ func main() {
 	)
 
 	// Create and register post service
-	postServer := post.NewServer(shardRouter, cache, postProducer, communityClient, mediaClient, logger)
+	var postOpts []post.ServerOption
+	if spamClient != nil {
+		postOpts = append(postOpts, post.WithSpamClient(spamClient))
+	}
+	if moderationClient != nil {
+		postOpts = append(postOpts, post.WithModerationClient(moderationClient))
+	}
+	postServer := post.NewServer(shardRouter, cache, postProducer, communityClient, mediaClient, logger, postOpts...)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 
 	// Start background hot score refresh goroutine

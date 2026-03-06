@@ -15,7 +15,9 @@ import (
 	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
 	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
 	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
+	modv1 "github.com/redyx/redyx/gen/redyx/moderation/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
+	spamv1 "github.com/redyx/redyx/gen/redyx/spam/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 	"github.com/redyx/redyx/internal/platform/pagination"
@@ -24,11 +26,13 @@ import (
 // Server implements the CommentServiceServer gRPC interface.
 type Server struct {
 	commentv1.UnimplementedCommentServiceServer
-	store      *Store
-	producer   *CommentProducer
-	postClient postv1.PostServiceClient // gRPC client for post-service (comment enrichment)
-	voteRedis  *redis.Client            // vote-service Redis DB 5 (read-only for user_vote)
-	logger     *zap.Logger
+	store            *Store
+	producer         *CommentProducer
+	postClient       postv1.PostServiceClient      // gRPC client for post-service (comment enrichment)
+	spamClient       spamv1.SpamServiceClient      // gRPC client for spam-service (content checks)
+	moderationClient modv1.ModerationServiceClient // gRPC client for moderation-service (ban checks)
+	voteRedis        *redis.Client                 // vote-service Redis DB 5 (read-only for user_vote)
+	logger           *zap.Logger
 }
 
 // NewServer creates a new comment gRPC server.
@@ -52,6 +56,20 @@ type ServerOption func(*Server)
 func WithPostClient(client postv1.PostServiceClient) ServerOption {
 	return func(s *Server) {
 		s.postClient = client
+	}
+}
+
+// WithSpamClient configures the spam-service gRPC client for content checks.
+func WithSpamClient(client spamv1.SpamServiceClient) ServerOption {
+	return func(s *Server) {
+		s.spamClient = client
+	}
+}
+
+// WithModerationClient configures the moderation-service gRPC client for ban checks.
+func WithModerationClient(client modv1.ModerationServiceClient) ServerOption {
+	return func(s *Server) {
+		s.moderationClient = client
 	}
 }
 
@@ -79,6 +97,60 @@ func (s *Server) CreateComment(ctx context.Context, req *commentv1.CreateComment
 	if parentID != "" {
 		if _, err := s.store.GetComment(ctx, parentID); err != nil {
 			return nil, fmt.Errorf("parent comment %q: %w", parentID, perrors.ErrNotFound)
+		}
+	}
+
+	// Resolve community name from post (needed for ban check).
+	// If post-service is unavailable, skip ban/spam checks (fail-open).
+	var communityName string
+	if s.postClient != nil {
+		postResp, err := s.postClient.GetPost(ctx, &postv1.GetPostRequest{PostId: postID})
+		if err != nil {
+			s.logger.Warn("failed to resolve post for ban/spam check, allowing comment through (fail-open)",
+				zap.String("post_id", postID),
+				zap.Error(err),
+			)
+		} else if postResp.GetPost() != nil {
+			communityName = postResp.GetPost().GetCommunityName()
+		}
+	}
+
+	// Ban check: verify user is not banned from this community (fail-open on service error)
+	if s.moderationClient != nil && communityName != "" {
+		banResp, err := s.moderationClient.CheckBan(ctx, &modv1.CheckBanRequest{
+			CommunityName: communityName,
+			UserId:        claims.UserID,
+		})
+		if err != nil {
+			s.logger.Warn("ban check failed, allowing comment through (fail-open)",
+				zap.String("community", communityName),
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if banResp.GetIsBanned() {
+			return nil, fmt.Errorf("you are banned from this community: %w", perrors.ErrForbidden)
+		}
+	}
+
+	// Spam check: evaluate content before persisting (fail-open on service error)
+	if s.spamClient != nil {
+		spamResp, err := s.spamClient.CheckContent(ctx, &spamv1.CheckContentRequest{
+			UserId:      claims.UserID,
+			ContentType: "comment",
+			Content:     body,
+		})
+		if err != nil {
+			s.logger.Warn("spam check failed, allowing comment through (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else {
+			if spamResp.GetResult() == spamv1.SpamCheckResult_SPAM_CHECK_RESULT_SPAM {
+				return nil, fmt.Errorf("your comment couldn't be published — it may contain restricted content: %w", perrors.ErrInvalidInput)
+			}
+			if spamResp.GetIsDuplicate() {
+				return nil, fmt.Errorf("duplicate content detected: %w", perrors.ErrAlreadyExists)
+			}
 		}
 	}
 

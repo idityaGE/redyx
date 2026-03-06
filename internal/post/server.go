@@ -21,7 +21,9 @@ import (
 	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
 	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
 	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
+	modv1 "github.com/redyx/redyx/gen/redyx/moderation/v1"
 	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
+	spamv1 "github.com/redyx/redyx/gen/redyx/spam/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 	"github.com/redyx/redyx/internal/platform/pagination"
@@ -30,23 +32,46 @@ import (
 // Server implements the PostServiceServer gRPC interface.
 type Server struct {
 	postv1.UnimplementedPostServiceServer
-	shards          *ShardRouter
-	cache           *Cache
-	producer        *PostProducer
-	communityClient communityv1.CommunityServiceClient
-	mediaClient     mediav1.MediaServiceClient
-	logger          *zap.Logger
+	shards           *ShardRouter
+	cache            *Cache
+	producer         *PostProducer
+	communityClient  communityv1.CommunityServiceClient
+	mediaClient      mediav1.MediaServiceClient
+	spamClient       spamv1.SpamServiceClient
+	moderationClient modv1.ModerationServiceClient
+	logger           *zap.Logger
 }
 
 // NewServer creates a new post gRPC server.
-func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityClient communityv1.CommunityServiceClient, mediaClient mediav1.MediaServiceClient, logger *zap.Logger) *Server {
-	return &Server{
+func NewServer(shards *ShardRouter, cache *Cache, producer *PostProducer, communityClient communityv1.CommunityServiceClient, mediaClient mediav1.MediaServiceClient, logger *zap.Logger, opts ...ServerOption) *Server {
+	s := &Server{
 		shards:          shards,
 		cache:           cache,
 		producer:        producer,
 		communityClient: communityClient,
 		mediaClient:     mediaClient,
 		logger:          logger,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// ServerOption configures optional dependencies for the post server.
+type ServerOption func(*Server)
+
+// WithSpamClient configures the spam-service gRPC client.
+func WithSpamClient(client spamv1.SpamServiceClient) ServerOption {
+	return func(s *Server) {
+		s.spamClient = client
+	}
+}
+
+// WithModerationClient configures the moderation-service gRPC client.
+func WithModerationClient(client modv1.ModerationServiceClient) ServerOption {
+	return func(s *Server) {
+		s.moderationClient = client
 	}
 }
 
@@ -122,6 +147,54 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	// Verify user is a member of the community
 	if !isMember {
 		return nil, fmt.Errorf("you must join the community before posting: %w", perrors.ErrForbidden)
+	}
+
+	// Ban check: verify user is not banned from this community (fail-open on service error)
+	if s.moderationClient != nil {
+		banResp, err := s.moderationClient.CheckBan(ctx, &modv1.CheckBanRequest{
+			CommunityName: communityName,
+			UserId:        claims.UserID,
+		})
+		if err != nil {
+			// Fail-open: log warning and allow content through if moderation service is unavailable
+			s.logger.Warn("ban check failed, allowing content through (fail-open)",
+				zap.String("community", communityName),
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if banResp.GetIsBanned() {
+			return nil, fmt.Errorf("you are banned from this community: %w", perrors.ErrForbidden)
+		}
+	}
+
+	// Spam check: evaluate content before persisting (fail-open on service error)
+	if s.spamClient != nil {
+		// Extract URLs from link posts
+		var contentURLs []string
+		if postURL != "" {
+			contentURLs = append(contentURLs, postURL)
+		}
+
+		spamResp, err := s.spamClient.CheckContent(ctx, &spamv1.CheckContentRequest{
+			UserId:      claims.UserID,
+			ContentType: "post",
+			Content:     title + "\n" + body,
+			Urls:        contentURLs,
+		})
+		if err != nil {
+			// Fail-open: log warning and allow content through if spam service is unavailable
+			s.logger.Warn("spam check failed, allowing content through (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else {
+			if spamResp.GetResult() == spamv1.SpamCheckResult_SPAM_CHECK_RESULT_SPAM {
+				return nil, fmt.Errorf("your post couldn't be published — it may contain restricted content: %w", perrors.ErrInvalidInput)
+			}
+			if spamResp.GetIsDuplicate() {
+				return nil, fmt.Errorf("duplicate content detected: %w", perrors.ErrAlreadyExists)
+			}
+		}
 	}
 
 	// Resolve media IDs → URLs for media posts via media-service gRPC
