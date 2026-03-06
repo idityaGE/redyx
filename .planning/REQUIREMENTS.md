@@ -107,10 +107,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Spam Detection (SPAM)
 
-- [ ] **SPAM-01**: Content checked against keyword blocklist before publishing
-- [ ] **SPAM-02**: URLs in posts checked against known-bad domain list
-- [ ] **SPAM-03**: Duplicate content from same user rejected (content hash comparison)
-- [ ] **SPAM-04**: Async behavior analysis via Kafka detects rapid posting and link spam across communities
+- [x] **SPAM-01**: Content checked against keyword blocklist before publishing
+- [x] **SPAM-02**: URLs in posts checked against known-bad domain list
+- [x] **SPAM-03**: Duplicate content from same user rejected (content hash comparison)
+- [x] **SPAM-04**: Async behavior analysis via Kafka detects rapid posting and link spam across communities
 
 ### Infrastructure (INFRA)
 
@@ -233,10 +233,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-04 | Phase 6 | Pending |
 | MOD-05 | Phase 6 | Pending |
 | MOD-06 | Phase 6 | Pending |
-| SPAM-01 | Phase 6 | Pending |
-| SPAM-02 | Phase 6 | Pending |
-| SPAM-03 | Phase 6 | Pending |
-| SPAM-04 | Phase 6 | Pending |
+| SPAM-01 | Phase 6 | Complete |
+| SPAM-02 | Phase 6 | Complete |
+| SPAM-03 | Phase 6 | Complete |
+| SPAM-04 | Phase 6 | Complete |
 | RATE-01 | Phase 2 | Complete |
 | RATE-02 | Phase 2 | Complete |
 | RATE-03 | Phase 2 | Complete |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-06T09:43:47.636Z"
-last_activity: "2026-03-05 — Housekeeping: committed all outstanding changes, archived debug files, updated state"
+status: executing
+stopped_at: "Completed 06-02-PLAN.md"
+last_updated: "2026-03-06T10:23:00Z"
+last_activity: "2026-03-06 — Executed Phase 6 Plan 02: Spam detection service"
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 33
-  completed_plans: 33
-  percent: 100
+  total_plans: 40
+  completed_plans: 35
+  percent: 88
 ---
 
 # State: Redyx
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 5 complete + quick tasks done — ready for Phase 6 (Moderation + Spam)
+**Current focus:** Phase 6 in progress — Moderation + Spam (Plan 2 of 7 complete)
 
 ## Current Position
 
-Phase: 5 of 7 — Complete
-Plan: 9 of 9 complete in Phase 5
-Status: Phase 5 verified and complete. Architecture refactoring done. Ready for Phase 6.
-Last activity: 2026-03-05 — Housekeeping: committed all outstanding changes, archived debug files, updated state
+Phase: 6 of 7 — In Progress
+Plan: 2 of 7 complete in Phase 6
+Status: Executing Phase 6 (Moderation + Spam). Plan 02 (spam service) complete.
+Last activity: 2026-03-06 — Executed Plan 06-02: Spam detection service
 
-Progress: [██████████] 100% (Plan 33/33 overall through Phase 5, Phases 1-5 complete)
+Progress: [████████░░] 88% (Plan 35/40 overall, Phases 1-5 complete, Phase 6 in progress)
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100% (Plan 33/33 overall through Phas
 | 03-posts-voting-feeds | 7/7 | ~159 min | ~23 min |
 | 04-comments | 4/4 | ~34 min | ~9 min |
 | 05-search-notifications-media | 9/9 | ~95 min | ~11 min |
+| 06-moderation-spam-full-stack | 2/7 | ~8 min | ~4 min |
 
 *Phase 5 included extensive E2E bug fixing (9 fixes) during verification*
 
@@ -167,6 +168,11 @@ Recent decisions affecting current work:
 - [05-09 E2E]: Post shards need media_urls column + cross-service DB read to media DB for resolving media IDs to URLs
 - [05-09 E2E]: CreatePost membership check — verify user joined community before allowing post creation (returns 403)
 - [05-09 E2E]: Envoy unknown query params cause 415 — frontend must use exact proto field names (snake_case)
+- [06-02]: Redis DB 11 for spam-service — per-service DB isolation pattern
+- [06-02]: Vague reasons in CheckContentResponse (blocked_content/blocked_url) — never expose matched keywords
+- [06-02]: Content normalization (lowercase, trim, collapse whitespace) before SHA-256 hashing for dedup
+- [06-02]: BehaviorConsumer logs flags when moderation SubmitReport RPC not yet available
+- [06-02]: Redis sliding window (INCR + EXPIRE) for rapid posting and link spam detection
 
 ### Context from Init
 
@@ -196,9 +202,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06T09:43:47.632Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-moderation-spam-full-stack/06-CONTEXT.md
+Last session: 2026-03-06T10:23:00Z
+Stopped at: Completed 06-02-PLAN.md
+Resume file: None
 
 ---
-*Last updated: 2026-03-05 — Phase 5 complete, quick-002/003/004 done, all changes committed*
+*Last updated: 2026-03-06 — Phase 6 Plan 02 complete (spam detection service)*
