@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
   import { api, ApiError } from '../../lib/api';
   import { getUser, isAuthenticated, isLoading, initialize, subscribe } from '../../lib/auth';
+  import ReportQueue from '../moderation/ReportQueue.svelte';
+  import ModLog from '../moderation/ModLog.svelte';
+  import BanList from '../moderation/BanList.svelte';
 
   interface Props {
     name: string;
@@ -70,6 +73,9 @@
   let modMessage = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
   let isOwner = $derived(currentUser?.userId === community?.ownerId);
+
+  // Mod tool tab state — queue is the primary/landing view
+  let activeModTab = $state<'settings' | 'queue' | 'log' | 'bans'>('queue');
 
   const visibilityOptions = [
     { value: 1, label: 'public', desc: 'anyone can view and join' },
@@ -297,6 +303,43 @@
       <div class="text-xs text-terminal-dim mt-1">moderator controls</div>
     </div>
 
+    <!-- Mod tool tab bar -->
+    <div class="flex gap-2 text-xs font-mono mb-4">
+      <button
+        onclick={() => { activeModTab = 'settings'; }}
+        class="border border-terminal-border px-2 py-0.5 transition-colors {activeModTab === 'settings' ? 'text-accent-500 border-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      >
+        [settings]
+      </button>
+      <button
+        onclick={() => { activeModTab = 'queue'; }}
+        class="border border-terminal-border px-2 py-0.5 transition-colors {activeModTab === 'queue' ? 'text-accent-500 border-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      >
+        [queue]
+      </button>
+      <button
+        onclick={() => { activeModTab = 'log'; }}
+        class="border border-terminal-border px-2 py-0.5 transition-colors {activeModTab === 'log' ? 'text-accent-500 border-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      >
+        [log]
+      </button>
+      <button
+        onclick={() => { activeModTab = 'bans'; }}
+        class="border border-terminal-border px-2 py-0.5 transition-colors {activeModTab === 'bans' ? 'text-accent-500 border-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      >
+        [bans]
+      </button>
+    </div>
+
+    <!-- Queue tab -->
+    {#if activeModTab === 'queue'}
+      <ReportQueue communityName={name} />
+    {:else if activeModTab === 'log'}
+      <ModLog communityName={name} />
+    {:else if activeModTab === 'bans'}
+      <BanList communityName={name} />
+    {:else}
+    <!-- Settings tab (existing content) -->
     <div class="space-y-4">
 
       <!-- ── Description section ─────────────────── -->
@@ -534,5 +577,6 @@
       {/if}
 
     </div>
+    {/if}
   </div>
 {/if}
