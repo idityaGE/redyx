@@ -24,3 +24,8 @@ CREATE DATABASE media;
 
 GRANT ALL PRIVILEGES ON DATABASE notifications TO redyx;
 GRANT ALL PRIVILEGES ON DATABASE media TO redyx;
+
+-- Phase 6 databases
+CREATE DATABASE moderation;
+
+GRANT ALL PRIVILEGES ON DATABASE moderation TO redyx;

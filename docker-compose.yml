@@ -143,6 +143,8 @@ services:
       POST_SHARD_DSNS: "postgres://redyx:dev@postgres:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgres:5432/posts_shard_1?sslmode=disable"
       COMMUNITY_SERVICE_ADDR: "community-service:50054"
       MEDIA_SERVICE_ADDR: "media-service:50060"
+      SPAM_SERVICE_ADDR: "spam-service:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service:50061"
     ports: ["50055:50055"]
     depends_on:
       postgres:
@@ -154,6 +156,10 @@ services:
       community-service:
         condition: service_started
       media-service:
+        condition: service_started
+      spam-service:
+        condition: service_started
+      moderation-service:
         condition: service_started
 
   vote-service:
@@ -201,6 +207,8 @@ services:
       JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
       KAFKA_BROKERS: "kafka:9092"
       POST_SERVICE_ADDR: "post-service:50055"
+      SPAM_SERVICE_ADDR: "spam-service:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service:50061"
     ports: ["50057:50057"]
     depends_on:
       scylladb:
@@ -210,6 +218,10 @@ services:
       kafka:
         condition: service_healthy
       post-service:
+        condition: service_started
+      spam-service:
+        condition: service_started
+      moderation-service:
         condition: service_started
 
   meilisearch:
@@ -326,6 +338,53 @@ services:
       minio:
         condition: service_healthy
 
+  moderation-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: moderation
+    environment:
+      DATABASE_URL: postgres://redyx:dev@postgres:5432/moderation?sslmode=disable
+      REDIS_URL: redis://redis:6379/10
+      GRPC_PORT: "50061"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      KAFKA_BROKERS: "kafka:9092"
+      COMMUNITY_SERVICE_ADDR: "community-service:50054"
+      POST_SERVICE_ADDR: "post-service:50055"
+      COMMENT_SERVICE_ADDR: "comment-service:50057"
+      RATE_LIMIT_ENABLED: "false"
+    ports: ["50061:50061"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      community-service:
+        condition: service_started
+
+  spam-service:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        SERVICE: spam
+    environment:
+      REDIS_URL: redis://redis:6379/11
+      GRPC_PORT: "50062"
+      JWT_SECRET: "dev-jwt-secret-32-bytes-minimum!!"
+      KAFKA_BROKERS: "kafka:9092"
+      MODERATION_SERVICE_ADDR: "moderation-service:50061"
+      RATE_LIMIT_ENABLED: "false"
+    ports: ["50062:50062"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   envoy:
     image: envoyproxy/envoy:v1.37.0
     ports:
@@ -345,6 +404,8 @@ services:
       - search-service
       - notification-service
       - media-service
+      - moderation-service
+      - spam-service
 
 volumes:
   pg-data:
