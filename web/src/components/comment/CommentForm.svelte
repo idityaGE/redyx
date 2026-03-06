@@ -25,6 +25,7 @@
     onSubmit: (comment: Comment) => void;
     onCancel?: () => void;
     isTopLevel?: boolean;
+    isBanned?: boolean;
   }
 
   let {
@@ -33,6 +34,7 @@
     onSubmit,
     onCancel,
     isTopLevel = false,
+    isBanned = false,
   }: Props = $props();
 
   let body = $state('');
@@ -89,6 +91,10 @@
 {#if !isAuthenticated()}
   <div class="text-xs font-mono text-terminal-dim py-2">
     &gt; <a href="/login" class="text-accent-500 hover:text-accent-400">login</a> to comment
+  </div>
+{:else if isBanned}
+  <div class="text-xs font-mono text-terminal-dim py-2">
+    <span class="text-red-400">&gt; you are banned from this community</span>
   </div>
 {:else if isTopLevel && !expanded}
   <button

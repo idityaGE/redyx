@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { untrack } from 'svelte';
   import { api, ApiError } from '../../lib/api';
-  import { whenReady } from '../../lib/auth';
+  import { isAuthenticated, whenReady } from '../../lib/auth';
   import CommentSortBar from './CommentSortBar.svelte';
   import CommentForm from './CommentForm.svelte';
   import CommentCard from './CommentCard.svelte';
@@ -44,6 +44,7 @@
 
   let communityName = $state(propCommunityName);
   let isModerator = $state(propIsModerator);
+  let isBanned = $state(false);
 
   // Read stored sort preference from localStorage
   const storedSort = typeof window !== 'undefined' ? localStorage.getItem('commentSort') : null;
@@ -226,6 +227,19 @@
         } catch {
           // Non-critical
         }
+
+        // Check ban status (fail-open)
+        if (isAuthenticated()) {
+          try {
+            const banCheck = await api<{ isBanned: boolean }>(
+              `/communities/${encodeURIComponent(communityName)}/moderation/check-ban`,
+              { method: 'POST', body: JSON.stringify({ communityName }) }
+            );
+            isBanned = banCheck.isBanned ?? false;
+          } catch {
+            // Fail-open
+          }
+        }
       }
       fetchComments();
     });
@@ -241,6 +255,7 @@
   <CommentForm
     {postId}
     isTopLevel={true}
+    {isBanned}
     onSubmit={handleNewTopLevelComment}
   />
 

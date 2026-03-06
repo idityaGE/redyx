@@ -6,9 +6,10 @@
     communityName: string;
     isMember?: boolean;
     isModerator?: boolean;
+    isBanned?: boolean;
   }
 
-  let { communityName, isMember = false, isModerator = false }: Props = $props();
+  let { communityName, isMember = false, isModerator = false, isBanned = false }: Props = $props();
 
   let sort = $state('SORT_ORDER_HOT');
   let timeRange = $state<string | undefined>(undefined);
@@ -19,7 +20,7 @@
   }
 </script>
 
-{#if isMember}
+{#if isMember && !isBanned}
   <div class="mb-3">
     <a
       href="/community/{communityName}/submit"
@@ -27,6 +28,12 @@
     >
       [+ create post]
     </a>
+  </div>
+{:else if isBanned}
+  <div class="mb-3">
+    <span class="inline-block text-xs font-mono px-3 py-1.5 border border-terminal-border bg-terminal-surface text-terminal-dim cursor-not-allowed">
+      [banned — cannot post]
+    </span>
   </div>
 {/if}
 

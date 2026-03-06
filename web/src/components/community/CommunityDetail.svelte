@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../../lib/api';
-  import { whenReady } from '../../lib/auth';
+  import { isAuthenticated, whenReady } from '../../lib/auth';
   import CommunitySidebar from './CommunitySidebar.svelte';
   import CommunityFeed from './CommunityFeed.svelte';
 
@@ -36,9 +36,29 @@
   let community = $state<Community | null>(null);
   let isMember = $state(false);
   let isModerator = $state(false);
+  let isBanned = $state(false);
+  let banReason = $state('');
+  let banExpiresAt = $state<string | null>(null);
   let loading = $state(true);
   let errorStatus = $state<number | null>(null);
   let errorMessage = $state<string | null>(null);
+
+  function formatBanExpiry(expiresAt: string | null): string {
+    if (!expiresAt) return 'Permanent';
+    try {
+      const date = new Date(expiresAt);
+      if (isNaN(date.getTime())) return 'Permanent';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return 'Permanent';
+    }
+  }
 
   async function fetchCommunity() {
     loading = true;
@@ -50,6 +70,23 @@
       community = data.community;
       isMember = data.isMember ?? false;
       isModerator = data.isModerator ?? false;
+
+      // Check ban status for authenticated users (fail-open)
+      if (isAuthenticated()) {
+        try {
+          const banCheck = await api<{ isBanned: boolean; reason?: string; expiresAt?: string }>(
+            `/communities/${encodeURIComponent(name)}/moderation/check-ban`,
+            { method: 'POST', body: JSON.stringify({ communityName: name }) }
+          );
+          if (banCheck.isBanned) {
+            isBanned = true;
+            banReason = banCheck.reason ?? '';
+            banExpiresAt = banCheck.expiresAt ?? null;
+          }
+        } catch {
+          // Fail-open: if ban check fails, allow access
+        }
+      }
     } catch (e) {
       if (e instanceof ApiError) {
         errorStatus = e.status;
@@ -120,8 +157,21 @@
         </div>
       </div>
 
+      <!-- Ban banner -->
+      {#if isBanned}
+        <div class="border border-red-500/50 bg-red-500/10 text-red-400 font-mono text-sm p-3 mb-4">
+          <div class="text-xs text-red-500 mb-1">&#9484;&#9472; banned &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;</div>
+          <div class="text-xs">You are banned from this community.</div>
+          {#if banReason}
+            <div class="text-xs mt-1">Reason: {banReason}</div>
+          {/if}
+          <div class="text-xs mt-1">Expires: {formatBanExpiry(banExpiresAt)}</div>
+          <div class="text-xs text-red-500 mt-1">&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+        </div>
+      {/if}
+
       <!-- Posts feed -->
-      <CommunityFeed communityName={community.name} {isMember} />
+      <CommunityFeed communityName={community.name} isMember={isMember && !isBanned} {isModerator} {isBanned} />
     </div>
 
     <!-- Right sidebar -->

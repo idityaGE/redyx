@@ -41,6 +41,16 @@
   let { endpoint, sort, timeRange, isModerator = false }: Props = $props();
 
   let posts = $state<Post[]>([]);
+
+  // Sort pinned posts to the top of the feed (community feeds only)
+  let sortedPosts = $derived((() => {
+    if (!posts.length) return posts;
+    const pinned = posts.filter(p => p.isPinned);
+    const unpinned = posts.filter(p => !p.isPinned);
+    // Only sort if there are pinned posts (avoids unnecessary array allocation)
+    return pinned.length > 0 ? [...pinned, ...unpinned] : posts;
+  })());
+
   let nextCursor = $state<string | null>(null);
   let hasMore = $state(true);
   let loading = $state(false);
@@ -119,7 +129,7 @@
 {:else if posts.length === 0}
   <div class="text-xs text-terminal-dim p-4 font-mono">no posts yet</div>
 {:else}
-  {#each posts as post (post.postId)}
+  {#each sortedPosts as post (post.postId)}
     <FeedRow {post} {isModerator} />
   {/each}
 {/if}
