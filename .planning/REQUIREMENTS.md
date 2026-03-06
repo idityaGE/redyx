@@ -91,12 +91,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Moderation (MOD)
 
-- [ ] **MOD-01**: Moderators can remove posts and comments from their community (hidden from regular users)
-- [ ] **MOD-02**: Moderators can ban users from community (temporary or permanent, with duration and reason)
-- [ ] **MOD-03**: Moderators can pin up to 2 posts in their community (displayed at top of feed)
-- [ ] **MOD-04**: All moderation actions recorded in mod log (who, what, when, reason)
-- [ ] **MOD-05**: Moderators can view queue of reported/flagged content (sorted by report count)
-- [ ] **MOD-06**: Users can report posts and comments with a reason
+- [x] **MOD-01**: Moderators can remove posts and comments from their community (hidden from regular users)
+- [x] **MOD-02**: Moderators can ban users from community (temporary or permanent, with duration and reason)
+- [x] **MOD-03**: Moderators can pin up to 2 posts in their community (displayed at top of feed)
+- [x] **MOD-04**: All moderation actions recorded in mod log (who, what, when, reason)
+- [x] **MOD-05**: Moderators can view queue of reported/flagged content (sorted by report count)
+- [x] **MOD-06**: Users can report posts and comments with a reason
 
 ### Rate Limiting (RATE)
 
@@ -227,12 +227,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MDIA-02 | Phase 5 | Complete |
 | MDIA-03 | Phase 5 | Complete |
 | MDIA-04 | Phase 5 | Complete |
-| MOD-01 | Phase 6 | Pending |
-| MOD-02 | Phase 6 | Pending |
-| MOD-03 | Phase 6 | Pending |
-| MOD-04 | Phase 6 | Pending |
-| MOD-05 | Phase 6 | Pending |
-| MOD-06 | Phase 6 | Pending |
+| MOD-01 | Phase 6 | Complete |
+| MOD-02 | Phase 6 | Complete |
+| MOD-03 | Phase 6 | Complete |
+| MOD-04 | Phase 6 | Complete |
+| MOD-05 | Phase 6 | Complete |
+| MOD-06 | Phase 6 | Complete |
 | SPAM-01 | Phase 6 | Complete |
 | SPAM-02 | Phase 6 | Complete |
 | SPAM-03 | Phase 6 | Complete |
