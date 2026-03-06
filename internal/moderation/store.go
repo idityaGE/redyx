@@ -177,6 +177,20 @@ func (s *Store) UpdateReportStatus(ctx context.Context, contentID string, conten
 	return nil
 }
 
+// ReactivateReports moves resolved reports back to active status (for undo actions).
+func (s *Store) ReactivateReports(ctx context.Context, contentID string, contentType int16) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE reports
+		 SET status = 'active', resolved_action = NULL, resolved_by = NULL, resolved_at = NULL
+		 WHERE content_id = $1 AND content_type = $2 AND status = 'resolved'`,
+		contentID, contentType,
+	)
+	if err != nil {
+		return fmt.Errorf("reactivate reports: %w", err)
+	}
+	return nil
+}
+
 // CreateBan inserts or replaces a ban record. Uses ON CONFLICT to handle re-bans.
 func (s *Store) CreateBan(ctx context.Context, b *BanRecord) (string, error) {
 	var id string

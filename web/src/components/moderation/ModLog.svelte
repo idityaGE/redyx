@@ -9,32 +9,31 @@
   let { communityName }: Props = $props();
 
   type ModLogEntry = {
-    id: string;
+    entryId: string;
+    moderatorId: string;
     moderatorUsername: string;
     action: string;
     targetType: string;
     targetId: string;
-    targetTitle: string;
-    targetUsername: string;
     reason: string;
     createdAt: string;
   };
 
   type ModLogResponse = {
     entries: ModLogEntry[];
-    nextCursor: string;
+    pagination: { nextCursor: string; hasMore: boolean; totalCount: number };
   };
 
   const actionTypes = [
     { value: '', label: 'All' },
-    { value: 'remove_post', label: 'Remove Post' },
-    { value: 'remove_comment', label: 'Remove Comment' },
-    { value: 'ban_user', label: 'Ban User' },
-    { value: 'unban_user', label: 'Unban User' },
-    { value: 'pin_post', label: 'Pin Post' },
-    { value: 'unpin_post', label: 'Unpin Post' },
-    { value: 'dismiss_report', label: 'Dismiss Report' },
-    { value: 'restore_content', label: 'Restore Content' },
+    { value: 'MOD_ACTION_REMOVE_POST', label: 'Remove Post' },
+    { value: 'MOD_ACTION_REMOVE_COMMENT', label: 'Remove Comment' },
+    { value: 'MOD_ACTION_BAN_USER', label: 'Ban User' },
+    { value: 'MOD_ACTION_UNBAN_USER', label: 'Unban User' },
+    { value: 'MOD_ACTION_PIN_POST', label: 'Pin Post' },
+    { value: 'MOD_ACTION_UNPIN_POST', label: 'Unpin Post' },
+    { value: 'MOD_ACTION_DISMISS_REPORT', label: 'Dismiss Report' },
+    { value: 'MOD_ACTION_RESTORE_CONTENT', label: 'Restore Content' },
   ];
 
   let selectedFilter = $state('');
@@ -64,7 +63,7 @@
       } else {
         entries = data.entries ?? [];
       }
-      nextCursor = data.nextCursor ?? '';
+      nextCursor = data.pagination?.nextCursor ?? '';
     } catch {
       if (!append) entries = [];
     } finally {
@@ -79,7 +78,9 @@
   });
 
   function formatAction(action: string): string {
-    return action.replace(/_/g, ' ');
+    // Strip MOD_ACTION_ prefix and format nicely
+    const clean = action.replace(/^MOD_ACTION_/, '');
+    return clean.toLowerCase().replace(/_/g, ' ');
   }
 </script>
 
@@ -105,18 +106,13 @@
   {:else}
     <!-- Log entries -->
     <div class="space-y-1">
-      {#each entries as entry (entry.id)}
+      {#each entries as entry (entry.entryId)}
         <div class="border border-terminal-border bg-terminal-surface px-3 py-2 text-xs">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-terminal-dim">{relativeTime(entry.createdAt)}</span>
             <span class="text-accent-500">@{entry.moderatorUsername}</span>
             <span class="text-terminal-fg">{formatAction(entry.action)}</span>
-            {#if entry.targetUsername}
-              <span class="text-terminal-dim">u/{entry.targetUsername}</span>
-            {/if}
-            {#if entry.targetTitle}
-              <span class="text-terminal-dim">— {entry.targetTitle}</span>
-            {/if}
+            <span class="text-terminal-dim">{entry.targetType}: {entry.targetId.slice(0, 8)}...</span>
           </div>
           {#if entry.reason}
             <div class="text-terminal-dim mt-0.5 pl-2">

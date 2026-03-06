@@ -76,7 +76,7 @@
         try {
           const banCheck = await api<{ isBanned: boolean; reason?: string; expiresAt?: string }>(
             `/communities/${encodeURIComponent(name)}/moderation/check-ban`,
-            { method: 'POST', body: JSON.stringify({ communityName: name }) }
+            { method: 'POST', body: JSON.stringify({}) }
           );
           if (banCheck.isBanned) {
             isBanned = true;

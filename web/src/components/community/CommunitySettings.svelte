@@ -115,9 +115,9 @@
   async function fetchModerators() {
     try {
       const data = await api<{ members: Member[] }>(
-        `/communities/${encodeURIComponent(name)}/members?role=moderator`
+        `/communities/${encodeURIComponent(name)}/members`
       );
-      moderators = data.members ?? [];
+      moderators = (data.members ?? []).filter((m) => m.role === 'moderator' || m.role === 'owner');
     } catch {
       moderators = [];
     }

@@ -10,15 +10,15 @@
   let { communityName }: Props = $props();
 
   type Report = {
+    reportId: string;
     contentId: string;
-    contentType: number; // 1=post, 2=comment
+    contentType: string; // "CONTENT_TYPE_POST" or "CONTENT_TYPE_COMMENT"
+    reporterId: string;
     contentTitle: string;
-    contentPreview: string;
-    contentAuthorId: string;
-    contentAuthorUsername: string;
+    contentAuthor: string;
     reportCount: number;
-    topReason: string;
-    latestReportAt: string;
+    reason: string;
+    createdAt: string;
     source: string;
     status: string;
     resolvedAction: string;
@@ -86,8 +86,12 @@
     fetchReports();
   });
 
-  function contentTypeLabel(ct: number): string {
-    return ct === 1 ? 'post' : 'comment';
+  function contentTypeLabel(ct: string): string {
+    return ct === 'CONTENT_TYPE_COMMENT' ? 'comment' : 'post';
+  }
+
+  function contentTypeNum(ct: string): number {
+    return ct === 'CONTENT_TYPE_COMMENT' ? 2 : 1;
   }
 
   function truncate(text: string, max: number): string {
@@ -105,6 +109,7 @@
         body: JSON.stringify({
           contentId: report.contentId,
           contentType: report.contentType,
+          reason: report.reason,
         }),
       });
       confirmingRemove = null;
@@ -137,8 +142,8 @@
 
   function openBanDialog(report: Report) {
     banDialogTarget = {
-      userId: report.contentAuthorId,
-      username: report.contentAuthorUsername,
+      userId: report.reporterId,
+      username: report.contentAuthor || 'unknown',
     };
   }
 
@@ -164,7 +169,7 @@
         await api(`/communities/${encodeURIComponent(communityName)}/moderation/unban`, {
           method: 'POST',
           body: JSON.stringify({
-            userId: report.contentAuthorId,
+            userId: report.reporterId,
           }),
         });
       } else {
@@ -242,21 +247,21 @@
               [{report.source ?? 'user-report'}]
             </span>
             <span class="text-terminal-dim">[{contentTypeLabel(report.contentType)}]</span>
-            <span class="text-terminal-fg">u/{report.contentAuthorUsername}</span>
+            <span class="text-terminal-fg">u/{report.contentAuthor || 'unknown'}</span>
             <span class="text-terminal-dim">&middot;</span>
             <span class="text-terminal-dim">{report.reportCount} report{report.reportCount !== 1 ? 's' : ''}</span>
             <span class="text-terminal-dim">&middot;</span>
-            <span class="text-terminal-dim">{relativeTime(report.latestReportAt)}</span>
+            <span class="text-terminal-dim">{relativeTime(report.createdAt)}</span>
           </div>
 
           <!-- Content preview -->
           <div class="text-xs text-terminal-fg mb-2">
-            {truncate(report.contentTitle || report.contentPreview || '[no content]', 80)}
+            {truncate(report.contentTitle || '[no content]', 80)}
           </div>
 
           <!-- Reason -->
           <div class="text-xs text-terminal-dim mb-2">
-            reason: {report.topReason}
+            reason: {report.reason}
           </div>
 
           <!-- Actions -->

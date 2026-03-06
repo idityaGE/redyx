@@ -139,14 +139,15 @@ func (s *Server) RemoveContent(ctx context.Context, req *modv1.RemoveContentRequ
 		return nil, err
 	}
 
-	// Call post or comment service to soft-delete the content
+	// Call post or comment service to soft-delete the content via moderator RPCs
 	switch req.ContentType {
 	case modv1.ContentType_CONTENT_TYPE_POST:
-		_, err = s.postClient.DeletePost(ctx, &postv1.DeletePostRequest{
-			PostId: req.ContentId,
+		_, err = s.postClient.ModeratorRemovePost(ctx, &postv1.ModeratorRemovePostRequest{
+			PostId:        req.ContentId,
+			CommunityName: req.CommunityName,
 		})
 	case modv1.ContentType_CONTENT_TYPE_COMMENT:
-		_, err = s.commentClient.DeleteComment(ctx, &commentv1.DeleteCommentRequest{
+		_, err = s.commentClient.ModeratorRemoveComment(ctx, &commentv1.ModeratorRemoveCommentRequest{
 			CommentId: req.ContentId,
 		})
 	default:
@@ -247,10 +248,18 @@ func (s *Server) BanUser(ctx context.Context, req *modv1.BanUserRequest) (*modv1
 
 	// Optionally remove all user content in the community
 	if req.RemoveContent {
-		s.logger.Info("remove_content flag set for ban — content removal will be handled by post/comment services in Plan 03",
-			zap.String("user_id", req.UserId),
-			zap.String("community", req.CommunityName),
-		)
+		if _, rmErr := s.postClient.RemovePostsByUser(ctx, &postv1.RemovePostsByUserRequest{
+			UserId:        req.UserId,
+			CommunityName: req.CommunityName,
+		}); rmErr != nil {
+			s.logger.Warn("failed to remove posts by banned user", zap.Error(rmErr))
+		}
+		if _, rmErr := s.commentClient.RemoveCommentsByUser(ctx, &commentv1.RemoveCommentsByUserRequest{
+			UserId:        req.UserId,
+			CommunityName: req.CommunityName,
+		}); rmErr != nil {
+			s.logger.Warn("failed to remove comments by banned user", zap.Error(rmErr))
+		}
 	}
 
 	return &modv1.BanUserResponse{}, nil
@@ -288,20 +297,32 @@ func (s *Server) UnbanUser(ctx context.Context, req *modv1.UnbanUserRequest) (*m
 }
 
 // PinPost pins a post to the top of a community feed (max 2 pins).
-// NOTE: This requires an internal RPC on post-service to set is_pinned, which will be
-// added in Plan 03. For now, this logs the action and records in mod_log.
 func (s *Server) PinPost(ctx context.Context, req *modv1.PinPostRequest) (*modv1.PinPostResponse, error) {
 	claims, communityID, err := s.verifyModerator(ctx, req.CommunityName)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(Plan-03): Call postClient to count existing pins and reject if >= 2.
-	// TODO(Plan-03): Call postClient.SetPinned(postId, true) to update is_pinned column.
-	s.logger.Info("PinPost: post-service internal RPC needed (Plan 03)",
-		zap.String("post_id", req.PostId),
-		zap.String("community", req.CommunityName),
-	)
+	// Check existing pin count — max 2 pinned posts per community
+	countResp, err := s.postClient.CountPinnedPosts(ctx, &postv1.CountPinnedPostsRequest{
+		CommunityName: req.CommunityName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("count pinned posts: %w", err)
+	}
+	if countResp.Count >= 2 {
+		return nil, fmt.Errorf("maximum 2 pinned posts per community: %w", perrors.ErrInvalidInput)
+	}
+
+	// Set post as pinned via post-service
+	_, err = s.postClient.SetPostPinned(ctx, &postv1.SetPostPinnedRequest{
+		PostId:        req.PostId,
+		CommunityName: req.CommunityName,
+		Pinned:        true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("pin post: %w", err)
+	}
 
 	// Log to mod_log
 	if _, err := s.store.CreateModLogEntry(ctx, &ModLogRecord{
@@ -320,18 +341,21 @@ func (s *Server) PinPost(ctx context.Context, req *modv1.PinPostRequest) (*modv1
 }
 
 // UnpinPost removes a post from the pinned position.
-// NOTE: Requires internal RPC on post-service (Plan 03).
 func (s *Server) UnpinPost(ctx context.Context, req *modv1.UnpinPostRequest) (*modv1.UnpinPostResponse, error) {
 	claims, communityID, err := s.verifyModerator(ctx, req.CommunityName)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(Plan-03): Call postClient.SetPinned(postId, false) to clear is_pinned column.
-	s.logger.Info("UnpinPost: post-service internal RPC needed (Plan 03)",
-		zap.String("post_id", req.PostId),
-		zap.String("community", req.CommunityName),
-	)
+	// Unpin post via post-service
+	_, err = s.postClient.SetPostPinned(ctx, &postv1.SetPostPinnedRequest{
+		PostId:        req.PostId,
+		CommunityName: req.CommunityName,
+		Pinned:        false,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unpin post: %w", err)
+	}
 
 	// Log to mod_log
 	if _, err := s.store.CreateModLogEntry(ctx, &ModLogRecord{
@@ -438,6 +462,26 @@ func (s *Server) ListReportQueue(ctx context.Context, req *modv1.ListReportQueue
 		if r.ResolvedAction != nil {
 			report.ResolvedAction = *r.ResolvedAction
 		}
+
+		// Enrich report with content title and author from post/comment service
+		if r.ContentType == 1 { // CONTENT_TYPE_POST
+			postResp, postErr := s.postClient.GetPost(ctx, &postv1.GetPostRequest{
+				PostId: r.ContentID,
+			})
+			if postErr == nil && postResp.Post != nil {
+				report.ContentTitle = postResp.Post.Title
+				report.ContentAuthor = postResp.Post.AuthorUsername
+			}
+		} else if r.ContentType == 2 { // CONTENT_TYPE_COMMENT
+			commentResp, commentErr := s.commentClient.GetComment(ctx, &commentv1.GetCommentRequest{
+				CommentId: r.ContentID,
+			})
+			if commentErr == nil && commentResp.Comment != nil {
+				report.ContentTitle = commentResp.Comment.Body
+				report.ContentAuthor = commentResp.Comment.AuthorUsername
+			}
+		}
+
 		pbReports = append(pbReports, report)
 	}
 
@@ -511,23 +555,35 @@ func (s *Server) DismissReport(ctx context.Context, req *modv1.DismissReportRequ
 	return &modv1.DismissReportResponse{}, nil
 }
 
-// RestoreContent re-shows previously removed content (moderator only).
-// NOTE: Requires internal RPCs on post/comment services to undelete (Plan 03).
+// RestoreContent re-shows previously removed content and reactivates reports (moderator only).
 func (s *Server) RestoreContent(ctx context.Context, req *modv1.RestoreContentRequest) (*modv1.RestoreContentResponse, error) {
 	claims, communityID, err := s.verifyModerator(ctx, req.CommunityName)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(Plan-03): Call post/comment service to unset is_deleted.
-	s.logger.Info("RestoreContent: post/comment service internal undelete RPC needed (Plan 03)",
-		zap.String("content_id", req.ContentId),
-		zap.String("content_type", contentTypeString(req.ContentType)),
-	)
+	// Call post/comment service to unset is_deleted
+	switch req.ContentType {
+	case modv1.ContentType_CONTENT_TYPE_POST:
+		_, restoreErr := s.postClient.ModeratorRestorePost(ctx, &postv1.ModeratorRestorePostRequest{
+			PostId:        req.ContentId,
+			CommunityName: req.CommunityName,
+		})
+		if restoreErr != nil {
+			s.logger.Warn("failed to restore post via post-service", zap.Error(restoreErr))
+		}
+	case modv1.ContentType_CONTENT_TYPE_COMMENT:
+		_, restoreErr := s.commentClient.ModeratorRestoreComment(ctx, &commentv1.ModeratorRestoreCommentRequest{
+			CommentId: req.ContentId,
+		})
+		if restoreErr != nil {
+			s.logger.Warn("failed to restore comment via comment-service", zap.Error(restoreErr))
+		}
+	}
 
-	// Mark related reports as resolved with "restored" action
-	if err := s.store.UpdateReportStatus(ctx, req.ContentId, int16(req.ContentType), "restored", claims.UserID); err != nil {
-		s.logger.Error("failed to update report status", zap.Error(err))
+	// Reactivate reports — move them back to "active" status
+	if err := s.store.ReactivateReports(ctx, req.ContentId, int16(req.ContentType)); err != nil {
+		s.logger.Error("failed to reactivate reports", zap.Error(err))
 	}
 
 	// Log to mod_log
@@ -595,7 +651,18 @@ func (s *Server) ListBans(ctx context.Context, req *modv1.ListBansRequest) (*mod
 
 // CheckBan checks if a user is banned from a community.
 // Checks Redis cache first, falls back to database.
+// If user_id is empty, uses the authenticated user's ID from JWT claims.
 func (s *Server) CheckBan(ctx context.Context, req *modv1.CheckBanRequest) (*modv1.CheckBanResponse, error) {
+	// If no user_id provided, use the authenticated user's ID
+	userID := req.UserId
+	if userID == "" {
+		claims := auth.ClaimsFromContext(ctx)
+		if claims == nil {
+			return nil, fmt.Errorf("user_id required or must be authenticated: %w", perrors.ErrUnauthenticated)
+		}
+		userID = claims.UserID
+	}
+
 	// First, resolve community ID from name
 	resp, err := s.communityClient.GetCommunity(ctx, &commv1.GetCommunityRequest{
 		Name: req.CommunityName,
@@ -606,7 +673,7 @@ func (s *Server) CheckBan(ctx context.Context, req *modv1.CheckBanRequest) (*mod
 	communityID := resp.Community.CommunityId
 
 	// Check Redis cache first
-	key := banCacheKey(communityID, req.UserId)
+	key := banCacheKey(communityID, userID)
 	cached, err := s.redisClient.Get(ctx, key).Result()
 	if err == nil {
 		// Cache hit
@@ -624,7 +691,7 @@ func (s *Server) CheckBan(ctx context.Context, req *modv1.CheckBanRequest) (*mod
 	}
 
 	// Cache miss — check database
-	ban, err := s.store.GetBan(ctx, communityID, req.UserId)
+	ban, err := s.store.GetBan(ctx, communityID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("check ban: %w", err)
 	}
