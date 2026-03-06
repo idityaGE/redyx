@@ -78,13 +78,15 @@ func (ContentType) EnumDescriptor() ([]byte, []int) {
 type ModAction int32
 
 const (
-	ModAction_MOD_ACTION_UNSPECIFIED    ModAction = 0
-	ModAction_MOD_ACTION_REMOVE_POST    ModAction = 1
-	ModAction_MOD_ACTION_REMOVE_COMMENT ModAction = 2
-	ModAction_MOD_ACTION_BAN_USER       ModAction = 3
-	ModAction_MOD_ACTION_UNBAN_USER     ModAction = 4
-	ModAction_MOD_ACTION_PIN_POST       ModAction = 5
-	ModAction_MOD_ACTION_UNPIN_POST     ModAction = 6
+	ModAction_MOD_ACTION_UNSPECIFIED     ModAction = 0
+	ModAction_MOD_ACTION_REMOVE_POST     ModAction = 1
+	ModAction_MOD_ACTION_REMOVE_COMMENT  ModAction = 2
+	ModAction_MOD_ACTION_BAN_USER        ModAction = 3
+	ModAction_MOD_ACTION_UNBAN_USER      ModAction = 4
+	ModAction_MOD_ACTION_PIN_POST        ModAction = 5
+	ModAction_MOD_ACTION_UNPIN_POST      ModAction = 6
+	ModAction_MOD_ACTION_DISMISS_REPORT  ModAction = 7
+	ModAction_MOD_ACTION_RESTORE_CONTENT ModAction = 8
 )
 
 // Enum value maps for ModAction.
@@ -97,15 +99,19 @@ var (
 		4: "MOD_ACTION_UNBAN_USER",
 		5: "MOD_ACTION_PIN_POST",
 		6: "MOD_ACTION_UNPIN_POST",
+		7: "MOD_ACTION_DISMISS_REPORT",
+		8: "MOD_ACTION_RESTORE_CONTENT",
 	}
 	ModAction_value = map[string]int32{
-		"MOD_ACTION_UNSPECIFIED":    0,
-		"MOD_ACTION_REMOVE_POST":    1,
-		"MOD_ACTION_REMOVE_COMMENT": 2,
-		"MOD_ACTION_BAN_USER":       3,
-		"MOD_ACTION_UNBAN_USER":     4,
-		"MOD_ACTION_PIN_POST":       5,
-		"MOD_ACTION_UNPIN_POST":     6,
+		"MOD_ACTION_UNSPECIFIED":     0,
+		"MOD_ACTION_REMOVE_POST":     1,
+		"MOD_ACTION_REMOVE_COMMENT":  2,
+		"MOD_ACTION_BAN_USER":        3,
+		"MOD_ACTION_UNBAN_USER":      4,
+		"MOD_ACTION_PIN_POST":        5,
+		"MOD_ACTION_UNPIN_POST":      6,
+		"MOD_ACTION_DISMISS_REPORT":  7,
+		"MOD_ACTION_RESTORE_CONTENT": 8,
 	}
 )
 
@@ -247,8 +253,12 @@ type BanUserRequest struct {
 	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
 	// Duration in seconds. 0 = permanent ban.
 	DurationSeconds int64 `protobuf:"varint,4,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Username for display in ban list.
+	Username string `protobuf:"bytes,5,opt,name=username,proto3" json:"username,omitempty"`
+	// Whether to also remove all posts/comments by this user in the community.
+	RemoveContent bool `protobuf:"varint,6,opt,name=remove_content,json=removeContent,proto3" json:"remove_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BanUserRequest) Reset() {
@@ -307,6 +317,20 @@ func (x *BanUserRequest) GetDurationSeconds() int64 {
 		return x.DurationSeconds
 	}
 	return 0
+}
+
+func (x *BanUserRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *BanUserRequest) GetRemoveContent() bool {
+	if x != nil {
+		return x.RemoveContent
+	}
+	return false
 }
 
 type BanUserResponse struct {
@@ -835,10 +859,20 @@ type Report struct {
 	ReporterId string `protobuf:"bytes,4,opt,name=reporter_id,json=reporterId,proto3" json:"reporter_id,omitempty"`
 	Reason     string `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
 	// Number of reports on this content.
-	ReportCount   int32                  `protobuf:"varint,6,opt,name=report_count,json=reportCount,proto3" json:"report_count,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ReportCount int32                  `protobuf:"varint,6,opt,name=report_count,json=reportCount,proto3" json:"report_count,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Source of the report: "user" or "spam-detection".
+	Source string `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"`
+	// Title of the reported content (for display in queue).
+	ContentTitle string `protobuf:"bytes,9,opt,name=content_title,json=contentTitle,proto3" json:"content_title,omitempty"`
+	// Author of the reported content (for display in queue).
+	ContentAuthor string `protobuf:"bytes,10,opt,name=content_author,json=contentAuthor,proto3" json:"content_author,omitempty"`
+	// Status: "active" or "resolved".
+	Status string `protobuf:"bytes,11,opt,name=status,proto3" json:"status,omitempty"`
+	// Action taken when resolved: "removed", "dismissed", "banned".
+	ResolvedAction string `protobuf:"bytes,12,opt,name=resolved_action,json=resolvedAction,proto3" json:"resolved_action,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Report) Reset() {
@@ -920,10 +954,49 @@ func (x *Report) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Report) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *Report) GetContentTitle() string {
+	if x != nil {
+		return x.ContentTitle
+	}
+	return ""
+}
+
+func (x *Report) GetContentAuthor() string {
+	if x != nil {
+		return x.ContentAuthor
+	}
+	return ""
+}
+
+func (x *Report) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Report) GetResolvedAction() string {
+	if x != nil {
+		return x.ResolvedAction
+	}
+	return ""
+}
+
 type ListReportQueueRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
 	Pagination    *v1.PaginationRequest  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// Filter by status: "active" or "resolved".
+	Status string `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	// Filter by source: "user" or "spam-detection".
+	Source        string `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -970,6 +1043,20 @@ func (x *ListReportQueueRequest) GetPagination() *v1.PaginationRequest {
 		return x.Pagination
 	}
 	return nil
+}
+
+func (x *ListReportQueueRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListReportQueueRequest) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
 }
 
 type ListReportQueueResponse struct {
@@ -1024,6 +1111,636 @@ func (x *ListReportQueueResponse) GetPagination() *v1.PaginationResponse {
 	return nil
 }
 
+type SubmitReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	ContentId     string                 `protobuf:"bytes,2,opt,name=content_id,json=contentId,proto3" json:"content_id,omitempty"`
+	ContentType   ContentType            `protobuf:"varint,3,opt,name=content_type,json=contentType,proto3,enum=redyx.moderation.v1.ContentType" json:"content_type,omitempty"`
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitReportRequest) Reset() {
+	*x = SubmitReportRequest{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitReportRequest) ProtoMessage() {}
+
+func (x *SubmitReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitReportRequest.ProtoReflect.Descriptor instead.
+func (*SubmitReportRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SubmitReportRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *SubmitReportRequest) GetContentId() string {
+	if x != nil {
+		return x.ContentId
+	}
+	return ""
+}
+
+func (x *SubmitReportRequest) GetContentType() ContentType {
+	if x != nil {
+		return x.ContentType
+	}
+	return ContentType_CONTENT_TYPE_UNSPECIFIED
+}
+
+func (x *SubmitReportRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type SubmitReportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReportId      string                 `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitReportResponse) Reset() {
+	*x = SubmitReportResponse{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitReportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitReportResponse) ProtoMessage() {}
+
+func (x *SubmitReportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitReportResponse.ProtoReflect.Descriptor instead.
+func (*SubmitReportResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SubmitReportResponse) GetReportId() string {
+	if x != nil {
+		return x.ReportId
+	}
+	return ""
+}
+
+type DismissReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	ContentId     string                 `protobuf:"bytes,2,opt,name=content_id,json=contentId,proto3" json:"content_id,omitempty"`
+	ContentType   ContentType            `protobuf:"varint,3,opt,name=content_type,json=contentType,proto3,enum=redyx.moderation.v1.ContentType" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissReportRequest) Reset() {
+	*x = DismissReportRequest{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissReportRequest) ProtoMessage() {}
+
+func (x *DismissReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissReportRequest.ProtoReflect.Descriptor instead.
+func (*DismissReportRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *DismissReportRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *DismissReportRequest) GetContentId() string {
+	if x != nil {
+		return x.ContentId
+	}
+	return ""
+}
+
+func (x *DismissReportRequest) GetContentType() ContentType {
+	if x != nil {
+		return x.ContentType
+	}
+	return ContentType_CONTENT_TYPE_UNSPECIFIED
+}
+
+type DismissReportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissReportResponse) Reset() {
+	*x = DismissReportResponse{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissReportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissReportResponse) ProtoMessage() {}
+
+func (x *DismissReportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissReportResponse.ProtoReflect.Descriptor instead.
+func (*DismissReportResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{19}
+}
+
+type RestoreContentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	ContentId     string                 `protobuf:"bytes,2,opt,name=content_id,json=contentId,proto3" json:"content_id,omitempty"`
+	ContentType   ContentType            `protobuf:"varint,3,opt,name=content_type,json=contentType,proto3,enum=redyx.moderation.v1.ContentType" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreContentRequest) Reset() {
+	*x = RestoreContentRequest{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreContentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreContentRequest) ProtoMessage() {}
+
+func (x *RestoreContentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreContentRequest.ProtoReflect.Descriptor instead.
+func (*RestoreContentRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RestoreContentRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *RestoreContentRequest) GetContentId() string {
+	if x != nil {
+		return x.ContentId
+	}
+	return ""
+}
+
+func (x *RestoreContentRequest) GetContentType() ContentType {
+	if x != nil {
+		return x.ContentType
+	}
+	return ContentType_CONTENT_TYPE_UNSPECIFIED
+}
+
+type RestoreContentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreContentResponse) Reset() {
+	*x = RestoreContentResponse{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreContentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreContentResponse) ProtoMessage() {}
+
+func (x *RestoreContentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreContentResponse.ProtoReflect.Descriptor instead.
+func (*RestoreContentResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{21}
+}
+
+type ListBansRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	Pagination    *v1.PaginationRequest  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBansRequest) Reset() {
+	*x = ListBansRequest{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBansRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBansRequest) ProtoMessage() {}
+
+func (x *ListBansRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBansRequest.ProtoReflect.Descriptor instead.
+func (*ListBansRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ListBansRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *ListBansRequest) GetPagination() *v1.PaginationRequest {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type ListBansResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bans          []*Ban                 `protobuf:"bytes,1,rep,name=bans,proto3" json:"bans,omitempty"`
+	Pagination    *v1.PaginationResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBansResponse) Reset() {
+	*x = ListBansResponse{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBansResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBansResponse) ProtoMessage() {}
+
+func (x *ListBansResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBansResponse.ProtoReflect.Descriptor instead.
+func (*ListBansResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ListBansResponse) GetBans() []*Ban {
+	if x != nil {
+		return x.Bans
+	}
+	return nil
+}
+
+func (x *ListBansResponse) GetPagination() *v1.PaginationResponse {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+// Ban represents an active ban record.
+type Ban struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	BanId            string                 `protobuf:"bytes,1,opt,name=ban_id,json=banId,proto3" json:"ban_id,omitempty"`
+	UserId           string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Username         string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	Reason           string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	BannedBy         string                 `protobuf:"bytes,5,opt,name=banned_by,json=bannedBy,proto3" json:"banned_by,omitempty"`
+	BannedByUsername string                 `protobuf:"bytes,6,opt,name=banned_by_username,json=bannedByUsername,proto3" json:"banned_by_username,omitempty"`
+	// Duration in seconds. 0 = permanent.
+	DurationSeconds int64                  `protobuf:"varint,7,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
+	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Ban) Reset() {
+	*x = Ban{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ban) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ban) ProtoMessage() {}
+
+func (x *Ban) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ban.ProtoReflect.Descriptor instead.
+func (*Ban) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *Ban) GetBanId() string {
+	if x != nil {
+		return x.BanId
+	}
+	return ""
+}
+
+func (x *Ban) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *Ban) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *Ban) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *Ban) GetBannedBy() string {
+	if x != nil {
+		return x.BannedBy
+	}
+	return ""
+}
+
+func (x *Ban) GetBannedByUsername() string {
+	if x != nil {
+		return x.BannedByUsername
+	}
+	return ""
+}
+
+func (x *Ban) GetDurationSeconds() int64 {
+	if x != nil {
+		return x.DurationSeconds
+	}
+	return 0
+}
+
+func (x *Ban) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *Ban) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type CheckBanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommunityName string                 `protobuf:"bytes,1,opt,name=community_name,json=communityName,proto3" json:"community_name,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckBanRequest) Reset() {
+	*x = CheckBanRequest{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckBanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckBanRequest) ProtoMessage() {}
+
+func (x *CheckBanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckBanRequest.ProtoReflect.Descriptor instead.
+func (*CheckBanRequest) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *CheckBanRequest) GetCommunityName() string {
+	if x != nil {
+		return x.CommunityName
+	}
+	return ""
+}
+
+func (x *CheckBanRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type CheckBanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsBanned      bool                   `protobuf:"varint,1,opt,name=is_banned,json=isBanned,proto3" json:"is_banned,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckBanResponse) Reset() {
+	*x = CheckBanResponse{}
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckBanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckBanResponse) ProtoMessage() {}
+
+func (x *CheckBanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_redyx_moderation_v1_moderation_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckBanResponse.ProtoReflect.Descriptor instead.
+func (*CheckBanResponse) Descriptor() ([]byte, []int) {
+	return file_redyx_moderation_v1_moderation_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *CheckBanResponse) GetIsBanned() bool {
+	if x != nil {
+		return x.IsBanned
+	}
+	return false
+}
+
+func (x *CheckBanResponse) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *CheckBanResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
 var File_redyx_moderation_v1_moderation_proto protoreflect.FileDescriptor
 
 const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
@@ -1035,12 +1752,14 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"content_id\x18\x02 \x01(\tR\tcontentId\x12C\n" +
 	"\fcontent_type\x18\x03 \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x17\n" +
-	"\x15RemoveContentResponse\"\x93\x01\n" +
+	"\x15RemoveContentResponse\"\xd6\x01\n" +
 	"\x0eBanUserRequest\x12%\n" +
 	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
-	"\x10duration_seconds\x18\x04 \x01(\x03R\x0fdurationSeconds\"\x11\n" +
+	"\x10duration_seconds\x18\x04 \x01(\x03R\x0fdurationSeconds\x12\x1a\n" +
+	"\busername\x18\x05 \x01(\tR\busername\x12%\n" +
+	"\x0eremove_content\x18\x06 \x01(\bR\rremoveContent\"\x11\n" +
 	"\x0fBanUserResponse\"R\n" +
 	"\x10UnbanUserRequest\x12%\n" +
 	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x17\n" +
@@ -1075,7 +1794,7 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\aentries\x18\x01 \x03(\v2 .redyx.moderation.v1.ModLogEntryR\aentries\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination\"\xa0\x02\n" +
+	"pagination\"\xc5\x03\n" +
 	"\x06Report\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x12\x1d\n" +
 	"\n" +
@@ -1086,21 +1805,79 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\x12!\n" +
 	"\freport_count\x18\x06 \x01(\x05R\vreportCount\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x83\x01\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x16\n" +
+	"\x06source\x18\b \x01(\tR\x06source\x12#\n" +
+	"\rcontent_title\x18\t \x01(\tR\fcontentTitle\x12%\n" +
+	"\x0econtent_author\x18\n" +
+	" \x01(\tR\rcontentAuthor\x12\x16\n" +
+	"\x06status\x18\v \x01(\tR\x06status\x12'\n" +
+	"\x0fresolved_action\x18\f \x01(\tR\x0eresolvedAction\"\xb3\x01\n" +
 	"\x16ListReportQueueRequest\x12%\n" +
 	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12B\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\".redyx.common.v1.PaginationRequestR\n" +
-	"pagination\"\x95\x01\n" +
+	"pagination\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x16\n" +
+	"\x06source\x18\x04 \x01(\tR\x06source\"\x95\x01\n" +
 	"\x17ListReportQueueResponse\x125\n" +
 	"\areports\x18\x01 \x03(\v2\x1b.redyx.moderation.v1.ReportR\areports\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination*\\\n" +
+	"pagination\"\xb8\x01\n" +
+	"\x13SubmitReportRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x1d\n" +
+	"\n" +
+	"content_id\x18\x02 \x01(\tR\tcontentId\x12C\n" +
+	"\fcontent_type\x18\x03 \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"3\n" +
+	"\x14SubmitReportResponse\x12\x1b\n" +
+	"\treport_id\x18\x01 \x01(\tR\breportId\"\xa1\x01\n" +
+	"\x14DismissReportRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x1d\n" +
+	"\n" +
+	"content_id\x18\x02 \x01(\tR\tcontentId\x12C\n" +
+	"\fcontent_type\x18\x03 \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\"\x17\n" +
+	"\x15DismissReportResponse\"\xa2\x01\n" +
+	"\x15RestoreContentRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x1d\n" +
+	"\n" +
+	"content_id\x18\x02 \x01(\tR\tcontentId\x12C\n" +
+	"\fcontent_type\x18\x03 \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\"\x18\n" +
+	"\x16RestoreContentResponse\"|\n" +
+	"\x0fListBansRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12B\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\".redyx.common.v1.PaginationRequestR\n" +
+	"pagination\"\x85\x01\n" +
+	"\x10ListBansResponse\x12,\n" +
+	"\x04bans\x18\x01 \x03(\v2\x18.redyx.moderation.v1.BanR\x04bans\x12C\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
+	"pagination\"\xd5\x02\n" +
+	"\x03Ban\x12\x15\n" +
+	"\x06ban_id\x18\x01 \x01(\tR\x05banId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1a\n" +
+	"\busername\x18\x03 \x01(\tR\busername\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12\x1b\n" +
+	"\tbanned_by\x18\x05 \x01(\tR\bbannedBy\x12,\n" +
+	"\x12banned_by_username\x18\x06 \x01(\tR\x10bannedByUsername\x12)\n" +
+	"\x10duration_seconds\x18\a \x01(\x03R\x0fdurationSeconds\x129\n" +
+	"\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
+	"\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"Q\n" +
+	"\x0fCheckBanRequest\x12%\n" +
+	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\x82\x01\n" +
+	"\x10CheckBanResponse\x12\x1b\n" +
+	"\tis_banned\x18\x01 \x01(\bR\bisBanned\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x129\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt*\\\n" +
 	"\vContentType\x12\x1c\n" +
 	"\x18CONTENT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11CONTENT_TYPE_POST\x10\x01\x12\x18\n" +
-	"\x14CONTENT_TYPE_COMMENT\x10\x02*\xca\x01\n" +
+	"\x14CONTENT_TYPE_COMMENT\x10\x02*\x89\x02\n" +
 	"\tModAction\x12\x1a\n" +
 	"\x16MOD_ACTION_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16MOD_ACTION_REMOVE_POST\x10\x01\x12\x1d\n" +
@@ -1108,7 +1885,9 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x13MOD_ACTION_BAN_USER\x10\x03\x12\x19\n" +
 	"\x15MOD_ACTION_UNBAN_USER\x10\x04\x12\x17\n" +
 	"\x13MOD_ACTION_PIN_POST\x10\x05\x12\x19\n" +
-	"\x15MOD_ACTION_UNPIN_POST\x10\x062\xf5\b\n" +
+	"\x15MOD_ACTION_UNPIN_POST\x10\x06\x12\x1d\n" +
+	"\x19MOD_ACTION_DISMISS_REPORT\x10\a\x12\x1e\n" +
+	"\x1aMOD_ACTION_RESTORE_CONTENT\x10\b2\xbc\x0f\n" +
 	"\x11ModerationService\x12\xa9\x01\n" +
 	"\rRemoveContent\x12).redyx.moderation.v1.RemoveContentRequest\x1a*.redyx.moderation.v1.RemoveContentResponse\"A\x82\xd3\xe4\x93\x02;:\x01*\"6/api/v1/communities/{community_name}/moderation/remove\x12\x94\x01\n" +
 	"\aBanUser\x12#.redyx.moderation.v1.BanUserRequest\x1a$.redyx.moderation.v1.BanUserResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/api/v1/communities/{community_name}/moderation/ban\x12\x9c\x01\n" +
@@ -1116,7 +1895,12 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\aPinPost\x12#.redyx.moderation.v1.PinPostRequest\x1a$.redyx.moderation.v1.PinPostResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/api/v1/communities/{community_name}/moderation/pin\x12\x9c\x01\n" +
 	"\tUnpinPost\x12%.redyx.moderation.v1.UnpinPostRequest\x1a&.redyx.moderation.v1.UnpinPostResponse\"@\x82\xd3\xe4\x93\x02::\x01*\"5/api/v1/communities/{community_name}/moderation/unpin\x12\x97\x01\n" +
 	"\tGetModLog\x12%.redyx.moderation.v1.GetModLogRequest\x1a&.redyx.moderation.v1.GetModLogResponse\";\x82\xd3\xe4\x93\x025\x123/api/v1/communities/{community_name}/moderation/log\x12\xad\x01\n" +
-	"\x0fListReportQueue\x12+.redyx.moderation.v1.ListReportQueueRequest\x1a,.redyx.moderation.v1.ListReportQueueResponse\"?\x82\xd3\xe4\x93\x029\x127/api/v1/communities/{community_name}/moderation/reportsB\xd5\x01\n" +
+	"\x0fListReportQueue\x12+.redyx.moderation.v1.ListReportQueueRequest\x1a,.redyx.moderation.v1.ListReportQueueResponse\"?\x82\xd3\xe4\x93\x029\x127/api/v1/communities/{community_name}/moderation/reports\x12\xa7\x01\n" +
+	"\fSubmitReport\x12(.redyx.moderation.v1.SubmitReportRequest\x1a).redyx.moderation.v1.SubmitReportResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/communities/{community_name}/moderation/reports\x12\xb2\x01\n" +
+	"\rDismissReport\x12).redyx.moderation.v1.DismissReportRequest\x1a*.redyx.moderation.v1.DismissReportResponse\"J\x82\xd3\xe4\x93\x02D:\x01*\"?/api/v1/communities/{community_name}/moderation/reports/dismiss\x12\xad\x01\n" +
+	"\x0eRestoreContent\x12*.redyx.moderation.v1.RestoreContentRequest\x1a+.redyx.moderation.v1.RestoreContentResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/communities/{community_name}/moderation/restore\x12\x95\x01\n" +
+	"\bListBans\x12$.redyx.moderation.v1.ListBansRequest\x1a%.redyx.moderation.v1.ListBansResponse\"<\x82\xd3\xe4\x93\x026\x124/api/v1/communities/{community_name}/moderation/bans\x12\x9d\x01\n" +
+	"\bCheckBan\x12$.redyx.moderation.v1.CheckBanRequest\x1a%.redyx.moderation.v1.CheckBanResponse\"D\x82\xd3\xe4\x93\x02>:\x01*\"9/api/v1/communities/{community_name}/moderation/check-banB\xd5\x01\n" +
 	"\x17com.redyx.moderation.v1B\x0fModerationProtoP\x01Z;github.com/redyx/redyx/gen/redyx/moderation/v1;moderationv1\xa2\x02\x03RMX\xaa\x02\x13Redyx.Moderation.V1\xca\x02\x13Redyx\\Moderation\\V1\xe2\x02\x1fRedyx\\Moderation\\V1\\GPBMetadata\xea\x02\x15Redyx::Moderation::V1b\x06proto3"
 
 var (
@@ -1132,7 +1916,7 @@ func file_redyx_moderation_v1_moderation_proto_rawDescGZIP() []byte {
 }
 
 var file_redyx_moderation_v1_moderation_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_redyx_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_redyx_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_redyx_moderation_v1_moderation_proto_goTypes = []any{
 	(ContentType)(0),                // 0: redyx.moderation.v1.ContentType
 	(ModAction)(0),                  // 1: redyx.moderation.v1.ModAction
@@ -1152,42 +1936,72 @@ var file_redyx_moderation_v1_moderation_proto_goTypes = []any{
 	(*Report)(nil),                  // 15: redyx.moderation.v1.Report
 	(*ListReportQueueRequest)(nil),  // 16: redyx.moderation.v1.ListReportQueueRequest
 	(*ListReportQueueResponse)(nil), // 17: redyx.moderation.v1.ListReportQueueResponse
-	(*timestamppb.Timestamp)(nil),   // 18: google.protobuf.Timestamp
-	(*v1.PaginationRequest)(nil),    // 19: redyx.common.v1.PaginationRequest
-	(*v1.PaginationResponse)(nil),   // 20: redyx.common.v1.PaginationResponse
+	(*SubmitReportRequest)(nil),     // 18: redyx.moderation.v1.SubmitReportRequest
+	(*SubmitReportResponse)(nil),    // 19: redyx.moderation.v1.SubmitReportResponse
+	(*DismissReportRequest)(nil),    // 20: redyx.moderation.v1.DismissReportRequest
+	(*DismissReportResponse)(nil),   // 21: redyx.moderation.v1.DismissReportResponse
+	(*RestoreContentRequest)(nil),   // 22: redyx.moderation.v1.RestoreContentRequest
+	(*RestoreContentResponse)(nil),  // 23: redyx.moderation.v1.RestoreContentResponse
+	(*ListBansRequest)(nil),         // 24: redyx.moderation.v1.ListBansRequest
+	(*ListBansResponse)(nil),        // 25: redyx.moderation.v1.ListBansResponse
+	(*Ban)(nil),                     // 26: redyx.moderation.v1.Ban
+	(*CheckBanRequest)(nil),         // 27: redyx.moderation.v1.CheckBanRequest
+	(*CheckBanResponse)(nil),        // 28: redyx.moderation.v1.CheckBanResponse
+	(*timestamppb.Timestamp)(nil),   // 29: google.protobuf.Timestamp
+	(*v1.PaginationRequest)(nil),    // 30: redyx.common.v1.PaginationRequest
+	(*v1.PaginationResponse)(nil),   // 31: redyx.common.v1.PaginationResponse
 }
 var file_redyx_moderation_v1_moderation_proto_depIdxs = []int32{
 	0,  // 0: redyx.moderation.v1.RemoveContentRequest.content_type:type_name -> redyx.moderation.v1.ContentType
 	1,  // 1: redyx.moderation.v1.ModLogEntry.action:type_name -> redyx.moderation.v1.ModAction
-	18, // 2: redyx.moderation.v1.ModLogEntry.created_at:type_name -> google.protobuf.Timestamp
-	19, // 3: redyx.moderation.v1.GetModLogRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	29, // 2: redyx.moderation.v1.ModLogEntry.created_at:type_name -> google.protobuf.Timestamp
+	30, // 3: redyx.moderation.v1.GetModLogRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	1,  // 4: redyx.moderation.v1.GetModLogRequest.action_filter:type_name -> redyx.moderation.v1.ModAction
 	12, // 5: redyx.moderation.v1.GetModLogResponse.entries:type_name -> redyx.moderation.v1.ModLogEntry
-	20, // 6: redyx.moderation.v1.GetModLogResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	31, // 6: redyx.moderation.v1.GetModLogResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
 	0,  // 7: redyx.moderation.v1.Report.content_type:type_name -> redyx.moderation.v1.ContentType
-	18, // 8: redyx.moderation.v1.Report.created_at:type_name -> google.protobuf.Timestamp
-	19, // 9: redyx.moderation.v1.ListReportQueueRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	29, // 8: redyx.moderation.v1.Report.created_at:type_name -> google.protobuf.Timestamp
+	30, // 9: redyx.moderation.v1.ListReportQueueRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
 	15, // 10: redyx.moderation.v1.ListReportQueueResponse.reports:type_name -> redyx.moderation.v1.Report
-	20, // 11: redyx.moderation.v1.ListReportQueueResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	2,  // 12: redyx.moderation.v1.ModerationService.RemoveContent:input_type -> redyx.moderation.v1.RemoveContentRequest
-	4,  // 13: redyx.moderation.v1.ModerationService.BanUser:input_type -> redyx.moderation.v1.BanUserRequest
-	6,  // 14: redyx.moderation.v1.ModerationService.UnbanUser:input_type -> redyx.moderation.v1.UnbanUserRequest
-	8,  // 15: redyx.moderation.v1.ModerationService.PinPost:input_type -> redyx.moderation.v1.PinPostRequest
-	10, // 16: redyx.moderation.v1.ModerationService.UnpinPost:input_type -> redyx.moderation.v1.UnpinPostRequest
-	13, // 17: redyx.moderation.v1.ModerationService.GetModLog:input_type -> redyx.moderation.v1.GetModLogRequest
-	16, // 18: redyx.moderation.v1.ModerationService.ListReportQueue:input_type -> redyx.moderation.v1.ListReportQueueRequest
-	3,  // 19: redyx.moderation.v1.ModerationService.RemoveContent:output_type -> redyx.moderation.v1.RemoveContentResponse
-	5,  // 20: redyx.moderation.v1.ModerationService.BanUser:output_type -> redyx.moderation.v1.BanUserResponse
-	7,  // 21: redyx.moderation.v1.ModerationService.UnbanUser:output_type -> redyx.moderation.v1.UnbanUserResponse
-	9,  // 22: redyx.moderation.v1.ModerationService.PinPost:output_type -> redyx.moderation.v1.PinPostResponse
-	11, // 23: redyx.moderation.v1.ModerationService.UnpinPost:output_type -> redyx.moderation.v1.UnpinPostResponse
-	14, // 24: redyx.moderation.v1.ModerationService.GetModLog:output_type -> redyx.moderation.v1.GetModLogResponse
-	17, // 25: redyx.moderation.v1.ModerationService.ListReportQueue:output_type -> redyx.moderation.v1.ListReportQueueResponse
-	19, // [19:26] is the sub-list for method output_type
-	12, // [12:19] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	31, // 11: redyx.moderation.v1.ListReportQueueResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	0,  // 12: redyx.moderation.v1.SubmitReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	0,  // 13: redyx.moderation.v1.DismissReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	0,  // 14: redyx.moderation.v1.RestoreContentRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	30, // 15: redyx.moderation.v1.ListBansRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	26, // 16: redyx.moderation.v1.ListBansResponse.bans:type_name -> redyx.moderation.v1.Ban
+	31, // 17: redyx.moderation.v1.ListBansResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	29, // 18: redyx.moderation.v1.Ban.expires_at:type_name -> google.protobuf.Timestamp
+	29, // 19: redyx.moderation.v1.Ban.created_at:type_name -> google.protobuf.Timestamp
+	29, // 20: redyx.moderation.v1.CheckBanResponse.expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 21: redyx.moderation.v1.ModerationService.RemoveContent:input_type -> redyx.moderation.v1.RemoveContentRequest
+	4,  // 22: redyx.moderation.v1.ModerationService.BanUser:input_type -> redyx.moderation.v1.BanUserRequest
+	6,  // 23: redyx.moderation.v1.ModerationService.UnbanUser:input_type -> redyx.moderation.v1.UnbanUserRequest
+	8,  // 24: redyx.moderation.v1.ModerationService.PinPost:input_type -> redyx.moderation.v1.PinPostRequest
+	10, // 25: redyx.moderation.v1.ModerationService.UnpinPost:input_type -> redyx.moderation.v1.UnpinPostRequest
+	13, // 26: redyx.moderation.v1.ModerationService.GetModLog:input_type -> redyx.moderation.v1.GetModLogRequest
+	16, // 27: redyx.moderation.v1.ModerationService.ListReportQueue:input_type -> redyx.moderation.v1.ListReportQueueRequest
+	18, // 28: redyx.moderation.v1.ModerationService.SubmitReport:input_type -> redyx.moderation.v1.SubmitReportRequest
+	20, // 29: redyx.moderation.v1.ModerationService.DismissReport:input_type -> redyx.moderation.v1.DismissReportRequest
+	22, // 30: redyx.moderation.v1.ModerationService.RestoreContent:input_type -> redyx.moderation.v1.RestoreContentRequest
+	24, // 31: redyx.moderation.v1.ModerationService.ListBans:input_type -> redyx.moderation.v1.ListBansRequest
+	27, // 32: redyx.moderation.v1.ModerationService.CheckBan:input_type -> redyx.moderation.v1.CheckBanRequest
+	3,  // 33: redyx.moderation.v1.ModerationService.RemoveContent:output_type -> redyx.moderation.v1.RemoveContentResponse
+	5,  // 34: redyx.moderation.v1.ModerationService.BanUser:output_type -> redyx.moderation.v1.BanUserResponse
+	7,  // 35: redyx.moderation.v1.ModerationService.UnbanUser:output_type -> redyx.moderation.v1.UnbanUserResponse
+	9,  // 36: redyx.moderation.v1.ModerationService.PinPost:output_type -> redyx.moderation.v1.PinPostResponse
+	11, // 37: redyx.moderation.v1.ModerationService.UnpinPost:output_type -> redyx.moderation.v1.UnpinPostResponse
+	14, // 38: redyx.moderation.v1.ModerationService.GetModLog:output_type -> redyx.moderation.v1.GetModLogResponse
+	17, // 39: redyx.moderation.v1.ModerationService.ListReportQueue:output_type -> redyx.moderation.v1.ListReportQueueResponse
+	19, // 40: redyx.moderation.v1.ModerationService.SubmitReport:output_type -> redyx.moderation.v1.SubmitReportResponse
+	21, // 41: redyx.moderation.v1.ModerationService.DismissReport:output_type -> redyx.moderation.v1.DismissReportResponse
+	23, // 42: redyx.moderation.v1.ModerationService.RestoreContent:output_type -> redyx.moderation.v1.RestoreContentResponse
+	25, // 43: redyx.moderation.v1.ModerationService.ListBans:output_type -> redyx.moderation.v1.ListBansResponse
+	28, // 44: redyx.moderation.v1.ModerationService.CheckBan:output_type -> redyx.moderation.v1.CheckBanResponse
+	33, // [33:45] is the sub-list for method output_type
+	21, // [21:33] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_redyx_moderation_v1_moderation_proto_init() }
@@ -1201,7 +2015,7 @@ func file_redyx_moderation_v1_moderation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_redyx_moderation_v1_moderation_proto_rawDesc), len(file_redyx_moderation_v1_moderation_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   16,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

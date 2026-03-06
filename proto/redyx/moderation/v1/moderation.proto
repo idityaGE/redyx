@@ -61,6 +61,45 @@ service ModerationService {
       get: "/api/v1/communities/{community_name}/moderation/reports"
     };
   }
+
+  // SubmitReport allows an authenticated user to report content.
+  rpc SubmitReport(SubmitReportRequest) returns (SubmitReportResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/reports"
+      body: "*"
+    };
+  }
+
+  // DismissReport marks a report as resolved without removing content (moderator only).
+  rpc DismissReport(DismissReportRequest) returns (DismissReportResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/reports/dismiss"
+      body: "*"
+    };
+  }
+
+  // RestoreContent re-shows previously removed content (moderator only).
+  rpc RestoreContent(RestoreContentRequest) returns (RestoreContentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/restore"
+      body: "*"
+    };
+  }
+
+  // ListBans returns active bans for a community (moderator only).
+  rpc ListBans(ListBansRequest) returns (ListBansResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/communities/{community_name}/moderation/bans"
+    };
+  }
+
+  // CheckBan checks if a user is banned from a community (service-to-service).
+  rpc CheckBan(CheckBanRequest) returns (CheckBanResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/communities/{community_name}/moderation/check-ban"
+      body: "*"
+    };
+  }
 }
 
 // ContentType identifies whether moderation targets a post or comment.
@@ -89,6 +128,10 @@ message BanUserRequest {
   string reason = 3;
   // Duration in seconds. 0 = permanent ban.
   int64 duration_seconds = 4;
+  // Username for display in ban list.
+  string username = 5;
+  // Whether to also remove all posts/comments by this user in the community.
+  bool remove_content = 6;
 }
 
 message BanUserResponse {}
@@ -131,6 +174,8 @@ enum ModAction {
   MOD_ACTION_UNBAN_USER = 4;
   MOD_ACTION_PIN_POST = 5;
   MOD_ACTION_UNPIN_POST = 6;
+  MOD_ACTION_DISMISS_REPORT = 7;
+  MOD_ACTION_RESTORE_CONTENT = 8;
 }
 
 // ModLogEntry represents a single entry in the moderation log.
@@ -172,14 +217,100 @@ message Report {
   // Number of reports on this content.
   int32 report_count = 6;
   google.protobuf.Timestamp created_at = 7;
+  // Source of the report: "user" or "spam-detection".
+  string source = 8;
+  // Title of the reported content (for display in queue).
+  string content_title = 9;
+  // Author of the reported content (for display in queue).
+  string content_author = 10;
+  // Status: "active" or "resolved".
+  string status = 11;
+  // Action taken when resolved: "removed", "dismissed", "banned".
+  string resolved_action = 12;
 }
 
 message ListReportQueueRequest {
   string community_name = 1;
   redyx.common.v1.PaginationRequest pagination = 2;
+  // Filter by status: "active" or "resolved".
+  string status = 3;
+  // Filter by source: "user" or "spam-detection".
+  string source = 4;
 }
 
 message ListReportQueueResponse {
   repeated Report reports = 1;
   redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// SubmitReport
+
+message SubmitReportRequest {
+  string community_name = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+  string reason = 4;
+}
+
+message SubmitReportResponse {
+  string report_id = 1;
+}
+
+// DismissReport
+
+message DismissReportRequest {
+  string community_name = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+}
+
+message DismissReportResponse {}
+
+// RestoreContent
+
+message RestoreContentRequest {
+  string community_name = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+}
+
+message RestoreContentResponse {}
+
+// ListBans
+
+message ListBansRequest {
+  string community_name = 1;
+  redyx.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListBansResponse {
+  repeated Ban bans = 1;
+  redyx.common.v1.PaginationResponse pagination = 2;
+}
+
+// Ban represents an active ban record.
+message Ban {
+  string ban_id = 1;
+  string user_id = 2;
+  string username = 3;
+  string reason = 4;
+  string banned_by = 5;
+  string banned_by_username = 6;
+  // Duration in seconds. 0 = permanent.
+  int64 duration_seconds = 7;
+  google.protobuf.Timestamp expires_at = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// CheckBan
+
+message CheckBanRequest {
+  string community_name = 1;
+  string user_id = 2;
+}
+
+message CheckBanResponse {
+  bool is_banned = 1;
+  string reason = 2;
+  google.protobuf.Timestamp expires_at = 3;
 }

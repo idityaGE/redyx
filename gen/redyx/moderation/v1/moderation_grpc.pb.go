@@ -26,6 +26,11 @@ const (
 	ModerationService_UnpinPost_FullMethodName       = "/redyx.moderation.v1.ModerationService/UnpinPost"
 	ModerationService_GetModLog_FullMethodName       = "/redyx.moderation.v1.ModerationService/GetModLog"
 	ModerationService_ListReportQueue_FullMethodName = "/redyx.moderation.v1.ModerationService/ListReportQueue"
+	ModerationService_SubmitReport_FullMethodName    = "/redyx.moderation.v1.ModerationService/SubmitReport"
+	ModerationService_DismissReport_FullMethodName   = "/redyx.moderation.v1.ModerationService/DismissReport"
+	ModerationService_RestoreContent_FullMethodName  = "/redyx.moderation.v1.ModerationService/RestoreContent"
+	ModerationService_ListBans_FullMethodName        = "/redyx.moderation.v1.ModerationService/ListBans"
+	ModerationService_CheckBan_FullMethodName        = "/redyx.moderation.v1.ModerationService/CheckBan"
 )
 
 // ModerationServiceClient is the client API for ModerationService service.
@@ -48,6 +53,16 @@ type ModerationServiceClient interface {
 	GetModLog(ctx context.Context, in *GetModLogRequest, opts ...grpc.CallOption) (*GetModLogResponse, error)
 	// ListReportQueue returns reported content awaiting review.
 	ListReportQueue(ctx context.Context, in *ListReportQueueRequest, opts ...grpc.CallOption) (*ListReportQueueResponse, error)
+	// SubmitReport allows an authenticated user to report content.
+	SubmitReport(ctx context.Context, in *SubmitReportRequest, opts ...grpc.CallOption) (*SubmitReportResponse, error)
+	// DismissReport marks a report as resolved without removing content (moderator only).
+	DismissReport(ctx context.Context, in *DismissReportRequest, opts ...grpc.CallOption) (*DismissReportResponse, error)
+	// RestoreContent re-shows previously removed content (moderator only).
+	RestoreContent(ctx context.Context, in *RestoreContentRequest, opts ...grpc.CallOption) (*RestoreContentResponse, error)
+	// ListBans returns active bans for a community (moderator only).
+	ListBans(ctx context.Context, in *ListBansRequest, opts ...grpc.CallOption) (*ListBansResponse, error)
+	// CheckBan checks if a user is banned from a community (service-to-service).
+	CheckBan(ctx context.Context, in *CheckBanRequest, opts ...grpc.CallOption) (*CheckBanResponse, error)
 }
 
 type moderationServiceClient struct {
@@ -128,6 +143,56 @@ func (c *moderationServiceClient) ListReportQueue(ctx context.Context, in *ListR
 	return out, nil
 }
 
+func (c *moderationServiceClient) SubmitReport(ctx context.Context, in *SubmitReportRequest, opts ...grpc.CallOption) (*SubmitReportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitReportResponse)
+	err := c.cc.Invoke(ctx, ModerationService_SubmitReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) DismissReport(ctx context.Context, in *DismissReportRequest, opts ...grpc.CallOption) (*DismissReportResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DismissReportResponse)
+	err := c.cc.Invoke(ctx, ModerationService_DismissReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) RestoreContent(ctx context.Context, in *RestoreContentRequest, opts ...grpc.CallOption) (*RestoreContentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RestoreContentResponse)
+	err := c.cc.Invoke(ctx, ModerationService_RestoreContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) ListBans(ctx context.Context, in *ListBansRequest, opts ...grpc.CallOption) (*ListBansResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBansResponse)
+	err := c.cc.Invoke(ctx, ModerationService_ListBans_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) CheckBan(ctx context.Context, in *CheckBanRequest, opts ...grpc.CallOption) (*CheckBanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckBanResponse)
+	err := c.cc.Invoke(ctx, ModerationService_CheckBan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModerationServiceServer is the server API for ModerationService service.
 // All implementations must embed UnimplementedModerationServiceServer
 // for forward compatibility.
@@ -148,6 +213,16 @@ type ModerationServiceServer interface {
 	GetModLog(context.Context, *GetModLogRequest) (*GetModLogResponse, error)
 	// ListReportQueue returns reported content awaiting review.
 	ListReportQueue(context.Context, *ListReportQueueRequest) (*ListReportQueueResponse, error)
+	// SubmitReport allows an authenticated user to report content.
+	SubmitReport(context.Context, *SubmitReportRequest) (*SubmitReportResponse, error)
+	// DismissReport marks a report as resolved without removing content (moderator only).
+	DismissReport(context.Context, *DismissReportRequest) (*DismissReportResponse, error)
+	// RestoreContent re-shows previously removed content (moderator only).
+	RestoreContent(context.Context, *RestoreContentRequest) (*RestoreContentResponse, error)
+	// ListBans returns active bans for a community (moderator only).
+	ListBans(context.Context, *ListBansRequest) (*ListBansResponse, error)
+	// CheckBan checks if a user is banned from a community (service-to-service).
+	CheckBan(context.Context, *CheckBanRequest) (*CheckBanResponse, error)
 	mustEmbedUnimplementedModerationServiceServer()
 }
 
@@ -178,6 +253,21 @@ func (UnimplementedModerationServiceServer) GetModLog(context.Context, *GetModLo
 }
 func (UnimplementedModerationServiceServer) ListReportQueue(context.Context, *ListReportQueueRequest) (*ListReportQueueResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListReportQueue not implemented")
+}
+func (UnimplementedModerationServiceServer) SubmitReport(context.Context, *SubmitReportRequest) (*SubmitReportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitReport not implemented")
+}
+func (UnimplementedModerationServiceServer) DismissReport(context.Context, *DismissReportRequest) (*DismissReportResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DismissReport not implemented")
+}
+func (UnimplementedModerationServiceServer) RestoreContent(context.Context, *RestoreContentRequest) (*RestoreContentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestoreContent not implemented")
+}
+func (UnimplementedModerationServiceServer) ListBans(context.Context, *ListBansRequest) (*ListBansResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBans not implemented")
+}
+func (UnimplementedModerationServiceServer) CheckBan(context.Context, *CheckBanRequest) (*CheckBanResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckBan not implemented")
 }
 func (UnimplementedModerationServiceServer) mustEmbedUnimplementedModerationServiceServer() {}
 func (UnimplementedModerationServiceServer) testEmbeddedByValue()                           {}
@@ -326,6 +416,96 @@ func _ModerationService_ListReportQueue_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModerationService_SubmitReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).SubmitReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_SubmitReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).SubmitReport(ctx, req.(*SubmitReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_DismissReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DismissReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).DismissReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_DismissReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).DismissReport(ctx, req.(*DismissReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_RestoreContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).RestoreContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_RestoreContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).RestoreContent(ctx, req.(*RestoreContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_ListBans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBansRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).ListBans(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_ListBans_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).ListBans(ctx, req.(*ListBansRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_CheckBan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckBanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).CheckBan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_CheckBan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).CheckBan(ctx, req.(*CheckBanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModerationService_ServiceDesc is the grpc.ServiceDesc for ModerationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -360,6 +540,26 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListReportQueue",
 			Handler:    _ModerationService_ListReportQueue_Handler,
+		},
+		{
+			MethodName: "SubmitReport",
+			Handler:    _ModerationService_SubmitReport_Handler,
+		},
+		{
+			MethodName: "DismissReport",
+			Handler:    _ModerationService_DismissReport_Handler,
+		},
+		{
+			MethodName: "RestoreContent",
+			Handler:    _ModerationService_RestoreContent_Handler,
+		},
+		{
+			MethodName: "ListBans",
+			Handler:    _ModerationService_ListBans_Handler,
+		},
+		{
+			MethodName: "CheckBan",
+			Handler:    _ModerationService_CheckBan_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
