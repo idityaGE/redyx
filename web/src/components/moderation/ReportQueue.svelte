@@ -30,7 +30,7 @@
   };
 
   let activeTab = $state<'active' | 'resolved'>('active');
-  let sourceFilter = $state<'all' | 'user-report' | 'spam-detection'>('all');
+  let sourceFilter = $state<'all' | 'user' | 'spam'>('all');
   let reports = $state<Report[]>([]);
   let loading = $state(true);
   let nextCursor = $state('');
@@ -218,16 +218,16 @@
       [all]
     </button>
     <button
-      onclick={() => { sourceFilter = 'user-report'; }}
-      class="transition-colors {sourceFilter === 'user-report' ? 'text-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      onclick={() => { sourceFilter = 'user'; }}
+      class="transition-colors {sourceFilter === 'user' ? 'text-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
     >
-      [user-report]
+      [user]
     </button>
     <button
-      onclick={() => { sourceFilter = 'spam-detection'; }}
-      class="transition-colors {sourceFilter === 'spam-detection' ? 'text-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
+      onclick={() => { sourceFilter = 'spam'; }}
+      class="transition-colors {sourceFilter === 'spam' ? 'text-accent-500' : 'text-terminal-dim hover:text-terminal-fg'}"
     >
-      [spam-detection]
+      [spam]
     </button>
   </div>
 
@@ -243,8 +243,8 @@
         <div class="border border-terminal-border bg-terminal-surface p-3">
           <!-- Header row -->
           <div class="flex items-center gap-2 text-xs mb-1 flex-wrap">
-            <span class="px-1 border {report.source === 'spam-detection' ? 'border-accent-500 text-accent-500' : 'border-terminal-border text-terminal-dim'}">
-              [{report.source ?? 'user-report'}]
+            <span class="px-1 border {report.source === 'spam' ? 'border-accent-500 text-accent-500' : 'border-terminal-border text-terminal-dim'}">
+              [{report.source ?? 'user'}]
             </span>
             <span class="text-terminal-dim">[{contentTypeLabel(report.contentType)}]</span>
             <span class="text-terminal-fg">u/{report.contentAuthor || 'unknown'}</span>

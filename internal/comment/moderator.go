@@ -16,9 +16,8 @@ import (
 // Called by moderation-service via internal gRPC.
 func (s *Server) ModeratorRemoveComment(ctx context.Context, req *commentv1.ModeratorRemoveCommentRequest) (*commentv1.ModeratorRemoveCommentResponse, error) {
 	commentID := req.GetCommentId()
-	postID := req.GetPostId()
-	if commentID == "" || postID == "" {
-		return nil, fmt.Errorf("comment_id and post_id are required: %w", perrors.ErrInvalidInput)
+	if commentID == "" {
+		return nil, fmt.Errorf("comment_id is required: %w", perrors.ErrInvalidInput)
 	}
 
 	commentUUID, err := gocql.ParseUUID(commentID)
@@ -50,7 +49,7 @@ func (s *Server) ModeratorRemoveComment(ctx context.Context, req *commentv1.Mode
 
 	s.logger.Info("moderator removed comment",
 		zap.String("comment_id", commentID),
-		zap.String("post_id", postID),
+		zap.String("post_id", comment.PostID.String()),
 	)
 
 	return &commentv1.ModeratorRemoveCommentResponse{}, nil
@@ -61,9 +60,8 @@ func (s *Server) ModeratorRemoveComment(ctx context.Context, req *commentv1.Mode
 // Called by moderation-service via internal gRPC.
 func (s *Server) ModeratorRestoreComment(ctx context.Context, req *commentv1.ModeratorRestoreCommentRequest) (*commentv1.ModeratorRestoreCommentResponse, error) {
 	commentID := req.GetCommentId()
-	postID := req.GetPostId()
-	if commentID == "" || postID == "" {
-		return nil, fmt.Errorf("comment_id and post_id are required: %w", perrors.ErrInvalidInput)
+	if commentID == "" {
+		return nil, fmt.Errorf("comment_id is required: %w", perrors.ErrInvalidInput)
 	}
 
 	commentUUID, err := gocql.ParseUUID(commentID)
@@ -95,7 +93,7 @@ func (s *Server) ModeratorRestoreComment(ctx context.Context, req *commentv1.Mod
 
 	s.logger.Info("moderator restored comment",
 		zap.String("comment_id", commentID),
-		zap.String("post_id", postID),
+		zap.String("post_id", comment.PostID.String()),
 	)
 
 	return &commentv1.ModeratorRestoreCommentResponse{}, nil

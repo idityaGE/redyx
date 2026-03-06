@@ -494,11 +494,17 @@ func (s *Server) ListReportQueue(ctx context.Context, req *modv1.ListReportQueue
 	}, nil
 }
 
-// SubmitReport allows an authenticated user to report content.
+// SubmitReport allows an authenticated user or an internal service to report content.
+// User-submitted reports require JWT auth; service-to-service calls (e.g., spam service)
+// may omit auth — in that case, reporter_id is set to "system".
 func (s *Server) SubmitReport(ctx context.Context, req *modv1.SubmitReportRequest) (*modv1.SubmitReportResponse, error) {
+	// Determine reporter and source based on caller
 	claims := auth.ClaimsFromContext(ctx)
-	if claims == nil {
-		return nil, fmt.Errorf("must be logged in to report: %w", perrors.ErrUnauthenticated)
+	reporterID := "system"
+	source := "spam"
+	if claims != nil {
+		reporterID = claims.UserID
+		source = "user"
 	}
 
 	// Resolve community ID
@@ -514,9 +520,9 @@ func (s *Server) SubmitReport(ctx context.Context, req *modv1.SubmitReportReques
 		CommunityName: req.CommunityName,
 		ContentID:     req.ContentId,
 		ContentType:   int16(req.ContentType),
-		ReporterID:    claims.UserID,
+		ReporterID:    reporterID,
 		Reason:        req.Reason,
-		Source:        "user",
+		Source:        source,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create report: %w", err)

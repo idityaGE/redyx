@@ -237,7 +237,7 @@ func (c *BehaviorConsumer) analyzePostBehavior(ctx context.Context, event *commo
 	return flagged, nil
 }
 
-// submitFlag reports detected spam behavior to the moderation service.
+// submitFlag reports detected spam behavior to the moderation service via SubmitReport.
 // If the moderation client is nil (moderation service not yet available),
 // it logs the detection for manual review.
 func (c *BehaviorConsumer) submitFlag(ctx context.Context, event *commonv1.PostEvent, reason string) {
@@ -247,21 +247,34 @@ func (c *BehaviorConsumer) submitFlag(ctx context.Context, event *commonv1.PostE
 			zap.String("author", event.GetAuthorUsername()),
 			zap.String("community", event.GetCommunityName()),
 			zap.String("reason", reason),
-			zap.String("source", "spam-detection"),
 		)
 		return
 	}
 
-	// Call moderation service ListReportQueue is not the right RPC.
-	// The SubmitReport RPC will be added by Plan 06-01.
-	// For now, log the detection — the consumer is ready to call SubmitReport
-	// once the moderation service proto is extended.
-	c.logger.Info("spam behavior flagged for moderation review",
+	// Call SubmitReport on the moderation service. Since this is a service-to-service
+	// call without JWT, the moderation handler will set source="spam" and reporter="system".
+	_, err := c.moderationClient.SubmitReport(ctx, &modv1.SubmitReportRequest{
+		CommunityName: event.GetCommunityName(),
+		ContentId:     event.GetPostId(),
+		ContentType:   modv1.ContentType_CONTENT_TYPE_POST,
+		Reason:        reason,
+	})
+	if err != nil {
+		c.logger.Error("failed to submit spam report to moderation service",
+			zap.String("post_id", event.GetPostId()),
+			zap.String("author", event.GetAuthorUsername()),
+			zap.String("community", event.GetCommunityName()),
+			zap.String("reason", reason),
+			zap.Error(err),
+		)
+		return
+	}
+
+	c.logger.Info("spam behavior report submitted",
 		zap.String("post_id", event.GetPostId()),
 		zap.String("author", event.GetAuthorUsername()),
 		zap.String("community", event.GetCommunityName()),
 		zap.String("reason", reason),
-		zap.String("source", "spam-detection"),
 	)
 }
 

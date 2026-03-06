@@ -83,7 +83,10 @@ func main() {
 
 	// Connect to post-service (for pin/remove operations)
 	postAddr := envStr("POST_SERVICE_ADDR", "post-service:50055")
-	postConn, err := grpc.NewClient(postAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	postConn, err := grpc.NewClient(postAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(auth.ForwardAuthUnaryInterceptor()),
+	)
 	if err != nil {
 		logger.Fatal("failed to connect to post-service", zap.Error(err), zap.String("addr", postAddr))
 	}
@@ -92,7 +95,10 @@ func main() {
 
 	// Connect to comment-service (for remove operations)
 	commentAddr := envStr("COMMENT_SERVICE_ADDR", "comment-service:50057")
-	commentConn, err := grpc.NewClient(commentAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	commentConn, err := grpc.NewClient(commentAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(auth.ForwardAuthUnaryInterceptor()),
+	)
 	if err != nil {
 		logger.Fatal("failed to connect to comment-service", zap.Error(err), zap.String("addr", commentAddr))
 	}
