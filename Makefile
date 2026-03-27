@@ -1,4 +1,4 @@
-.PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild help
+.PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild web help
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -42,5 +42,8 @@ clean:  ## Remove generated files
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+web:  ## Start the astro development server 
+	cd web && bun dev
 
 .DEFAULT_GOAL := help

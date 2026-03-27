@@ -36,14 +36,16 @@
     sort: string;
     timeRange?: string;
     isModerator?: boolean;
+    showPinnedPosts?: boolean;
   }
 
-  let { endpoint, sort, timeRange, isModerator = false }: Props = $props();
+  let { endpoint, sort, timeRange, isModerator = false, showPinnedPosts = true }: Props = $props();
 
   let posts = $state<Post[]>([]);
 
-  // Sort pinned posts to the top of the feed (community feeds only)
+  // Keep pinned posts grouped at top only when enabled by parent feed.
   let sortedPosts = $derived((() => {
+    if (!showPinnedPosts) return posts;
     if (!posts.length) return posts;
     const pinned = posts.filter(p => p.isPinned);
     const unpinned = posts.filter(p => !p.isPinned);
@@ -130,7 +132,7 @@
   <div class="text-xs text-terminal-dim p-4 font-mono">no posts yet</div>
 {:else}
   {#each sortedPosts as post (post.postId)}
-    <FeedRow {post} {isModerator} />
+    <FeedRow {post} {isModerator} showPinned={showPinnedPosts} />
   {/each}
 {/if}
 

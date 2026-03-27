@@ -32,9 +32,10 @@
     post: Post;
     userVote?: number;
     isModerator?: boolean;
+    showPinned?: boolean;
   }
 
-  let { post, userVote = 0, isModerator = false }: Props = $props();
+  let { post, userVote = 0, isModerator = false, showPinned = true }: Props = $props();
 
   // Overflow menu state
   let showMenu = $state(false);
@@ -125,7 +126,7 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group {post.isPinned ? 'border-l-2 border-l-accent-500 bg-terminal-surface/50' : ''}">
+<div class="flex items-center gap-3 px-2 py-1.5 border-b border-terminal-border hover:bg-terminal-surface transition-colors text-xs font-mono group {showPinned && post.isPinned ? 'border-l-2 border-l-accent-500 bg-terminal-surface/50' : ''}">
   <!-- Vote column -->
   <VoteButtons postId={post.postId} initialScore={post.voteScore} initialVote={userVote} authorId={post.authorId} />
 
@@ -135,7 +136,7 @@
       href="/post/{post.postId}"
       class="text-terminal-fg group-hover:text-accent-500 transition-colors truncate block text-sm"
     >
-      {#if post.isPinned}
+      {#if showPinned && post.isPinned}
         <span class="text-accent-500 mr-1">[pinned]</span>
       {/if}
       {post.title}
@@ -180,10 +181,15 @@
       </button>
 
       {#if showMenu}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-          class="absolute right-0 top-full mt-1 bg-terminal-bg border border-terminal-border text-xs font-mono z-20 min-w-[140px]"
+          class="absolute right-0 top-full mt-1 bg-terminal-bg border border-terminal-border text-xs font-mono z-20 min-w-35"
           onclick={(e) => e.stopPropagation()}
+          onkeydown={(e) => {
+            if (e.key === 'Escape') closeMenu();
+            e.stopPropagation();
+          }}
+          role="menu"
+          tabindex="0"
         >
           <!-- Report (all authenticated users) -->
           <button
@@ -195,14 +201,16 @@
 
           {#if isModerator}
             <div class="border-t border-terminal-border"></div>
-            <!-- Pin/Unpin -->
-            <button
-              onclick={handlePin}
-              disabled={pinning}
-              class="w-full text-left px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-surface transition-colors cursor-pointer disabled:text-terminal-dim"
-            >
-              {post.isPinned ? '[unpin]' : '[pin]'}
-            </button>
+            {#if showPinned}
+              <!-- Pin/Unpin -->
+              <button
+                onclick={handlePin}
+                disabled={pinning}
+                class="w-full text-left px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-surface transition-colors cursor-pointer disabled:text-terminal-dim"
+              >
+                {post.isPinned ? '[unpin]' : '[pin]'}
+              </button>
+            {/if}
             <!-- Remove -->
             <button
               onclick={handleRemove}

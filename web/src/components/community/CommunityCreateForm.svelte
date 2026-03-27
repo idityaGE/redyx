@@ -18,8 +18,20 @@
   // Form state
   let name = $state('');
   let description = $state('');
-  let visibility = $state(1); // 1=PUBLIC, 2=RESTRICTED, 3=PRIVATE
+  let visibility = $state('VISIBILITY_PUBLIC');
   let rules = $state<CommunityRule[]>([]);
+
+  // Banner/Icon state
+  let bannerUrl = $state('');
+  let iconUrl = $state('');
+  let bannerFile = $state<File | null>(null);
+  let iconFile = $state<File | null>(null);
+  let bannerPreview = $state('');
+  let iconPreview = $state('');
+  let bannerUploading = $state(false);
+  let iconUploading = $state(false);
+  let bannerError = $state<string | null>(null);
+  let iconError = $state<string | null>(null);
 
   // UI state
   let submitting = $state(false);
@@ -31,9 +43,9 @@
   const NAME_REGEX = /^[a-zA-Z0-9_]{3,21}$/;
 
   const visibilityOptions = [
-    { value: 1, label: 'public', desc: 'anyone can view and join' },
-    { value: 2, label: 'restricted', desc: 'anyone can view, approval to join' },
-    { value: 3, label: 'private', desc: 'invitation only, hidden from browse' },
+    { value: 'VISIBILITY_PUBLIC', label: 'public', desc: 'anyone can view and join' },
+    { value: 'VISIBILITY_RESTRICTED', label: 'restricted', desc: 'anyone can view, approval to join' },
+    { value: 'VISIBILITY_PRIVATE', label: 'private', desc: 'invitation only, hidden from browse' },
   ];
 
   function validateName(value: string): string | null {
@@ -64,6 +76,105 @@
     rules = rules.map((r, i) => i === index ? { ...r, description: value } : r);
   }
 
+  // ── Banner/Icon Upload ───────────────────────────────
+
+  async function uploadImage(file: File): Promise<string | null> {
+    try {
+      // Step 1: Init upload
+      const initRes = await api<{ mediaId: string; uploadUrl: string }>('/media/upload', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          sizeBytes: String(file.size),
+          mediaType: 'MEDIA_TYPE_IMAGE',
+        }),
+      });
+
+      // Step 2: PUT file to presigned URL
+      const uploadRes = await fetch(initRes.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed with status ${uploadRes.status}`);
+      }
+
+      // Step 3: Complete upload
+      const completeRes = await api<{ url: string }>(`/media/${initRes.mediaId}/complete`, {
+        method: 'POST',
+      });
+
+      return completeRes.url;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  function handleBannerSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (!input.files?.[0]) return;
+
+    const file = input.files[0];
+    input.value = '';
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      bannerError = 'only jpg, png, webp allowed';
+      return;
+    }
+
+    // Validate file size (max 5MB for banner)
+    if (file.size > 5 * 1024 * 1024) {
+      bannerError = 'max file size is 5MB';
+      return;
+    }
+
+    bannerFile = file;
+    bannerPreview = URL.createObjectURL(file);
+    bannerError = null;
+  }
+
+  function handleIconSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (!input.files?.[0]) return;
+
+    const file = input.files[0];
+    input.value = '';
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      iconError = 'only jpg, png, webp allowed';
+      return;
+    }
+
+    // Validate file size (max 2MB for icon)
+    if (file.size > 2 * 1024 * 1024) {
+      iconError = 'max file size is 2MB';
+      return;
+    }
+
+    iconFile = file;
+    iconPreview = URL.createObjectURL(file);
+    iconError = null;
+  }
+
+  function removeBanner() {
+    bannerFile = null;
+    bannerPreview = '';
+    bannerUrl = '';
+    bannerError = null;
+  }
+
+  function removeIcon() {
+    iconFile = null;
+    iconPreview = '';
+    iconUrl = '';
+    iconError = null;
+  }
+
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
 
@@ -82,7 +193,39 @@
     error = null;
 
     try {
-      // Step 1: Create the community
+      // Step 1: Upload banner if selected
+      let uploadedBannerUrl = '';
+      if (bannerFile) {
+        bannerUploading = true;
+        try {
+          const url = await uploadImage(bannerFile);
+          if (url) uploadedBannerUrl = url;
+        } catch (e) {
+          bannerError = e instanceof Error ? e.message : 'banner upload failed';
+          submitting = false;
+          bannerUploading = false;
+          return;
+        }
+        bannerUploading = false;
+      }
+
+      // Step 2: Upload icon if selected
+      let uploadedIconUrl = '';
+      if (iconFile) {
+        iconUploading = true;
+        try {
+          const url = await uploadImage(iconFile);
+          if (url) uploadedIconUrl = url;
+        } catch (e) {
+          iconError = e instanceof Error ? e.message : 'icon upload failed';
+          submitting = false;
+          iconUploading = false;
+          return;
+        }
+        iconUploading = false;
+      }
+
+      // Step 3: Create the community
       const data = await api<CreateResponse>('/communities', {
         method: 'POST',
         body: JSON.stringify({
@@ -92,17 +235,27 @@
         }),
       });
 
-      // Step 2: If rules are entered, PATCH to add them
+      // Step 4: PATCH to add rules, banner, icon if any
       const validRules = rules.filter(r => r.title.trim() !== '');
+      const patchBody: Record<string, unknown> = {};
+      
       if (validRules.length > 0) {
+        patchBody.rules = validRules.map(r => ({
+          title: r.title.trim(),
+          description: r.description.trim(),
+        }));
+      }
+      if (uploadedBannerUrl) {
+        patchBody.bannerUrl = uploadedBannerUrl;
+      }
+      if (uploadedIconUrl) {
+        patchBody.iconUrl = uploadedIconUrl;
+      }
+
+      if (Object.keys(patchBody).length > 0) {
         await api(`/communities/${data.community.name}`, {
           method: 'PATCH',
-          body: JSON.stringify({
-            rules: validRules.map(r => ({
-              title: r.title.trim(),
-              description: r.description.trim(),
-            })),
-          }),
+          body: JSON.stringify(patchBody),
         });
       }
 
@@ -148,7 +301,7 @@
     <span class="text-xs text-terminal-dim font-mono">&gt; redirecting to login...</span>
   </div>
 {:else}
-  <div class="flex items-center justify-center min-h-[60vh] px-4">
+  <div class="flex items-center justify-center min-h-[60vh] px-4 py-8">
     <div class="w-full max-w-lg">
       <!-- Terminal-style form box -->
       <div class="border border-terminal-border bg-terminal-surface font-mono">
@@ -194,6 +347,87 @@
               class="w-full bg-terminal-bg border border-terminal-border px-2 py-1 text-xs text-terminal-fg placeholder:text-terminal-dim outline-none font-mono resize-y focus:border-accent-500 transition-colors"
             ></textarea>
             <div class="text-xs text-terminal-dim">markdown supported</div>
+          </div>
+
+          <!-- Banner -->
+          <div class="space-y-1">
+            <span class="block text-xs text-terminal-dim">banner image:</span>
+            {#if bannerPreview}
+              <div class="relative">
+                <img
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  class="w-full h-20 object-cover border border-terminal-border"
+                />
+                <button
+                  type="button"
+                  onclick={removeBanner}
+                  class="absolute top-1 right-1 text-xs bg-terminal-bg border border-terminal-border px-1 text-red-500 hover:text-red-400 transition-colors"
+                >
+                  [x]
+                </button>
+              </div>
+            {:else}
+              <label class="block border border-dashed border-terminal-border p-3 text-center cursor-pointer hover:border-accent-500 transition-colors">
+                <span class="text-xs text-terminal-dim">click to select banner (optional)</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onchange={handleBannerSelect}
+                  class="hidden"
+                />
+              </label>
+            {/if}
+            <div class="text-xs text-terminal-dim">jpg, png, webp (max 5MB)</div>
+            {#if bannerError}
+              <div class="text-xs">
+                <span class="text-red-500">&gt; error:</span>
+                <span class="text-red-400"> {bannerError}</span>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Icon -->
+          <div class="space-y-1">
+            <span class="block text-xs text-terminal-dim">community icon:</span>
+            <div class="flex items-center gap-3">
+              {#if iconPreview}
+                <div class="relative">
+                  <img
+                    src={iconPreview}
+                    alt="Icon preview"
+                    class="w-14 h-14 object-cover border border-terminal-border rounded"
+                  />
+                  <button
+                    type="button"
+                    onclick={removeIcon}
+                    class="absolute -top-1 -right-1 text-xs bg-terminal-bg border border-terminal-border px-1 text-red-500 hover:text-red-400 transition-colors"
+                  >
+                    [x]
+                  </button>
+                </div>
+              {:else}
+                <label class="w-14 h-14 border border-dashed border-terminal-border rounded flex items-center justify-center cursor-pointer hover:border-accent-500 transition-colors">
+                  <span class="text-xs text-terminal-dim">+</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onchange={handleIconSelect}
+                    class="hidden"
+                  />
+                </label>
+              {/if}
+              <div class="text-xs text-terminal-dim">
+                <div>square image recommended</div>
+                <div>jpg, png, webp (max 2MB)</div>
+              </div>
+            </div>
+            {#if iconError}
+              <div class="text-xs">
+                <span class="text-red-500">&gt; error:</span>
+                <span class="text-red-400"> {iconError}</span>
+              </div>
+            {/if}
           </div>
 
           <!-- Visibility -->
@@ -281,7 +515,7 @@
             class="w-full text-left px-3 py-1.5 text-xs font-mono border border-terminal-border bg-terminal-bg text-terminal-fg hover:text-accent-500 hover:border-accent-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {#if submitting}
-              <span class="text-terminal-dim">[creating...]</span>
+              <span class="text-terminal-dim">[creating{bannerUploading ? ' (uploading banner...)' : iconUploading ? ' (uploading icon...)' : '...'}]</span>
             {:else}
               <span class="text-accent-500">&gt;</span> create community<span class="animate-pulse">_</span>
             {/if}

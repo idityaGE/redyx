@@ -42,4 +42,4 @@
 </div>
 
 <!-- Feed with infinite scroll -->
-<FeedList endpoint="/feed" {sort} {timeRange} />
+<FeedList endpoint="/feed" {sort} {timeRange} showPinnedPosts={false} />
