@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model notification_preferences {
+  user_id           String   @id @db.Uuid
+  post_replies      Boolean  @default(true)
+  comment_replies   Boolean  @default(true)
+  mentions          Boolean  @default(true)
+  muted_communities String[] @default([])
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model notifications {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  type           String   @db.VarChar(30)
+  actor_id       String   @db.Uuid
+  actor_username String   @db.VarChar(50)
+  target_id      String   @db.VarChar(255)
+  target_type    String   @db.VarChar(20)
+  post_id        String   @db.VarChar(255)
+  community_name String   @db.VarChar(50)
+  message        String
+  is_read        Boolean  @default(false)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, created_at(sort: Desc)], map: "idx_notifications_user_created")
+  @@index([user_id, is_read, created_at(sort: Desc)], map: "idx_notifications_user_unread")
+}

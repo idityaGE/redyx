@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model profiles {
+  user_id      String    @id @db.Uuid
+  username     String    @unique(map: "idx_profiles_username")
+  display_name String    @default("")
+  bio          String    @default("")
+  avatar_url   String    @default("")
+  karma        Int       @default(0)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at   DateTime? @db.Timestamptz(6)
+}

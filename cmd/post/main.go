@@ -173,6 +173,7 @@ func main() {
 	if moderationClient != nil {
 		postOpts = append(postOpts, post.WithModerationClient(moderationClient))
 	}
+	postOpts = append(postOpts, post.WithLimiter(limiter))
 	postServer := post.NewServer(shardRouter, cache, postProducer, communityClient, mediaClient, logger, postOpts...)
 	postv1.RegisterPostServiceServer(srv.Server(), postServer)
 

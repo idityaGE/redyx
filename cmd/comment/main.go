@@ -173,6 +173,7 @@ func main() {
 	if moderationClient != nil {
 		serverOpts = append(serverOpts, comment.WithModerationClient(moderationClient))
 	}
+	serverOpts = append(serverOpts, comment.WithLimiter(limiter))
 	commentServer := comment.NewServer(store, commentProducer, voteRedis, logger, serverOpts...)
 	commentv1.RegisterCommentServiceServer(srv.Server(), commentServer)
 

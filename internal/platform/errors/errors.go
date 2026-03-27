@@ -12,4 +12,5 @@ var (
 	ErrForbidden       = errors.New("forbidden")
 	ErrInvalidInput    = errors.New("invalid input")
 	ErrUnauthenticated = errors.New("unauthenticated")
+	ErrRateLimited     = errors.New("rate limited")
 )

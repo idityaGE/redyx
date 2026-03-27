@@ -145,7 +145,7 @@
   </div>
 
   {#if showDropdown}
-    <div class="absolute top-full left-0 right-0 mt-1 bg-terminal-bg border border-terminal-border rounded shadow-lg z-50 max-h-72 overflow-y-auto">
+    <div class="absolute top-full left-0 right-0 mt-1 bg-terminal-bg border border-terminal-border rounded shadow-lg z-50 max-h-72 overflow-y-auto custom-scrollbar">
       {#if suggestions.length > 0}
         <div class="px-3 py-1 text-[10px] text-terminal-dim uppercase tracking-wider border-b border-terminal-border">communities</div>
         {#each suggestions as suggestion}

@@ -18,6 +18,7 @@ import (
 //   - ErrForbidden      → codes.PermissionDenied (HTTP 403)
 //   - ErrInvalidInput   → codes.InvalidArgument (HTTP 400)
 //   - ErrUnauthenticated→ codes.Unauthenticated (HTTP 401)
+//   - ErrRateLimited    → codes.ResourceExhausted (HTTP 429)
 //   - Any other error   → codes.Internal with sanitized message (HTTP 500)
 //
 // If the error is already a gRPC status, it is passed through unchanged.
@@ -45,6 +46,8 @@ func ErrorMapping() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		case errors.Is(err, perrors.ErrUnauthenticated):
 			return nil, status.Error(codes.Unauthenticated, err.Error())
+		case errors.Is(err, perrors.ErrRateLimited):
+			return nil, status.Error(codes.ResourceExhausted, err.Error())
 		default:
 			// Never leak raw errors to clients (Pitfall 11)
 			return nil, status.Error(codes.Internal, "internal error")

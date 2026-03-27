@@ -21,6 +21,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 	"github.com/redyx/redyx/internal/platform/pagination"
+	"github.com/redyx/redyx/internal/platform/ratelimit"
 )
 
 // Server implements the CommentServiceServer gRPC interface.
@@ -31,6 +32,7 @@ type Server struct {
 	postClient       postv1.PostServiceClient      // gRPC client for post-service (comment enrichment)
 	spamClient       spamv1.SpamServiceClient      // gRPC client for spam-service (content checks)
 	moderationClient modv1.ModerationServiceClient // gRPC client for moderation-service (ban checks)
+	limiter          *ratelimit.Limiter            // action-specific rate limiter
 	voteRedis        *redis.Client                 // vote-service Redis DB 5 (read-only for user_vote)
 	logger           *zap.Logger
 }
@@ -73,11 +75,34 @@ func WithModerationClient(client modv1.ModerationServiceClient) ServerOption {
 	}
 }
 
+// WithLimiter configures the rate limiter for action-specific rate limiting.
+func WithLimiter(limiter *ratelimit.Limiter) ServerOption {
+	return func(s *Server) {
+		s.limiter = limiter
+	}
+}
+
 // CreateComment creates a new comment on a post (CMNT-01, CMNT-02).
 func (s *Server) CreateComment(ctx context.Context, req *commentv1.CreateCommentRequest) (*commentv1.CreateCommentResponse, error) {
 	claims := auth.ClaimsFromContext(ctx)
 	if claims == nil {
 		return nil, fmt.Errorf("create comment: %w", perrors.ErrUnauthenticated)
+	}
+
+	// Action-specific rate limit: 30 comments per hour
+	if s.limiter != nil {
+		key := fmt.Sprintf("action:comment:%s", claims.UserID)
+		cfg := ratelimit.ActionLimits["comment"]
+		result, err := s.limiter.Check(ctx, key, cfg.Limit, cfg.WindowSec)
+		if err != nil {
+			s.logger.Warn("rate limit check failed, allowing request (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if !result.Allowed {
+			return nil, fmt.Errorf("rate limit exceeded: you can create %d comments per hour, retry after %v: %w",
+				cfg.Limit, result.RetryAfter.Round(time.Second), perrors.ErrRateLimited)
+		}
 	}
 
 	// Validate post_id

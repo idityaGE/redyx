@@ -82,7 +82,7 @@ func main() {
 	)
 
 	// Create and register community service
-	communityServer := community.NewServer(db, cache, logger)
+	communityServer := community.NewServer(db, cache, logger, community.WithLimiter(limiter))
 	commv1.RegisterCommunityServiceServer(srv.Server(), communityServer)
 
 	logger.Info("community service starting",

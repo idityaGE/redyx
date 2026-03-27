@@ -3,6 +3,7 @@ package vote
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -12,6 +13,7 @@ import (
 	votev1 "github.com/redyx/redyx/gen/redyx/vote/v1"
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
+	"github.com/redyx/redyx/internal/platform/ratelimit"
 )
 
 // Server implements the VoteServiceServer gRPC interface.
@@ -19,15 +21,30 @@ type Server struct {
 	votev1.UnimplementedVoteServiceServer
 	store    *VoteStore
 	producer *Producer
+	limiter  *ratelimit.Limiter
 	logger   *zap.Logger
 }
 
 // NewServer creates a new vote gRPC server.
-func NewServer(store *VoteStore, producer *Producer, logger *zap.Logger) *Server {
-	return &Server{
+func NewServer(store *VoteStore, producer *Producer, logger *zap.Logger, opts ...ServerOption) *Server {
+	s := &Server{
 		store:    store,
 		producer: producer,
 		logger:   logger,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// ServerOption configures optional dependencies for the vote server.
+type ServerOption func(*Server)
+
+// WithLimiter configures the rate limiter for action-specific rate limiting.
+func WithLimiter(limiter *ratelimit.Limiter) ServerOption {
+	return func(s *Server) {
+		s.limiter = limiter
 	}
 }
 
@@ -37,6 +54,22 @@ func (s *Server) Vote(ctx context.Context, req *votev1.VoteRequest) (*votev1.Vot
 	claims := auth.ClaimsFromContext(ctx)
 	if claims == nil {
 		return nil, fmt.Errorf("vote: %w", perrors.ErrUnauthenticated)
+	}
+
+	// Action-specific rate limit: 60 votes per minute
+	if s.limiter != nil {
+		key := fmt.Sprintf("action:vote:%s", claims.UserID)
+		cfg := ratelimit.ActionLimits["vote"]
+		result, err := s.limiter.Check(ctx, key, cfg.Limit, cfg.WindowSec)
+		if err != nil {
+			s.logger.Warn("rate limit check failed, allowing request (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if !result.Allowed {
+			return nil, fmt.Errorf("rate limit exceeded: you can cast %d votes per minute, retry after %v: %w",
+				cfg.Limit, result.RetryAfter.Round(time.Second), perrors.ErrRateLimited)
+		}
 	}
 
 	// Validate target_id

@@ -1,0 +1,49 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model posts {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String
+  body            String    @default("")
+  url             String    @default("")
+  post_type       Int       @default(1) @db.SmallInt
+  author_id       String    @db.Uuid
+  author_username String
+  community_id    String    @db.Uuid
+  community_name  String
+  vote_score      Int       @default(0)
+  upvotes         Int       @default(0)
+  downvotes       Int       @default(0)
+  comment_count   Int       @default(0)
+  hot_score       Float     @default(0)
+  is_edited       Boolean   @default(false)
+  is_deleted      Boolean   @default(false)
+  is_pinned       Boolean   @default(false)
+  is_anonymous    Boolean   @default(false)
+  thumbnail_url   String    @default("")
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  edited_at       DateTime? @db.Timestamptz(6)
+  media_urls      String[]  @default([])
+
+  @@index([author_id, created_at(sort: Desc)], map: "idx_posts_author")
+  @@index([community_id, hot_score(sort: Desc), id(sort: Desc)], map: "idx_posts_community_hot", where: raw("(is_deleted = false)"))
+  @@index([community_id], map: "idx_posts_community_id")
+  @@index([community_id, created_at(sort: Desc), id(sort: Desc)], map: "idx_posts_community_new", where: raw("(is_deleted = false)"))
+  @@index([community_id, vote_score(sort: Desc), id(sort: Desc)], map: "idx_posts_community_top", where: raw("(is_deleted = false)"))
+}
+
+model saved_posts {
+  user_id  String   @db.Uuid
+  post_id  String   @db.Uuid
+  saved_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([user_id, post_id])
+  @@index([user_id, saved_at(sort: Desc)], map: "idx_saved_posts_user")
+}

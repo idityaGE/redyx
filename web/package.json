@@ -6,7 +6,24 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "db:pull:all": "bun db:pull:auth && bun db:pull:user && bun db:pull:community && bun db:pull:post && bun db:pull:notifications && bun db:pull:media && bun db:pull:moderation",
+    "db:pull:auth": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/auth?sslmode=disable' PRISMA_SCHEMA='prisma/schema.auth.prisma' prisma db pull",
+    "db:pull:user": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/user_profiles?sslmode=disable' PRISMA_SCHEMA='prisma/schema.user.prisma' prisma db pull",
+    "db:pull:community": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/community?sslmode=disable' PRISMA_SCHEMA='prisma/schema.community.prisma' prisma db pull",
+    "db:pull:post:0": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/posts_shard_0?sslmode=disable' PRISMA_SCHEMA='prisma/schema.post.prisma' prisma db pull",
+    "db:pull:post:1": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/posts_shard_1?sslmode=disable' PRISMA_SCHEMA='prisma/schema.post.prisma' prisma db pull",
+    "db:pull:notifications": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/notifications?sslmode=disable' PRISMA_SCHEMA='prisma/schema.notifications.prisma' prisma db pull",
+    "db:pull:media": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/media?sslmode=disable' PRISMA_SCHEMA='prisma/schema.media.prisma' prisma db pull",
+    "db:pull:moderation": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/moderation?sslmode=disable' PRISMA_SCHEMA='prisma/schema.moderation.prisma' prisma db pull",
+    "studio:auth": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/auth?sslmode=disable' PRISMA_SCHEMA='prisma/schema.auth.prisma' prisma studio",
+    "studio:user": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/user_profiles?sslmode=disable' PRISMA_SCHEMA='prisma/schema.user.prisma' prisma studio",
+    "studio:community": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/community?sslmode=disable' PRISMA_SCHEMA='prisma/schema.community.prisma' prisma studio",
+    "studio:post:0": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/posts_shard_0?sslmode=disable' PRISMA_SCHEMA='prisma/schema.post.prisma' prisma studio",
+    "studio:post:1": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/posts_shard_1?sslmode=disable' PRISMA_SCHEMA='prisma/schema.post.prisma' prisma studio",
+    "studio:notifications": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/notifications?sslmode=disable' PRISMA_SCHEMA='prisma/schema.notifications.prisma' prisma studio",
+    "studio:media": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/media?sslmode=disable' PRISMA_SCHEMA='prisma/schema.media.prisma' prisma studio",
+    "studio:moderation": "DATABASE_URL='postgresql://redyx:dev@localhost:5432/moderation?sslmode=disable' PRISMA_SCHEMA='prisma/schema.moderation.prisma' prisma studio"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
@@ -21,6 +38,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@types/dompurify": "^3.0.5",
+    "prisma": "^7.4.2",
     "tailwindcss": "^4.2.1"
   }
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 	"github.com/redyx/redyx/internal/platform/pagination"
+	"github.com/redyx/redyx/internal/platform/ratelimit"
 )
 
 // Server implements the PostServiceServer gRPC interface.
@@ -39,6 +40,7 @@ type Server struct {
 	mediaClient      mediav1.MediaServiceClient
 	spamClient       spamv1.SpamServiceClient
 	moderationClient modv1.ModerationServiceClient
+	limiter          *ratelimit.Limiter
 	logger           *zap.Logger
 }
 
@@ -75,6 +77,13 @@ func WithModerationClient(client modv1.ModerationServiceClient) ServerOption {
 	}
 }
 
+// WithLimiter configures the rate limiter for action-specific rate limiting.
+func WithLimiter(limiter *ratelimit.Limiter) ServerOption {
+	return func(s *Server) {
+		s.limiter = limiter
+	}
+}
+
 // resolveCommunity looks up a community by name and returns its UUID and membership status.
 func (s *Server) resolveCommunity(ctx context.Context, name string) (communityID string, isMember bool, err error) {
 	if s.communityClient == nil {
@@ -96,6 +105,22 @@ func (s *Server) CreatePost(ctx context.Context, req *postv1.CreatePostRequest) 
 	claims := auth.ClaimsFromContext(ctx)
 	if claims == nil {
 		return nil, fmt.Errorf("create post: %w", perrors.ErrUnauthenticated)
+	}
+
+	// Action-specific rate limit: 5 posts per hour
+	if s.limiter != nil {
+		key := fmt.Sprintf("action:post:%s", claims.UserID)
+		cfg := ratelimit.ActionLimits["post"]
+		result, err := s.limiter.Check(ctx, key, cfg.Limit, cfg.WindowSec)
+		if err != nil {
+			s.logger.Warn("rate limit check failed, allowing request (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if !result.Allowed {
+			return nil, fmt.Errorf("rate limit exceeded: you can create %d posts per hour, retry after %v: %w",
+				cfg.Limit, result.RetryAfter.Round(time.Second), perrors.ErrRateLimited)
+		}
 	}
 
 	// Validate title

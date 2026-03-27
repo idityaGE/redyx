@@ -1,0 +1,61 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model bans {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  community_id       String    @db.Uuid
+  community_name     String
+  user_id            String    @db.Uuid
+  username           String
+  reason             String
+  banned_by          String    @db.Uuid
+  banned_by_username String    @default("")
+  duration_seconds   BigInt    @default(0)
+  expires_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([community_id, user_id])
+  @@index([community_id, expires_at], map: "idx_bans_community_active")
+  @@index([user_id], map: "idx_bans_user")
+}
+
+model mod_log {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  community_id       String   @db.Uuid
+  community_name     String
+  moderator_id       String   @db.Uuid
+  moderator_username String
+  action             String
+  target_id          String
+  target_type        String
+  reason             String   @default("")
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([community_id, action, created_at(sort: Desc)], map: "idx_mod_log_action")
+  @@index([community_id, created_at(sort: Desc)], map: "idx_mod_log_community")
+}
+
+model reports {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  community_id    String    @db.Uuid
+  community_name  String
+  content_id      String    @db.Uuid
+  content_type    Int       @db.SmallInt
+  reporter_id     String    @db.Uuid
+  reason          String
+  source          String    @default("user")
+  status          String    @default("active")
+  resolved_action String?
+  resolved_by     String?   @db.Uuid
+  resolved_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([community_id, status, created_at(sort: Desc)], map: "idx_reports_community_active", where: raw("(status = 'active'::text)"))
+  @@index([content_id, content_type], map: "idx_reports_content")
+}

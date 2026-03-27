@@ -92,7 +92,7 @@ func main() {
 	)
 
 	// Create and register vote service
-	voteServer := vote.NewServer(voteStore, producer, logger)
+	voteServer := vote.NewServer(voteStore, producer, logger, vote.WithLimiter(limiter))
 	votev1.RegisterVoteServiceServer(srv.Server(), voteServer)
 
 	logger.Info("vote service starting",

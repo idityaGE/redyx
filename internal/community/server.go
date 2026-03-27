@@ -17,6 +17,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/auth"
 	perrors "github.com/redyx/redyx/internal/platform/errors"
 	"github.com/redyx/redyx/internal/platform/pagination"
+	"github.com/redyx/redyx/internal/platform/ratelimit"
 )
 
 var nameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,21}$`)
@@ -24,17 +25,32 @@ var nameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,21}$`)
 // Server implements the CommunityServiceServer gRPC interface.
 type Server struct {
 	commv1.UnimplementedCommunityServiceServer
-	db     *pgxpool.Pool
-	cache  *Cache
-	logger *zap.Logger
+	db      *pgxpool.Pool
+	cache   *Cache
+	limiter *ratelimit.Limiter
+	logger  *zap.Logger
 }
 
 // NewServer creates a new community gRPC server.
-func NewServer(db *pgxpool.Pool, cache *Cache, logger *zap.Logger) *Server {
-	return &Server{
+func NewServer(db *pgxpool.Pool, cache *Cache, logger *zap.Logger, opts ...ServerOption) *Server {
+	s := &Server{
 		db:     db,
 		cache:  cache,
 		logger: logger,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// ServerOption configures optional dependencies for the community server.
+type ServerOption func(*Server)
+
+// WithLimiter configures the rate limiter for action-specific rate limiting.
+func WithLimiter(limiter *ratelimit.Limiter) ServerOption {
+	return func(s *Server) {
+		s.limiter = limiter
 	}
 }
 
@@ -43,6 +59,22 @@ func (s *Server) CreateCommunity(ctx context.Context, req *commv1.CreateCommunit
 	claims := auth.ClaimsFromContext(ctx)
 	if claims == nil {
 		return nil, fmt.Errorf("create community: %w", perrors.ErrUnauthenticated)
+	}
+
+	// Action-specific rate limit: 1 community per day
+	if s.limiter != nil {
+		key := fmt.Sprintf("action:community:%s", claims.UserID)
+		cfg := ratelimit.ActionLimits["community"]
+		result, err := s.limiter.Check(ctx, key, cfg.Limit, cfg.WindowSec)
+		if err != nil {
+			s.logger.Warn("rate limit check failed, allowing request (fail-open)",
+				zap.String("user_id", claims.UserID),
+				zap.Error(err),
+			)
+		} else if !result.Allowed {
+			return nil, fmt.Errorf("rate limit exceeded: you can create %d community per day, retry after %v: %w",
+				cfg.Limit, result.RetryAfter.Round(time.Second), perrors.ErrRateLimited)
+		}
 	}
 
 	if !nameRegex.MatchString(req.GetName()) {

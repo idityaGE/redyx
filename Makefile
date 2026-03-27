@@ -1,4 +1,4 @@
-.PHONY: proto proto-lint proto-breaking proto-descriptor build test clean help
+.PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild help
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -17,6 +17,21 @@ proto-descriptor:  ## Build Envoy descriptor set only
 
 build:  ## Build all services
 	go build ./cmd/...
+
+docker-build: proto-descriptor  ## Build all Docker images for compose
+	docker compose build
+
+docker-up: proto-descriptor  ## Start full local stack in background
+	docker compose up -d
+
+docker-down:  ## Stop stack and remove orphan containers
+	docker compose down --remove-orphans
+
+docker-logs:  ## Tail logs from all services
+	docker compose logs -f --tail=200
+
+docker-rebuild: proto-descriptor  ## Rebuild all images without cache
+	docker compose build --no-cache
 
 test:  ## Run all tests
 	go test ./...

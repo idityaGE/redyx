@@ -139,7 +139,6 @@ static_resources:
                 - redyx.auth.v1.AuthService
                 - redyx.user.v1.UserService
                 - redyx.community.v1.CommunityService
-                - redyx.ratelimit.v1.RateLimitService
                 - redyx.post.v1.PostService
                 - redyx.vote.v1.VoteService
                 - redyx.comment.v1.CommentService

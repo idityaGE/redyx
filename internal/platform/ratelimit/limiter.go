@@ -20,7 +20,6 @@ type TierConfig struct {
 var TierLimits = map[string]TierConfig{
 	"anonymous":     {Limit: 10, WindowSec: 60},
 	"authenticated": {Limit: 100, WindowSec: 60},
-	"trusted":       {Limit: 300, WindowSec: 60},
 }
 
 // ActionLimits defines per-action rate limits (called from service handlers).
