@@ -7,7 +7,7 @@
     communityId: string;
     name: string;
     description: string;
-    visibility: number;
+    visibility: string;
     memberCount: number;
     createdAt: string;
   };
@@ -31,12 +31,12 @@
   let searchQuery = $state('');
   let debounceTimer: ReturnType<typeof setTimeout>;
 
-  const visibilityLabel = (v: number): string => {
+  const visibilityLabel = (v: string): string => {
     switch (v) {
-      case 1: return 'public';
-      case 2: return 'restricted';
-      case 3: return 'private';
-      default: return 'unknown';
+      case 'VISIBILITY_PUBLIC': return 'public';
+      case 'VISIBILITY_RESTRICTED': return 'restricted';
+      case 'VISIBILITY_PRIVATE': return 'private';
+      default: return 'public';
     }
   };
 

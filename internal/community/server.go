@@ -222,10 +222,15 @@ func (s *Server) UpdateCommunity(ctx context.Context, req *commv1.UpdateCommunit
 		return nil, fmt.Errorf("only owner or moderator can update community: %w", perrors.ErrForbidden)
 	}
 
-	// Build dynamic update
-	rulesJSON, err := json.Marshal(communityRulesToSlice(req.GetRules()))
-	if err != nil {
-		return nil, fmt.Errorf("marshal rules: %w", err)
+	// Build dynamic update - only update rules if provided (non-empty)
+	// This prevents partial updates from accidentally clearing rules
+	var rulesJSON interface{} = nil // Explicitly nil for SQL NULL
+	if len(req.GetRules()) > 0 {
+		jsonBytes, err := json.Marshal(communityRulesToSlice(req.GetRules()))
+		if err != nil {
+			return nil, fmt.Errorf("marshal rules: %w", err)
+		}
+		rulesJSON = jsonBytes
 	}
 
 	visibility := req.GetVisibility()
@@ -233,10 +238,12 @@ func (s *Server) UpdateCommunity(ctx context.Context, req *commv1.UpdateCommunit
 		visibility = comm.Visibility
 	}
 
+	// Use conditional update for rules: only update if rulesJSON is provided (not nil)
+	// COALESCE($2, rules) will keep existing rules when $2 is NULL
 	_, err = s.db.Exec(ctx,
 		`UPDATE communities
 		 SET description = COALESCE(NULLIF($1, ''), description),
-		     rules = $2,
+		     rules = COALESCE($2, rules),
 		     banner_url = COALESCE(NULLIF($3, ''), banner_url),
 		     icon_url = COALESCE(NULLIF($4, ''), icon_url),
 		     visibility = $5,
@@ -545,22 +552,59 @@ func (s *Server) AssignModerator(ctx context.Context, req *commv1.AssignModerato
 		return nil, fmt.Errorf("only the owner can assign moderators: %w", perrors.ErrForbidden)
 	}
 
-	// Check target is a member
-	targetRole, err := s.getMemberRole(ctx, comm.CommunityId, req.GetUserId())
+	// Get target user's username for the member record
+	// We need to look it up from user-service or the request
+	targetUserID := req.GetUserId()
+	if targetUserID == "" {
+		return nil, fmt.Errorf("user_id is required: %w", perrors.ErrInvalidInput)
+	}
+
+	// Username is provided by frontend (from user profile lookup)
+	targetUsername := req.GetUsername()
+	if targetUsername == "" {
+		return nil, fmt.Errorf("username is required: %w", perrors.ErrInvalidInput)
+	}
+
+	// Check if target is already a member
+	targetRole, err := s.getMemberRole(ctx, comm.CommunityId, targetUserID)
 	if err != nil {
 		return nil, err
 	}
-	if targetRole == "" {
-		return nil, fmt.Errorf("user is not a member of this community: %w", perrors.ErrNotFound)
-	}
 
-	_, err = s.db.Exec(ctx,
-		`UPDATE community_members SET role = 'moderator'
-		 WHERE community_id = $1 AND user_id = $2`,
-		comm.CommunityId, req.GetUserId(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("assign moderator: %w", err)
+	// If not a member, auto-add them as a moderator directly
+	// (They get added and promoted in one step)
+	if targetRole == "" {
+		// Insert as moderator directly
+		_, err = s.db.Exec(ctx,
+			`INSERT INTO community_members (community_id, user_id, username, role)
+			 VALUES ($1, $2, $3, 'moderator')
+			 ON CONFLICT (community_id, user_id) DO UPDATE SET role = 'moderator'`,
+			comm.CommunityId, targetUserID, targetUsername,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("add moderator: %w", err)
+		}
+
+		// Update member count
+		_, err = s.db.Exec(ctx,
+			`UPDATE communities SET member_count = (
+				SELECT COUNT(*) FROM community_members WHERE community_id = $1
+			) WHERE id = $1`,
+			comm.CommunityId,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("update member count: %w", err)
+		}
+	} else {
+		// Already a member, just update role to moderator
+		_, err = s.db.Exec(ctx,
+			`UPDATE community_members SET role = 'moderator'
+			 WHERE community_id = $1 AND user_id = $2`,
+			comm.CommunityId, targetUserID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("assign moderator: %w", err)
+		}
 	}
 
 	// Invalidate cache

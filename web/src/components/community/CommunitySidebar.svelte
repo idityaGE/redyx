@@ -13,7 +13,9 @@
     name: string;
     description: string;
     rules: CommunityRule[];
-    visibility: number;
+    bannerUrl: string;
+    iconUrl: string;
+    visibility: string;
     memberCount: number;
     ownerId: string;
     createdAt: string;
@@ -44,12 +46,12 @@
 
   let isOwner = $derived(currentUser?.userId === community.ownerId);
 
-  const visibilityLabel = (v: number): string => {
+  const visibilityLabel = (v: string): string => {
     switch (v) {
-      case 1: return 'public';
-      case 2: return 'restricted';
-      case 3: return 'private';
-      default: return 'unknown';
+      case 'VISIBILITY_PUBLIC': return 'public';
+      case 'VISIBILITY_RESTRICTED': return 'restricted';
+      case 'VISIBILITY_PRIVATE': return 'private';
+      default: return 'public';
     }
   };
 

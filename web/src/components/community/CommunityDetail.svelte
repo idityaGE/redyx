@@ -19,7 +19,9 @@
     name: string;
     description: string;
     rules: CommunityRule[];
-    visibility: number;
+    bannerUrl: string;
+    iconUrl: string;
+    visibility: string;
     memberCount: number;
     ownerId: string;
     createdAt: string;
@@ -150,10 +152,32 @@
   <div class="flex flex-col lg:flex-row gap-4 max-w-5xl">
     <!-- Main content area (left) -->
     <div class="flex-1 min-w-0">
+      <!-- Community banner -->
+      {#if community.bannerUrl}
+        <div class="mb-4">
+          <img
+            src={community.bannerUrl}
+            alt="Community banner"
+            class="w-full h-32 object-cover border border-terminal-border"
+          />
+        </div>
+      {/if}
+
       <!-- Community header with breadcrumb -->
       <div class="box-terminal mb-4">
-        <div class="text-accent-500 text-sm">
-          ~ <a href="/communities" class="hover:text-accent-400 transition-colors">/communities</a>/{community.name}
+        <div class="flex items-center gap-3">
+          {#if community.iconUrl}
+            <img
+              src={community.iconUrl}
+              alt="Community icon"
+              class="w-10 h-10 object-cover border border-terminal-border rounded"
+            />
+          {/if}
+          <div>
+            <div class="text-accent-500 text-sm">
+              ~ <a href="/communities" class="hover:text-accent-400 transition-colors">/communities</a>/{community.name}
+            </div>
+          </div>
         </div>
       </div>
 
