@@ -42,7 +42,7 @@
     <span class="text-accent-500">&gt;</span> my communities
   </a>
   <a
-    href="/user/{username}"
+    href="/settings"
     class="flex items-center gap-2 px-3 py-1.5 text-terminal-fg hover:text-accent-500 hover:bg-terminal-bg transition-colors"
     onclick={onclose}
   >

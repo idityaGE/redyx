@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SettingsLayout from '../../components/settings/SettingsLayout.svelte';
+import AccountSettings from '../../components/settings/AccountSettings.svelte';
+---
+<BaseLayout title="Settings">
+  <SettingsLayout activeSection="account" client:load>
+    <AccountSettings client:load />
+  </SettingsLayout>
+</BaseLayout>
