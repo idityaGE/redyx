@@ -1,6 +1,6 @@
 <script lang="ts">
   import { api, ApiError } from '../../lib/api';
-  import { logout } from '../../lib/auth';
+  import { logout, getUser } from '../../lib/auth';
 
   interface Props {
     displayName: string;
@@ -10,6 +10,9 @@
   }
 
   let { displayName, bio, avatarUrl, onupdate }: Props = $props();
+  
+  // Get username from auth store
+  let username = getUser()?.username || '';
 
   // Edit states
   let editingDisplayName = $state(false);
@@ -50,10 +53,17 @@
     saving = true;
     error = null;
     success = null;
+    
+    if (!username) {
+      error = 'not authenticated';
+      saving = false;
+      return;
+    }
+    
     try {
       const body: Record<string, string> = {};
       body[field] = value;
-      await api('/users/me', {
+      await api(`/users/${username}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
@@ -79,10 +89,14 @@
 
   async function deleteAccount() {
     if (deleteInput !== 'delete') return;
+    if (!username) {
+      deleteError = 'not authenticated';
+      return;
+    }
     deleting = true;
     deleteError = null;
     try {
-      await api('/users/me', { method: 'DELETE' });
+      await api(`/users/${username}`, { method: 'DELETE' });
       await logout();
       window.location.href = '/';
     } catch (e) {
