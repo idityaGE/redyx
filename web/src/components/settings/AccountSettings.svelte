@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError } from '../../lib/api';
-  import { logout } from '../../lib/auth';
+  import { logout, getUser, subscribe as authSubscribe } from '../../lib/auth';
+
+  // Auth state
+  let username = $state(getUser()?.username || '');
 
   // User data
   let user = $state<{
@@ -50,6 +53,13 @@
   async function fetchUser() {
     loading = true;
     fetchError = '';
+    
+    if (!username) {
+      fetchError = 'not authenticated';
+      loading = false;
+      return;
+    }
+    
     try {
       const data = await api<{
         user: {
@@ -57,7 +67,7 @@
           bio: string;
           avatarUrl: string;
         };
-      }>('/users/me');
+      }>(`/users/${username}`);
       user = {
         displayName: data.user?.displayName || '',
         bio: data.user?.bio || '',
@@ -74,10 +84,17 @@
     saving = true;
     error = null;
     success = null;
+    
+    if (!username) {
+      error = 'not authenticated';
+      saving = false;
+      return;
+    }
+    
     try {
       const body: Record<string, string> = {};
       body[field] = value;
-      await api('/users/me', {
+      await api(`/users/${username}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
@@ -109,10 +126,14 @@
 
   async function deleteAccount() {
     if (deleteInput !== 'delete') return;
+    if (!username) {
+      deleteError = 'not authenticated';
+      return;
+    }
     deleting = true;
     deleteError = null;
     try {
-      await api('/users/me', { method: 'DELETE' });
+      await api(`/users/${username}`, { method: 'DELETE' });
       await logout();
       window.location.href = '/';
     } catch (e) {
@@ -139,7 +160,18 @@
   }
 
   onMount(() => {
+    // Subscribe to auth changes
+    const unsub = authSubscribe(() => {
+      const currentUser = getUser();
+      if (currentUser?.username && currentUser.username !== username) {
+        username = currentUser.username;
+        fetchUser();
+      }
+    });
+    
     fetchUser();
+    
+    return unsub;
   });
 </script>
 
