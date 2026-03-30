@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SettingsLayout from '../../components/settings/SettingsLayout.svelte';
 import NotificationPreferences from '../../components/notification/NotificationPreferences.svelte';
 ---
 <BaseLayout title="Notification Settings">
-  <NotificationPreferences client:load />
+  <SettingsLayout activeSection="notifications" client:load>
+    <NotificationPreferences client:load />
+  </SettingsLayout>
 </BaseLayout>
