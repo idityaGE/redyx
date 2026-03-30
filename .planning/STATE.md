@@ -207,12 +207,13 @@ None.
 | 002 | Fix karma not updating — 3-link bug chain (empty author_id + skip + wrong SQL) | 2026-03-05 | e38e3f5 | [002-fix-karma-not-updating](./quick/002-fix-karma-not-updating/) |
 | 003 | Eliminate all cross-service database access — replace with gRPC calls | 2026-03-05 | 89e0af3 | [003-eliminate-cross-service-db-access](./quick/003-eliminate-cross-service-db-access/) |
 | 004 | Fix frontend communities — separate /communities and /my-communities pages | 2026-03-05 | 89bc29c | [004-fix-frontend-communities](./quick/004-fix-frontend-communities/) |
+| 005 | Fix settings dropdown to /settings page with account editing | 2026-03-30 | bd5e921 | [005-fix-header-profile-dropdown-settings-lin](./quick/005-fix-header-profile-dropdown-settings-lin/) |
 
 ## Session Continuity
 
-Last session: 2026-03-06T10:59:46.604Z
-Stopped at: Completed 06-06-PLAN.md
+Last session: 2026-03-30T18:55:18Z
+Stopped at: Completed quick-005
 Resume file: None
 
 ---
-*Last updated: 2026-03-06 — Phase 6 Plan 05 complete (moderation dashboard frontend)*
+*Last updated: 2026-03-30 — Quick task 005 complete (settings page with account editing)*
