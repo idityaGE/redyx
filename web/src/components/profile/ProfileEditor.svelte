@@ -61,13 +61,21 @@
     }
     
     try {
+      // Map camelCase field names to snake_case for proto
+      const fieldMap: Record<string, string> = {
+        displayName: 'display_name',
+        bio: 'bio',
+        avatarUrl: 'avatar_url',
+      };
+      const protoField = fieldMap[field] || field;
+      
       const body: Record<string, string> = {};
-      body[field] = value;
-      await api(`/users/${username}`, {
+      body[protoField] = value;
+      await api('/users/me', {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
-      onupdate(body);
+      onupdate({ [field]: value });
       success = `${field} updated`;
 
       // Close the editor for this field
@@ -96,7 +104,7 @@
     deleting = true;
     deleteError = null;
     try {
-      await api(`/users/${username}`, { method: 'DELETE' });
+      await api('/users/me', { method: 'DELETE' });
       await logout();
       window.location.href = '/';
     } catch (e) {

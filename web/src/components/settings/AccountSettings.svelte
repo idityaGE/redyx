@@ -97,15 +97,15 @@
     try {
       const body: Record<string, string> = {};
       
-      // Only include changed fields
+      // Only include changed fields (use snake_case for proto)
       if (displayNameValue !== (user?.displayName || '')) {
-        body.displayName = displayNameValue;
+        body.display_name = displayNameValue;
       }
       if (bioValue !== (user?.bio || '')) {
         body.bio = bioValue;
       }
       if (avatarUrlValue !== (user?.avatarUrl || '')) {
-        body.avatarUrl = avatarUrlValue;
+        body.avatar_url = avatarUrlValue;
       }
       
       if (Object.keys(body).length === 0) {
@@ -113,7 +113,7 @@
         return;
       }
       
-      await api(`/users/${username}`, {
+      await api('/users/me', {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
@@ -161,7 +161,7 @@
     deleting = true;
     deleteError = null;
     try {
-      await api(`/users/${username}`, { method: 'DELETE' });
+      await api('/users/me', { method: 'DELETE' });
       await logout();
       window.location.href = '/';
     } catch (e) {
