@@ -152,8 +152,6 @@
       <span>{post.isAnonymous ? '[anonymous]' : `u/${post.authorUsername}`}</span>
       <span class="mx-1">&middot;</span>
       <span>{relativeTime(post.createdAt)}</span>
-      <span class="mx-1">&middot;</span>
-      <span>{post.commentCount} comments</span>
     </div>
   </div>
 
