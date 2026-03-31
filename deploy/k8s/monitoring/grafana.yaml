@@ -1,0 +1,53 @@
+# grafana/grafana chart values
+adminUser: admin
+adminPassword: admin
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-kube-prometheus-prometheus.redyx-monitoring.svc:9090
+        access: proxy
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki.redyx-monitoring.svc:3100
+        access: proxy
+      - name: Jaeger
+        type: jaeger
+        url: http://jaeger-query.redyx-monitoring.svc:16686
+        access: proxy
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'redyx'
+        orgId: 1
+        folder: 'Redyx'
+        type: file
+        disableDeletion: true
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/redyx
+
+dashboardsConfigMaps:
+  redyx: grafana-dashboards
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
