@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-31T17:51:40.058Z"
-last_activity: "2026-03-31 — Completed Plan 06-07: E2E integration verification (human-verified)"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-31T21:59:48.822Z"
+last_activity: "2026-03-31 — Completed Plan 07-01: K8s Infrastructure Foundation"
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 40
-  completed_plans: 40
-  percent: 100
+  total_plans: 46
+  completed_plans: 41
+  percent: 91
 ---
 
 # State: Redyx
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 6 complete — Ready for Phase 7: Deployment + Observability
+**Current focus:** Phase 7: Deployment + Observability — K8s infrastructure foundation complete
 
 ## Current Position
 
-Phase: 6 of 7 — Complete
-Plan: 7 of 7 complete in Phase 6
-Status: Phase 6 (Moderation + Spam) complete. Ready for Phase 7.
-Last activity: 2026-03-31 — Completed Plan 06-07: E2E integration verification (human-verified)
+Phase: 7 of 7 — In Progress
+Plan: 1 of 5 complete in Phase 7
+Status: Plan 07-01 (K8s Infrastructure Foundation) complete. Ready for Plan 07-02.
+Last activity: 2026-03-31 — Completed Plan 07-01: K8s Infrastructure Foundation
 
-Progress: [██████████] 100% (Plan 40/40 overall, Phases 1-6 complete)
+Progress: [█████████░] 91% (Plan 41/45 overall, Phase 7 in progress)
 
 ## Performance Metrics
 
@@ -182,6 +182,12 @@ Recent decisions affecting current work:
 - [Phase 06]: Overflow menu uses svelte:window onclick for click-outside-close
 - [Phase 06]: Ban check uses fail-open pattern — service unavailable allows access
 - [Phase 06]: Pinned posts sorted client-side via $derived in FeedList (server provides isPinned flag)
+- [07-01]: K8s DNS names use {service}.{namespace}.svc.cluster.local pattern for all internal service discovery
+- [07-01]: HPA stabilizationWindowSeconds: 300 for scaleDown to prevent flapping
+- [07-01]: Envoy deployed as NodePort service for external API gateway access
+- [07-01]: gRPC native probes for readiness/liveness (not HTTP)
+- [07-01]: Security context with readOnlyRootFilesystem and runAsNonRoot for all pods
+- [Phase 07]: K8s DNS names use {service}.{namespace}.svc.cluster.local pattern for all internal service discovery
 
 ### Context from Init
 
@@ -212,9 +218,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-31T17:51:40.055Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-deployment-observability/07-CONTEXT.md
+Last session: 2026-03-31T21:59:05.648Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
 
 ---
 *Last updated: 2026-03-31 — Phase 6 complete, ready for Phase 7: Deployment + Observability*
