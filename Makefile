@@ -1,5 +1,5 @@
 .PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild web help \
-        k8s-create k8s-delete k8s-build k8s-load k8s-data k8s-monitoring k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-port k8s-validate
+        k8s-create k8s-delete k8s-build k8s-load k8s-data k8s-data-down k8s-monitoring k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-port k8s-validate
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -78,7 +78,33 @@ k8s-load:  ## Load all images into kind cluster
 	done
 
 k8s-data:  ## Deploy data stores (PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO)
-	@echo "Data store deployment - see Plan 02"
+	@echo "Adding Helm repos..."
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm repo add meilisearch https://meilisearch.github.io/meilisearch-kubernetes
+	helm repo update
+	@echo "Creating PostgreSQL init ConfigMap..."
+	kubectl create configmap postgresql-init-scripts -n $(K8S_NAMESPACE_DATA) --from-file=init-databases.sql=deploy/docker/init-databases.sql --dry-run=client -o yaml | kubectl apply -f -
+	@echo "Deploying PostgreSQL..."
+	helm upgrade --install postgresql bitnami/postgresql -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/postgresql.yaml --wait
+	@echo "Deploying Redis..."
+	helm upgrade --install redis bitnami/redis -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/redis.yaml --wait
+	@echo "Deploying ScyllaDB..."
+	helm upgrade --install scylladb bitnami/cassandra -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/scylladb.yaml --wait --timeout 5m
+	@echo "Deploying Kafka..."
+	helm upgrade --install kafka bitnami/kafka -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/kafka.yaml --wait --timeout 5m
+	@echo "Deploying Meilisearch..."
+	helm upgrade --install meilisearch meilisearch/meilisearch -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/meilisearch.yaml --wait
+	@echo "Deploying MinIO..."
+	helm upgrade --install minio bitnami/minio -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/minio.yaml --wait
+	@echo "Data stores deployed!"
+
+k8s-data-down:  ## Uninstall data stores
+	-helm uninstall postgresql -n $(K8S_NAMESPACE_DATA)
+	-helm uninstall redis -n $(K8S_NAMESPACE_DATA)
+	-helm uninstall scylladb -n $(K8S_NAMESPACE_DATA)
+	-helm uninstall kafka -n $(K8S_NAMESPACE_DATA)
+	-helm uninstall meilisearch -n $(K8S_NAMESPACE_DATA)
+	-helm uninstall minio -n $(K8S_NAMESPACE_DATA)
 
 k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaeger)
 	@echo "Monitoring deployment - see Plan 03"
