@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Posts + Voting + Feeds (Full Stack)** - Content creation, voting, feed algorithms + post/feed/voting frontend components ✓ (2026-03-03)
 - [x] **Phase 4: Comments (Full Stack)** - ScyllaDB threaded discussion + comment tree frontend with lazy-loading UI ✓ (2026-03-04)
 - [x] **Phase 5: Search + Notifications + Media (Full Stack)** - Engagement services + search bar, notification panel, media upload frontend ✓ (2026-03-05)
-- [ ] **Phase 6: Moderation + Spam (Full Stack)** - Moderation tools + mod dashboard, report UI, spam feedback frontend
+- [x] **Phase 6: Moderation + Spam (Full Stack)** - Moderation tools + mod dashboard, report UI, spam feedback frontend (completed 2026-03-31)
 - [ ] **Phase 7: Deployment + Observability** - Kubernetes deployment, monitoring stack, performance optimization
 
 ## Phase Details
@@ -140,13 +140,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Moderation proto extensions + moderation backend service (all RPCs, store, migrations)
-- [ ] 06-02-PLAN.md — Spam service backend (blocklist, dedup, Kafka behavior consumer)
-- [ ] 06-03-PLAN.md — Post/comment moderator internal RPCs + spam/ban integration
-- [ ] 06-04-PLAN.md — Docker Compose + Envoy wiring for moderation and spam services
-- [ ] 06-05-PLAN.md — Frontend mod dashboard: ReportDialog, ReportQueue, ModLog, BanList, BanDialog + CommunitySettings tabs
-- [ ] 06-06-PLAN.md — Frontend integration: three-dot menus, ban banner, pinned posts, form disabling
-- [ ] 06-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint
+- [x] 06-01-PLAN.md — Moderation proto extensions + moderation backend service (all RPCs, store, migrations) ✓
+- [x] 06-02-PLAN.md — Spam service backend (blocklist, dedup, Kafka behavior consumer) ✓
+- [x] 06-03-PLAN.md — Post/comment moderator internal RPCs + spam/ban integration ✓
+- [x] 06-04-PLAN.md — Docker Compose + Envoy wiring for moderation and spam services ✓
+- [x] 06-05-PLAN.md — Frontend mod dashboard: ReportDialog, ReportQueue, ModLog, BanList, BanDialog + CommunitySettings tabs ✓
+- [x] 06-06-PLAN.md — Frontend integration: three-dot menus, ban banner, pinned posts, form disabling ✓
+- [x] 06-07-PLAN.md — E2E integration verification: API curl tests + human verification checkpoint ✓
 
 ### Phase 7: Deployment + Observability
 **Goal**: The platform runs in Kubernetes with full observability, and frontend performance is optimized to meet load time targets
@@ -175,5 +175,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Posts + Voting + Feeds (Full Stack) | 7/7 | ✓ Complete | 2026-03-03 |
 | 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
 | 5. Search + Notifications + Media (Full Stack) | 9/9 | ✓ Complete | 2026-03-05 |
-| 6. Moderation + Spam (Full Stack) | 0/7 | Planning complete | - |
+| 6. Moderation + Spam (Full Stack) | 7/7 | ✓ Complete | 2026-03-31 |
 | 7. Deployment + Observability | 0/? | Not started | - |
