@@ -1,0 +1,14 @@
+apiVersion: v2
+name: redyx-services
+description: Redyx microservices deployment for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+maintainers:
+  - name: Redyx Team
+
+keywords:
+  - microservices
+  - grpc
+  - reddit-clone

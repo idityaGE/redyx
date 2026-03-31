@@ -1,0 +1,358 @@
+# Redyx Services Helm Chart - Default Values
+# All 12 microservices with environment variables from docker-compose.yml
+
+global:
+  # Image configuration
+  image:
+    registry: ""  # Empty for local images
+    tag: "dev"
+    pullPolicy: IfNotPresent
+  
+  # JWT secret shared across services
+  jwtSecret: "dev-jwt-secret-32-bytes-minimum!!"
+  
+  # Kafka configuration
+  kafka:
+    brokers: "kafka.redyx-data.svc.cluster.local:9092"
+  
+  # Data store DNS names (K8s internal)
+  postgres:
+    host: "postgresql.redyx-data.svc.cluster.local"
+    port: 5432
+    user: "redyx"
+    password: "dev"
+  
+  redis:
+    host: "redis-master.redyx-data.svc.cluster.local"
+    port: 6379
+  
+  scylladb:
+    hosts: "scylladb.redyx-data.svc.cluster.local:9042"
+  
+  meilisearch:
+    url: "http://meilisearch.redyx-data.svc.cluster.local:7700"
+    apiKey: "dev-master-key"
+  
+  minio:
+    endpoint: "http://minio.redyx-data.svc.cluster.local:9000"
+    publicEndpoint: "http://localhost:9000"
+    accessKey: "minioadmin"
+    secretKey: "minioadmin"
+    bucket: "redyx-media"
+
+# HPA defaults
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 60
+
+# Service-specific configurations
+services:
+  skeleton:
+    enabled: true
+    port: 50051
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/skeleton?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/0"
+      GRPC_PORT: "50051"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  auth:
+    enabled: true
+    port: 50052
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/auth?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/1"
+      GRPC_PORT: "50052"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  user:
+    enabled: true
+    port: 50053
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/user_profiles?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/2"
+      GRPC_PORT: "50053"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      COMMENT_SERVICE_ADDR: "comment-service.redyx-app.svc.cluster.local:50057"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  community:
+    enabled: true
+    port: 50054
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/community?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/3"
+      GRPC_PORT: "50054"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  post:
+    enabled: true
+    port: 50055
+    replicas: 1
+    resources:
+      requests:
+        cpu: 150m
+        memory: 256Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+    env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/4"
+      GRPC_PORT: "50055"
+      POST_SHARD_DSNS: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/posts_shard_1?sslmode=disable"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+      MEDIA_SERVICE_ADDR: "media-service.redyx-app.svc.cluster.local:50060"
+      SPAM_SERVICE_ADDR: "spam-service.redyx-app.svc.cluster.local:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  vote:
+    enabled: true
+    port: 50056
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/5"
+      GRPC_PORT: "50056"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  comment:
+    enabled: true
+    port: 50057
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      SCYLLADB_HOSTS: "scylladb.redyx-data.svc.cluster.local:9042"
+      SCYLLADB_KEYSPACE: "redyx_comments"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/6"
+      GRPC_PORT: "50057"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      SPAM_SERVICE_ADDR: "spam-service.redyx-app.svc.cluster.local:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 20
+
+  search:
+    enabled: true
+    port: 50058
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/7"
+      GRPC_PORT: "50058"
+      MEILISEARCH_URL: "http://meilisearch.redyx-data.svc.cluster.local:7700"
+      MEILISEARCH_API_KEY: "dev-master-key"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  notification:
+    enabled: true
+    port: 50059
+    websocketPort: 8081
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/notifications?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/8"
+      GRPC_PORT: "50059"
+      WEBSOCKET_PORT: "8081"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  media:
+    enabled: true
+    port: 50060
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/media?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/9"
+      GRPC_PORT: "50060"
+      MINIO_ENDPOINT: "http://minio.redyx-data.svc.cluster.local:9000"
+      MINIO_PUBLIC_ENDPOINT: "http://localhost:9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "redyx-media"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  moderation:
+    enabled: true
+    port: 50061
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/moderation?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/10"
+      GRPC_PORT: "50061"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      COMMENT_SERVICE_ADDR: "comment-service.redyx-app.svc.cluster.local:50057"
+      RATE_LIMIT_ENABLED: "false"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  spam:
+    enabled: true
+    port: 50062
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/11"
+      GRPC_PORT: "50062"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
+      RATE_LIMIT_ENABLED: "false"
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+# Envoy gateway deployment (internal API gateway)
+envoy:
+  enabled: true
+  port: 8080
+  adminPort: 9901
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

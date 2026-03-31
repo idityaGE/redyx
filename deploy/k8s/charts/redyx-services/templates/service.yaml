@@ -1,0 +1,66 @@
+{{/*
+Service template for all Redyx microservices
+Creates ClusterIP services for internal communication
+*/}}
+
+{{- $root := . -}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}-service
+  labels:
+    {{- include "redyx-services.serviceLabels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $serviceName }}-service
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: {{ $serviceConfig.port }}
+      targetPort: grpc
+      protocol: TCP
+    {{- if $serviceConfig.websocketPort }}
+    - name: websocket
+      port: {{ $serviceConfig.websocketPort }}
+      targetPort: websocket
+      protocol: TCP
+    {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ $serviceName }}-service
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Envoy gateway service (if enabled)
+Exposed as NodePort for external access
+*/}}
+{{- if .Values.envoy.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-gateway
+  labels:
+    {{- include "redyx-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: envoy-gateway
+    app.kubernetes.io/component: gateway
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: {{ .Values.envoy.port | default 8080 }}
+      targetPort: http
+      nodePort: 30808
+      protocol: TCP
+    - name: admin
+      port: {{ .Values.envoy.adminPort | default 9901 }}
+      targetPort: admin
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: envoy-gateway
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

@@ -1,0 +1,146 @@
+{{/*
+Deployment template for all Redyx microservices
+Loops over .Values.services and creates a Deployment for each enabled service
+*/}}
+
+{{- $root := . -}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}-service
+  labels:
+    {{- include "redyx-services.serviceLabels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $serviceName }}-service
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  replicas: {{ $serviceConfig.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $serviceName }}-service
+      app.kubernetes.io/instance: {{ $root.Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $serviceName }}-service
+        app.kubernetes.io/instance: {{ $root.Release.Name }}
+        app.kubernetes.io/part-of: redyx
+      annotations:
+        # Force pod restart on ConfigMap changes
+        checksum/config: {{ include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum | trunc 8 }}
+    spec:
+      containers:
+        - name: {{ $serviceName }}
+          image: {{ printf "redyx/%s-service:%s" $serviceName ($root.Values.global.image.tag | default "dev") }}
+          imagePullPolicy: {{ $root.Values.global.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: grpc
+              containerPort: {{ $serviceConfig.port }}
+              protocol: TCP
+            {{- if $serviceConfig.websocketPort }}
+            - name: websocket
+              containerPort: {{ $serviceConfig.websocketPort }}
+              protocol: TCP
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $serviceName }}-service-config
+          env:
+            # JWT secret from global config (could be secret reference in production)
+            - name: JWT_SECRET
+              value: {{ $root.Values.global.jwtSecret | quote }}
+            # Kafka brokers for services that need it
+            - name: KAFKA_BROKERS
+              value: {{ $root.Values.global.kafka.brokers | quote }}
+          resources:
+            {{- toYaml $serviceConfig.resources | nindent 12 }}
+          readinessProbe:
+            grpc:
+              port: {{ $serviceConfig.port }}
+            initialDelaySeconds: {{ $serviceConfig.readinessProbe.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ $serviceConfig.readinessProbe.periodSeconds | default 10 }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            grpc:
+              port: {{ $serviceConfig.port }}
+            initialDelaySeconds: {{ $serviceConfig.livenessProbe.initialDelaySeconds | default 15 }}
+            periodSeconds: {{ $serviceConfig.livenessProbe.periodSeconds | default 20 }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+{{- end }}
+{{- end }}
+
+{{/*
+Envoy gateway deployment (if enabled)
+*/}}
+{{- if .Values.envoy.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy-gateway
+  labels:
+    {{- include "redyx-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: envoy-gateway
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: {{ .Values.envoy.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envoy-gateway
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: envoy-gateway
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: redyx
+    spec:
+      containers:
+        - name: envoy
+          image: envoyproxy/envoy:v1.37.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ .Values.envoy.port | default 8080 }}
+              protocol: TCP
+            - name: admin
+              containerPort: {{ .Values.envoy.adminPort | default 9901 }}
+              protocol: TCP
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /etc/envoy
+              readOnly: true
+          resources:
+            {{- toYaml .Values.envoy.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.envoy.adminPort | default 9901 }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.envoy.adminPort | default 9901 }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: envoy-config
+      restartPolicy: Always
+{{- end }}

@@ -1,0 +1,163 @@
+# Redyx Services Helm Chart - Local Development Values
+# Overrides for kind cluster deployment
+
+global:
+  image:
+    # Never pull images - use kind load docker-image
+    pullPolicy: Never
+    tag: "dev"
+  
+  # OpenTelemetry tracing configuration
+  otel:
+    enabled: true
+    endpoint: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+
+# Lower resource limits for local development
+services:
+  skeleton:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "skeleton-service"
+
+  auth:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "auth-service"
+
+  user:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "user-service"
+
+  community:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "community-service"
+
+  post:
+    resources:
+      requests:
+        cpu: 75m
+        memory: 128Mi
+      limits:
+        cpu: 375m
+        memory: 384Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "post-service"
+
+  vote:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "vote-service"
+
+  comment:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "comment-service"
+
+  search:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "search-service"
+
+  notification:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "notification-service"
+
+  media:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 384Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "media-service"
+
+  moderation:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "moderation-service"
+
+  spam:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    env:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
+      OTEL_SERVICE_NAME: "spam-service"
+
+# HPA disabled for local dev (single replica is sufficient)
+hpa:
+  enabled: false
