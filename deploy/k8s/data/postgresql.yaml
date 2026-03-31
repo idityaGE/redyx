@@ -1,0 +1,36 @@
+# bitnami/postgresql chart values
+# Helm: helm upgrade --install postgresql bitnami/postgresql -n redyx-data -f deploy/k8s/data/postgresql.yaml
+
+global:
+  postgresql:
+    auth:
+      postgresPassword: "dev"
+      username: "redyx"
+      password: "dev"
+      database: "skeleton"
+
+primary:
+  persistence:
+    enabled: true
+    size: 1Gi
+  initdb:
+    scriptsConfigMap: postgresql-init-scripts  # Created from init-databases.sql
+
+service:
+  type: ClusterIP
+  ports:
+    postgresql: 5432
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: redyx-monitoring

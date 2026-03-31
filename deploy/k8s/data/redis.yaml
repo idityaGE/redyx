@@ -1,0 +1,25 @@
+# bitnami/redis chart values
+# Helm: helm upgrade --install redis bitnami/redis -n redyx-data -f deploy/k8s/data/redis.yaml
+
+architecture: standalone
+
+auth:
+  enabled: false  # Match docker-compose (no auth)
+
+master:
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: redyx-monitoring
