@@ -1,0 +1,50 @@
+# bitnami/kafka chart values - KRaft mode (no Zookeeper)
+# Helm: helm upgrade --install kafka bitnami/kafka -n redyx-data -f deploy/k8s/data/kafka.yaml
+
+kraft:
+  enabled: true
+  clusterId: "MkU3OEVBNTcwNTJENDM2Qk"  # Match docker-compose
+
+controller:
+  replicaCount: 1
+
+broker:
+  replicaCount: 1
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+provisioning:
+  enabled: true
+  topics:
+    - name: redyx.votes.v1
+      partitions: 6
+      replicationFactor: 1
+    - name: redyx.posts.v1
+      partitions: 3
+      replicationFactor: 1
+    - name: redyx.comments.v1
+      partitions: 3
+      replicationFactor: 1
+
+metrics:
+  kafka:
+    enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: redyx-monitoring

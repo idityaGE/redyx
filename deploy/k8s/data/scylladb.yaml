@@ -1,0 +1,36 @@
+# ScyllaDB via bitnami/cassandra chart with ScyllaDB image override
+# Helm: helm upgrade --install scylladb bitnami/cassandra -n redyx-data -f deploy/k8s/data/scylladb.yaml
+# Note: ScyllaDB operator is complex for local dev, using Cassandra chart with image override
+
+image:
+  registry: docker.io
+  repository: scylladb/scylla
+  tag: "6.2"
+
+cluster:
+  name: redyx-scylla
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Developer mode for local (reduced resource usage)
+extraEnvVars:
+  - name: SCYLLA_DEVELOPER_MODE
+    value: "1"
+
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 30
+
+# Keyspace init handled by comment-service migrations

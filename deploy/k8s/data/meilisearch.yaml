@@ -1,0 +1,18 @@
+# meilisearch/meilisearch chart values
+# Helm: helm upgrade --install meilisearch meilisearch/meilisearch -n redyx-data -f deploy/k8s/data/meilisearch.yaml
+
+environment:
+  MEILI_ENV: development
+  MEILI_MASTER_KEY: "dev-master-key"
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

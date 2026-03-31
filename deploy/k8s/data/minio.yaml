@@ -1,0 +1,27 @@
+# bitnami/minio chart values
+# Helm: helm upgrade --install minio bitnami/minio -n redyx-data -f deploy/k8s/data/minio.yaml
+
+auth:
+  rootUser: minioadmin
+  rootPassword: minioadmin
+
+defaultBuckets: "redyx-media"
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Console access
+service:
+  type: ClusterIP
+  ports:
+    api: 9000
+    console: 9001
