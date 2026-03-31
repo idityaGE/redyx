@@ -1,0 +1,37 @@
+# grafana/loki-stack chart values (includes Promtail)
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 5Gi
+  config:
+    limits_config:
+      retention_period: 168h  # 7 days
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    positions:
+      filename: /tmp/positions.yaml
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_promtail_io_scrape]
+            action: drop
+            regex: 'false'
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+  tolerations: []
+  extraArgs:
+    - -client.external-labels=cluster=redyx

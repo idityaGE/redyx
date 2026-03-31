@@ -1,0 +1,39 @@
+# jaegertracing/jaeger chart values
+provisionDataStore:
+  cassandra: false
+  elasticsearch: false
+  kafka: false
+
+storage:
+  type: memory  # Good enough for local dev, no persistence
+
+collector:
+  enabled: true
+  service:
+    otlp:
+      grpc:
+        name: otlp-grpc
+        port: 4317
+      http:
+        name: otlp-http
+        port: 4318
+
+query:
+  enabled: true
+  service:
+    type: ClusterIP
+    port: 16686
+
+agent:
+  enabled: false  # Services send directly to collector via OTLP
+
+allInOne:
+  enabled: false  # Use separate components for clarity
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
