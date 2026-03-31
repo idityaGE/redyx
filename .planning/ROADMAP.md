@@ -155,13 +155,16 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Kubernetes deployment runs all services with HPA, readiness/liveness probes, and namespace isolation
   2. Prometheus collects metrics from every service, Grafana displays per-service and global dashboards, Loki aggregates structured logs, and Jaeger visualizes distributed traces across service boundaries
-  3. Page loads complete under 2 seconds on fast 4G connection — verified with Lighthouse or equivalent performance audit
-**Plans**: TBD
+  3. Page loads complete under 2 seconds on fast 4G connection — verified with Lighthouse or equivalent performance audit (DEFERRED per user decision)
+**Plans**: 6 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md — Kind cluster config, Helm chart structure, Makefile K8s targets
+- [ ] 07-02-PLAN.md — Data stores deployment (PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO)
+- [ ] 07-03-PLAN.md — Observability stack (Prometheus, Grafana, Loki, Jaeger) with dashboards
+- [ ] 07-04-PLAN.md — Go service instrumentation (promgrpc metrics + OTEL tracing)
+- [ ] 07-05-PLAN.md — Application services deployment with HPAs and ServiceMonitors
+- [ ] 07-06-PLAN.md — E2E verification checkpoint
 
 ## Progress
 
@@ -176,4 +179,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Comments (Full Stack) | 4/4 | ✓ Complete | 2026-03-04 |
 | 5. Search + Notifications + Media (Full Stack) | 9/9 | ✓ Complete | 2026-03-05 |
 | 6. Moderation + Spam (Full Stack) | 7/7 | ✓ Complete | 2026-03-31 |
-| 7. Deployment + Observability | 0/? | Not started | - |
+| 7. Deployment + Observability | 0/6 | Planned | - |
