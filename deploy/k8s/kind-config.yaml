@@ -1,0 +1,33 @@
+# Kind cluster configuration for Redyx development
+# Creates a single control-plane node with NodePort access for ingress
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: redyx
+nodes:
+  - role: control-plane
+    # Extra port mappings for NodePort access from host
+    extraPortMappings:
+      # HTTP ingress
+      - containerPort: 30080
+        hostPort: 80
+        protocol: TCP
+      # HTTPS ingress
+      - containerPort: 30443
+        hostPort: 443
+        protocol: TCP
+      # Envoy gateway (for API access)
+      - containerPort: 30808
+        hostPort: 8080
+        protocol: TCP
+    # Mount docker socket for potential Docker-in-Docker needs
+    extraMounts:
+      - hostPath: /var/run/docker.sock
+        containerPath: /var/run/docker.sock
+    # Labels for ingress controller scheduling
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
