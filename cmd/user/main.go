@@ -26,6 +26,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/database"
 	"github.com/redyx/redyx/internal/platform/grpcserver"
 	"github.com/redyx/redyx/internal/platform/middleware"
+	"github.com/redyx/redyx/internal/platform/observability"
 	"github.com/redyx/redyx/internal/platform/ratelimit"
 	platformredis "github.com/redyx/redyx/internal/platform/redis"
 	"github.com/redyx/redyx/internal/user"
@@ -43,18 +44,34 @@ func main() {
 	// Load config — database URL defaults to user_profiles
 	cfg := config.Load("user_profiles")
 
+	// Initialize metrics
+	metrics, err := observability.InitMetrics(logger)
+	if err != nil {
+		logger.Fatal("failed to init metrics", zap.Error(err))
+	}
+
+	// Initialize tracing (optional - returns nil if env not set)
+	ctx := context.Background()
+	tracer, err := observability.InitTracing(ctx, logger)
+	if err != nil {
+		logger.Fatal("failed to init tracing", zap.Error(err))
+	}
+	if tracer != nil {
+		defer tracer.Shutdown(ctx)
+	}
+
 	// Connect to PostgreSQL (user_profiles database)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	dbCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	db, err := database.NewPostgres(ctx, cfg.DatabaseURL)
+	db, err := database.NewPostgres(dbCtx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Fatal("failed to connect to postgres", zap.Error(err))
 	}
 	defer db.Close()
 
 	// Run migrations
-	if err := runMigrations(ctx, db, logger); err != nil {
+	if err := runMigrations(dbCtx, db, logger); err != nil {
 		logger.Fatal("failed to run migrations", zap.Error(err))
 	}
 
@@ -73,12 +90,17 @@ func main() {
 	// Recovery → Logging → Auth → RateLimit → ErrorMapping
 	// Auth runs before RateLimit so rate limiter can differentiate anonymous vs authenticated tiers
 	srv := grpcserver.New(cfg.GRPCPort, logger,
+		grpcserver.WithServerOptions(observability.StatsHandler()),
 		grpcserver.WithUnaryInterceptors(
+			metrics.UnaryInterceptor(),
 			middleware.Recovery(logger),
 			middleware.Logging(logger),
 			auth.UnaryInterceptor(jwtValidator),
 			ratelimit.UnaryInterceptor(limiter, cfg.RateLimitEnabled),
 			middleware.ErrorMapping(),
+		),
+		grpcserver.WithStreamInterceptors(
+			metrics.StreamInterceptor(),
 		),
 	)
 

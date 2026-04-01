@@ -14,6 +14,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/database"
 	"github.com/redyx/redyx/internal/platform/grpcserver"
 	"github.com/redyx/redyx/internal/platform/middleware"
+	"github.com/redyx/redyx/internal/platform/observability"
 	platformredis "github.com/redyx/redyx/internal/platform/redis"
 	"github.com/redyx/redyx/internal/skeleton"
 )
@@ -29,10 +30,25 @@ func main() {
 	// Load config from environment
 	cfg := config.Load("skeleton")
 
-	// Connect to PostgreSQL
+	// Initialize metrics
+	metrics, err := observability.InitMetrics(logger)
+	if err != nil {
+		logger.Fatal("failed to init metrics", zap.Error(err))
+	}
+
+	// Initialize tracing (optional - returns nil if env not set)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	tracer, err := observability.InitTracing(ctx, logger)
+	if err != nil {
+		logger.Fatal("failed to init tracing", zap.Error(err))
+	}
+	if tracer != nil {
+		defer tracer.Shutdown(ctx)
+	}
+
+	// Connect to PostgreSQL
 	db, err := database.NewPostgres(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Fatal("failed to connect to postgres", zap.Error(err))
@@ -48,10 +64,15 @@ func main() {
 
 	// Create gRPC server with all middleware
 	srv := grpcserver.New(cfg.GRPCPort, logger,
+		grpcserver.WithServerOptions(observability.StatsHandler()),
 		grpcserver.WithUnaryInterceptors(
+			metrics.UnaryInterceptor(),
 			middleware.Recovery(logger),
 			middleware.Logging(logger),
 			middleware.ErrorMapping(),
+		),
+		grpcserver.WithStreamInterceptors(
+			metrics.StreamInterceptor(),
 		),
 	)
 

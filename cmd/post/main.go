@@ -27,6 +27,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/config"
 	"github.com/redyx/redyx/internal/platform/grpcserver"
 	"github.com/redyx/redyx/internal/platform/middleware"
+	"github.com/redyx/redyx/internal/platform/observability"
 	"github.com/redyx/redyx/internal/platform/ratelimit"
 	platformredis "github.com/redyx/redyx/internal/platform/redis"
 	"github.com/redyx/redyx/internal/post"
@@ -43,6 +44,22 @@ func main() {
 	// Load config from environment
 	cfg := config.Load("post")
 
+	// Initialize metrics
+	metrics, err := observability.InitMetrics(logger)
+	if err != nil {
+		logger.Fatal("failed to init metrics", zap.Error(err))
+	}
+
+	// Initialize tracing (optional - returns nil if env not set)
+	ctx := context.Background()
+	tracer, err := observability.InitTracing(ctx, logger)
+	if err != nil {
+		logger.Fatal("failed to init tracing", zap.Error(err))
+	}
+	if tracer != nil {
+		defer tracer.Shutdown(ctx)
+	}
+
 	// Create shard router from configured DSNs
 	shardRouter, err := post.NewShardRouter(cfg.PostShardDSNs)
 	if err != nil {
@@ -51,13 +68,13 @@ func main() {
 	defer shardRouter.Close()
 
 	// Run migrations on each shard
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	dbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	pools := shardRouter.AllPools()
 	for i, pool := range pools {
 		migrationsDir := fmt.Sprintf("migrations/post_shard_%d", i)
-		if err := runMigrations(ctx, pool, migrationsDir, logger); err != nil {
+		if err := runMigrations(dbCtx, pool, migrationsDir, logger); err != nil {
 			logger.Fatal("failed to run migrations",
 				zap.Int("shard", i),
 				zap.Error(err),
@@ -156,12 +173,17 @@ func main() {
 	// Create gRPC server with middleware chain:
 	// Recovery → Logging → AuthInterceptor → RateLimit → ErrorMapping
 	srv := grpcserver.New(cfg.GRPCPort, logger,
+		grpcserver.WithServerOptions(observability.StatsHandler()),
 		grpcserver.WithUnaryInterceptors(
+			metrics.UnaryInterceptor(),
 			middleware.Recovery(logger),
 			middleware.Logging(logger),
 			auth.UnaryInterceptor(jwtValidator),
 			ratelimit.UnaryInterceptor(limiter, cfg.RateLimitEnabled),
 			middleware.ErrorMapping(),
+		),
+		grpcserver.WithStreamInterceptors(
+			metrics.StreamInterceptor(),
 		),
 	)
 

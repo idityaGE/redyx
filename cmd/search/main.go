@@ -23,6 +23,7 @@ import (
 	"github.com/redyx/redyx/internal/platform/config"
 	"github.com/redyx/redyx/internal/platform/grpcserver"
 	"github.com/redyx/redyx/internal/platform/middleware"
+	"github.com/redyx/redyx/internal/platform/observability"
 	"github.com/redyx/redyx/internal/platform/ratelimit"
 	platformredis "github.com/redyx/redyx/internal/platform/redis"
 	"github.com/redyx/redyx/internal/search"
@@ -38,6 +39,22 @@ func main() {
 
 	// Load config from environment.
 	cfg := config.Load("search")
+
+	// Initialize metrics
+	metrics, err := observability.InitMetrics(logger)
+	if err != nil {
+		logger.Fatal("failed to init metrics", zap.Error(err))
+	}
+
+	// Initialize tracing (optional - returns nil if env not set)
+	ctx := context.Background()
+	tracer, err := observability.InitTracing(ctx, logger)
+	if err != nil {
+		logger.Fatal("failed to init tracing", zap.Error(err))
+	}
+	if tracer != nil {
+		defer tracer.Shutdown(ctx)
+	}
 
 	// Create Meilisearch client and configure indexes.
 	meili, err := search.NewMeiliClient(cfg.MeilisearchURL, cfg.MeilisearchAPIKey, logger)
@@ -83,12 +100,17 @@ func main() {
 	// Create gRPC server with middleware chain:
 	// Recovery -> Logging -> Auth -> RateLimit -> ErrorMapping
 	srv := grpcserver.New(cfg.GRPCPort, logger,
+		grpcserver.WithServerOptions(observability.StatsHandler()),
 		grpcserver.WithUnaryInterceptors(
+			metrics.UnaryInterceptor(),
 			middleware.Recovery(logger),
 			middleware.Logging(logger),
 			auth.UnaryInterceptor(jwtValidator),
 			ratelimit.UnaryInterceptor(limiter, cfg.RateLimitEnabled),
 			middleware.ErrorMapping(),
+		),
+		grpcserver.WithStreamInterceptors(
+			metrics.StreamInterceptor(),
 		),
 	)
 
