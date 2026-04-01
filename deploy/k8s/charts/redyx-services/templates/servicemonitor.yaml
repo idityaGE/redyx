@@ -1,0 +1,32 @@
+{{/*
+ServiceMonitor template for Prometheus scraping
+Creates a ServiceMonitor for each enabled service
+*/}}
+
+{{- $root := . -}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if and $serviceConfig.enabled $serviceConfig.metricsPort }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $serviceName }}-service
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "redyx-services.serviceLabels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $serviceName }}-service
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $serviceName }}-service
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - {{ $root.Release.Namespace }}
+{{- end }}
+{{- end }}
