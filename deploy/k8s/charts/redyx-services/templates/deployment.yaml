@@ -39,6 +39,11 @@ spec:
             - name: grpc
               containerPort: {{ $serviceConfig.port }}
               protocol: TCP
+            {{- if $serviceConfig.metricsPort }}
+            - name: metrics
+              containerPort: {{ $serviceConfig.metricsPort }}
+              protocol: TCP
+            {{- end }}
             {{- if $serviceConfig.websocketPort }}
             - name: websocket
               containerPort: {{ $serviceConfig.websocketPort }}

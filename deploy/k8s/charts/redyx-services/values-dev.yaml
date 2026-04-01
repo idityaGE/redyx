@@ -23,6 +23,10 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/skeleton?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/0"
+      GRPC_PORT: "50051"
+      METRICS_PORT: "9090"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "skeleton-service"
 
@@ -35,6 +39,10 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/auth?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/1"
+      GRPC_PORT: "50052"
+      METRICS_PORT: "9090"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "auth-service"
 
@@ -47,6 +55,13 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/user_profiles?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/2"
+      GRPC_PORT: "50053"
+      METRICS_PORT: "9090"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      COMMENT_SERVICE_ADDR: "comment-service.redyx-app.svc.cluster.local:50057"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "user-service"
 
@@ -59,6 +74,10 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/community?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/3"
+      GRPC_PORT: "50054"
+      METRICS_PORT: "9090"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "community-service"
 
@@ -71,6 +90,14 @@ services:
         cpu: 375m
         memory: 384Mi
     env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/4"
+      GRPC_PORT: "50055"
+      METRICS_PORT: "9090"
+      POST_SHARD_DSNS: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/posts_shard_0?sslmode=disable,postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/posts_shard_1?sslmode=disable"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+      MEDIA_SERVICE_ADDR: "media-service.redyx-app.svc.cluster.local:50060"
+      SPAM_SERVICE_ADDR: "spam-service.redyx-app.svc.cluster.local:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "post-service"
 
@@ -83,6 +110,9 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/5"
+      GRPC_PORT: "50056"
+      METRICS_PORT: "9090"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "vote-service"
 
@@ -95,6 +125,14 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      SCYLLADB_HOSTS: "scylladb.redyx-data.svc.cluster.local:9042"
+      SCYLLADB_KEYSPACE: "redyx_comments"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/6"
+      GRPC_PORT: "50057"
+      METRICS_PORT: "9090"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      SPAM_SERVICE_ADDR: "spam-service.redyx-app.svc.cluster.local:50062"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "comment-service"
 
@@ -107,6 +145,12 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/7"
+      GRPC_PORT: "50058"
+      METRICS_PORT: "9090"
+      MEILISEARCH_URL: "http://meilisearch.redyx-data.svc.cluster.local:7700"
+      MEILISEARCH_API_KEY: "dev-master-key"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "search-service"
 
@@ -119,6 +163,11 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/notifications?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/8"
+      GRPC_PORT: "50059"
+      METRICS_PORT: "9090"
+      WEBSOCKET_PORT: "8081"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "notification-service"
 
@@ -131,6 +180,15 @@ services:
         cpu: 250m
         memory: 384Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/media?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/9"
+      GRPC_PORT: "50060"
+      METRICS_PORT: "9090"
+      MINIO_ENDPOINT: "http://minio.redyx-data.svc.cluster.local:9000"
+      MINIO_PUBLIC_ENDPOINT: "http://localhost:30900"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "redyx-media"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "media-service"
 
@@ -143,6 +201,14 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      DATABASE_URL: "postgres://redyx:dev@postgresql.redyx-data.svc.cluster.local:5432/moderation?sslmode=disable"
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/10"
+      GRPC_PORT: "50061"
+      METRICS_PORT: "9090"
+      COMMUNITY_SERVICE_ADDR: "community-service.redyx-app.svc.cluster.local:50054"
+      POST_SERVICE_ADDR: "post-service.redyx-app.svc.cluster.local:50055"
+      COMMENT_SERVICE_ADDR: "comment-service.redyx-app.svc.cluster.local:50057"
+      RATE_LIMIT_ENABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "moderation-service"
 
@@ -155,6 +221,11 @@ services:
         cpu: 250m
         memory: 256Mi
     env:
+      REDIS_URL: "redis://redis-master.redyx-data.svc.cluster.local:6379/11"
+      GRPC_PORT: "50062"
+      METRICS_PORT: "9090"
+      MODERATION_SERVICE_ADDR: "moderation-service.redyx-app.svc.cluster.local:50061"
+      RATE_LIMIT_ENABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: "jaeger-collector.redyx-monitoring.svc.cluster.local:4317"
       OTEL_SERVICE_NAME: "spam-service"
 

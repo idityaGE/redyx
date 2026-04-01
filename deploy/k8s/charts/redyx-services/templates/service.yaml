@@ -22,6 +22,12 @@ spec:
       port: {{ $serviceConfig.port }}
       targetPort: grpc
       protocol: TCP
+    {{- if $serviceConfig.metricsPort }}
+    - name: metrics
+      port: {{ $serviceConfig.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+    {{- end }}
     {{- if $serviceConfig.websocketPort }}
     - name: websocket
       port: {{ $serviceConfig.websocketPort }}
