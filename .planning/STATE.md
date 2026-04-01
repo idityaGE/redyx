@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-04-01T03:36:31Z"
-last_activity: "2026-04-01 — Completed Plan 07-03: Observability Stack"
+status: in_progress
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-04-01T04:10:00Z"
+last_activity: "2026-04-01 — Completed Plan 07-04: Service Instrumentation"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 46
-  completed_plans: 43
-  percent: 93
+  completed_plans: 44
+  percent: 96
 ---
 
 # State: Redyx
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 7: Deployment + Observability — Observability stack complete
+**Current focus:** Phase 7: Deployment + Observability — Service instrumentation complete
 
 ## Current Position
 
 Phase: 7 of 7 — In Progress
-Plan: 3 of 6 complete in Phase 7
-Status: Plan 07-03 (Observability Stack) complete. Ready for Plan 07-04.
-Last activity: 2026-04-01 — Completed Plan 07-03: Observability Stack
+Plan: 4 of 6 complete in Phase 7
+Status: Plan 07-04 (Service Instrumentation) complete. Ready for Plan 07-05.
+Last activity: 2026-04-01 — Completed Plan 07-04: Service Instrumentation
 
-Progress: [█████████░] 93% (Plan 43/46 overall, Phase 7 in progress)
+Progress: [██████████] 96% (Plan 44/46 overall, Phase 7 in progress)
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [█████████░] 93% (Plan 43/46 overall, Phase 7 in p
 | Phase 06 P07 | 1 min | 2 tasks | 0 files |
 | Phase 07 P02 | 51 min | 3 tasks | 7 files |
 | Phase 07 P03 | 15 min | 3 tasks | 17 files |
+| Phase 07 P04 | 8 min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,10 @@ Recent decisions affecting current work:
 - [07-03]: Dashboard provisioning via ConfigMap from version-controlled JSON files
 - [07-03]: In-memory Jaeger storage for local dev (no persistence required)
 - [07-03]: OTLP collector endpoints (4317/4318) for traces
+- [07-04]: Metrics HTTP server on METRICS_PORT (default 9090) for Prometheus scraping
+- [07-04]: Tracing optional via OTEL_EXPORTER_OTLP_ENDPOINT env var (nil if not set)
+- [07-04]: grpc.StatsHandler via WithServerOptions for OTEL tracing injection
+- [07-04]: Trace context extracted via trace.SpanContextFromContext in logging middleware
 - [Phase 07]: K8s DNS names use {service}.{namespace}.svc.cluster.local pattern for all internal service discovery
 
 ### Context from Init
@@ -227,9 +232,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-01T03:36:31Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-04-01T04:10:00Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-04-01 — Phase 7 Plan 3 complete: Observability Stack*
+*Last updated: 2026-04-01 — Phase 7 Plan 4 complete: Service Instrumentation*
