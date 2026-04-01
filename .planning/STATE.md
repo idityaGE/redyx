@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-04-01T04:10:00Z"
-last_activity: "2026-04-01 — Completed Plan 07-04: Service Instrumentation"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-04-01T08:08:40Z"
+last_activity: "2026-04-01 — Completed Plan 07-05: Helm Values, ServiceMonitor & Envoy K8s Config"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 46
-  completed_plans: 44
-  percent: 96
+  completed_plans: 45
+  percent: 98
 ---
 
 # State: Redyx
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 7: Deployment + Observability — Service instrumentation complete
+**Current focus:** Phase 7: Deployment + Observability — Helm values and ServiceMonitor complete
 
 ## Current Position
 
 Phase: 7 of 7 — In Progress
-Plan: 4 of 6 complete in Phase 7
-Status: Plan 07-04 (Service Instrumentation) complete. Ready for Plan 07-05.
-Last activity: 2026-04-01 — Completed Plan 07-04: Service Instrumentation
+Plan: 5 of 6 complete in Phase 7
+Status: Plan 07-05 (Helm Values, ServiceMonitor & Envoy K8s Config) complete. Ready for Plan 07-06.
+Last activity: 2026-04-01 — Completed Plan 07-05: Helm Values, ServiceMonitor & Envoy K8s Config
 
-Progress: [██████████] 96% (Plan 44/46 overall, Phase 7 in progress)
+Progress: [██████████] 98% (Plan 45/46 overall, Phase 7 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 40
+- Total plans completed: 45
 - Average duration: ~10 min
-- Total execution time: ~5.6 hours
+- Total execution time: ~5.7 hours
 
 **By Phase:**
 
@@ -58,6 +58,7 @@ Progress: [██████████] 96% (Plan 44/46 overall, Phase 7 in p
 | Phase 07 P02 | 51 min | 3 tasks | 7 files |
 | Phase 07 P03 | 15 min | 3 tasks | 17 files |
 | Phase 07 P04 | 8 min | 3 tasks | 14 files |
+| Phase 07 P05 | 6 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -202,6 +203,9 @@ Recent decisions affecting current work:
 - [07-04]: grpc.StatsHandler via WithServerOptions for OTEL tracing injection
 - [07-04]: Trace context extracted via trace.SpanContextFromContext in logging middleware
 - [Phase 07]: K8s DNS names use {service}.{namespace}.svc.cluster.local pattern for all internal service discovery
+- [07-05]: ServiceMonitor template iterates over enabled services with metricsPort for Prometheus scraping
+- [07-05]: Envoy ConfigMap split into envoy-config (yaml) and envoy-proto (binaryData) for proper mount handling
+- [07-05]: Helm Files.Get pattern for loading external config files into ConfigMaps
 
 ### Context from Init
 
@@ -232,9 +236,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-01T04:10:00Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-04-01T08:08:40Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-04-01 — Phase 7 Plan 4 complete: Service Instrumentation*
+*Last updated: 2026-04-01 — Phase 7 Plan 5 complete: Helm Values, ServiceMonitor & Envoy K8s Config*
