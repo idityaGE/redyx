@@ -29,6 +29,7 @@ type Server struct {
 type serverConfig struct {
 	unaryInterceptors  []grpc.UnaryServerInterceptor
 	streamInterceptors []grpc.StreamServerInterceptor
+	serverOptions      []grpc.ServerOption
 }
 
 // Option configures the gRPC server.
@@ -48,6 +49,13 @@ func WithStreamInterceptors(interceptors ...grpc.StreamServerInterceptor) Option
 	}
 }
 
+// WithServerOptions appends raw gRPC server options (e.g., stats handler for tracing).
+func WithServerOptions(opts ...grpc.ServerOption) Option {
+	return func(c *serverConfig) {
+		c.serverOptions = append(c.serverOptions, opts...)
+	}
+}
+
 // New creates a gRPC server with health checking, reflection, and the provided
 // interceptors. Initial health status is set to SERVING.
 func New(port int, logger *zap.Logger, opts ...Option) *Server {
@@ -57,6 +65,8 @@ func New(port int, logger *zap.Logger, opts ...Option) *Server {
 	}
 
 	var serverOpts []grpc.ServerOption
+	// Add custom server options (like stats handler for tracing)
+	serverOpts = append(serverOpts, cfg.serverOptions...)
 	if len(cfg.unaryInterceptors) > 0 {
 		serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(cfg.unaryInterceptors...))
 	}

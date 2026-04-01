@@ -6,16 +6,30 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 // Logging returns a gRPC UnaryServerInterceptor that logs every RPC call
-// with method name, duration, and status code using structured zap logging.
+// with method name, duration, status code, and trace context (if present)
+// using structured zap logging.
 func Logging(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
+
+		// Extract trace context if present
+		spanCtx := trace.SpanContextFromContext(ctx)
+		fields := []zap.Field{
+			zap.String("method", info.FullMethod),
+		}
+		if spanCtx.IsValid() {
+			fields = append(fields,
+				zap.String("trace_id", spanCtx.TraceID().String()),
+				zap.String("span_id", spanCtx.SpanID().String()),
+			)
+		}
 
 		resp, err := handler(ctx, req)
 
@@ -23,11 +37,11 @@ func Logging(logger *zap.Logger) grpc.UnaryServerInterceptor {
 		st, _ := status.FromError(err)
 		code := st.Code()
 
-		fields := []zap.Field{
-			zap.String("method", info.FullMethod),
+		// Add duration and status to fields
+		fields = append(fields,
 			zap.Duration("duration", duration),
 			zap.String("code", code.String()),
-		}
+		)
 
 		switch {
 		case err == nil:
