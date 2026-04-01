@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-03-31T23:08:20.415Z"
-last_activity: "2026-03-31 — Completed Plan 07-01: K8s Infrastructure Foundation"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-04-01T03:36:31Z"
+last_activity: "2026-04-01 — Completed Plan 07-03: Observability Stack"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 46
-  completed_plans: 42
-  percent: 91
+  completed_plans: 43
+  percent: 93
 ---
 
 # State: Redyx
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Users can anonymously create communities, post content, and have threaded discussions — with minimal personal data collected and maximum privacy preserved.
-**Current focus:** Phase 7: Deployment + Observability — K8s data stores configuration complete
+**Current focus:** Phase 7: Deployment + Observability — Observability stack complete
 
 ## Current Position
 
 Phase: 7 of 7 — In Progress
-Plan: 2 of 6 complete in Phase 7
-Status: Plan 07-02 (K8s Data Stores) complete. Ready for Plan 07-03.
-Last activity: 2026-03-31 — Completed Plan 07-02: K8s Data Stores
+Plan: 3 of 6 complete in Phase 7
+Status: Plan 07-03 (Observability Stack) complete. Ready for Plan 07-04.
+Last activity: 2026-04-01 — Completed Plan 07-03: Observability Stack
 
-Progress: [█████████░] 91% (Plan 42/46 overall, Phase 7 in progress)
+Progress: [█████████░] 93% (Plan 43/46 overall, Phase 7 in progress)
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█████████░] 91% (Plan 42/46 overall, Phase 7 in p
 | Phase 06 P06 | 10 min | 2 tasks | 8 files |
 | Phase 06 P07 | 1 min | 2 tasks | 0 files |
 | Phase 07 P02 | 51 min | 3 tasks | 7 files |
+| Phase 07 P03 | 15 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -191,6 +192,10 @@ Recent decisions affecting current work:
 - [07-02]: ScyllaDB via bitnami/cassandra chart with ScyllaDB image override (operator too complex for local dev)
 - [07-02]: Kafka KRaft mode with topic provisioning for votes, posts, comments on startup
 - [07-02]: ConfigMap from file pattern for PostgreSQL init scripts
+- [07-03]: Separate Grafana release (not bundled with kube-prometheus-stack) for dashboard control
+- [07-03]: Dashboard provisioning via ConfigMap from version-controlled JSON files
+- [07-03]: In-memory Jaeger storage for local dev (no persistence required)
+- [07-03]: OTLP collector endpoints (4317/4318) for traces
 - [Phase 07]: K8s DNS names use {service}.{namespace}.svc.cluster.local pattern for all internal service discovery
 
 ### Context from Init
@@ -222,9 +227,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-31T23:08:20.410Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-04-01T03:36:31Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-03-31 — Phase 6 complete, ready for Phase 7: Deployment + Observability*
+*Last updated: 2026-04-01 — Phase 7 Plan 3 complete: Observability Stack*
