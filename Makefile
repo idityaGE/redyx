@@ -107,7 +107,34 @@ k8s-data-down:  ## Uninstall data stores
 	-helm uninstall minio -n $(K8S_NAMESPACE_DATA)
 
 k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaeger)
-	@echo "Monitoring deployment - see Plan 03"
+	@echo "Adding Helm repos..."
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo add grafana https://grafana.github.io/helm-charts
+	helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+	helm repo update
+	@echo "Creating dashboard ConfigMap..."
+	kubectl create configmap grafana-dashboards -n $(K8S_NAMESPACE_MON) \
+		--from-file=deploy/k8s/dashboards/ \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "Deploying Prometheus..."
+	helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/prometheus.yaml --wait --timeout 5m
+	@echo "Deploying Loki..."
+	helm upgrade --install loki grafana/loki-stack \
+		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/loki.yaml --wait
+	@echo "Deploying Jaeger..."
+	helm upgrade --install jaeger jaegertracing/jaeger \
+		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/jaeger.yaml --wait
+	@echo "Deploying Grafana..."
+	helm upgrade --install grafana grafana/grafana \
+		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/grafana.yaml --wait
+	@echo "Observability stack deployed!"
+
+k8s-monitoring-down:  ## Uninstall observability stack
+	-helm uninstall grafana -n $(K8S_NAMESPACE_MON)
+	-helm uninstall jaeger -n $(K8S_NAMESPACE_MON)
+	-helm uninstall loki -n $(K8S_NAMESPACE_MON)
+	-helm uninstall prometheus -n $(K8S_NAMESPACE_MON)
 
 k8s-app:  ## Deploy all microservices via Helm
 	helm upgrade --install redyx-app deploy/k8s/charts/redyx-services \
