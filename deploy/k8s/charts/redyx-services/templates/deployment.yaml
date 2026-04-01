@@ -113,6 +113,9 @@ spec:
         app.kubernetes.io/name: envoy-gateway
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/part-of: redyx
+      annotations:
+        # Force pod restart on ConfigMap changes
+        checksum/config: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum | trunc 8 }}
     spec:
       containers:
         - name: envoy
@@ -127,7 +130,12 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: envoy-config
-              mountPath: /etc/envoy
+              mountPath: /etc/envoy/envoy.yaml
+              subPath: envoy.yaml
+              readOnly: true
+            - name: envoy-proto
+              mountPath: /etc/envoy/proto.pb
+              subPath: proto.pb
               readOnly: true
           resources:
             {{- toYaml .Values.envoy.resources | nindent 12 }}
@@ -137,15 +145,22 @@ spec:
               port: {{ .Values.envoy.adminPort | default 9901 }}
             initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /ready
               port: {{ .Values.envoy.adminPort | default 9901 }}
             initialDelaySeconds: 15
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes:
         - name: envoy-config
           configMap:
             name: envoy-config
+        - name: envoy-proto
+          configMap:
+            name: envoy-proto
       restartPolicy: Always
 {{- end }}

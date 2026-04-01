@@ -19,20 +19,12 @@ data:
   {{- range $key, $value := $serviceConfig.env }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
-  # OpenTelemetry configuration (if enabled in values-dev.yaml)
-  {{- if $root.Values.global.otel }}
-  {{- if $root.Values.global.otel.enabled }}
-  OTEL_EXPORTER_OTLP_ENDPOINT: {{ $root.Values.global.otel.endpoint | quote }}
-  OTEL_SERVICE_NAME: "{{ $serviceName }}-service"
-  {{- end }}
-  {{- end }}
 {{- end }}
 {{- end }}
 
 {{/*
-Envoy ConfigMap (requires envoy.yaml to be mounted)
-This is a placeholder - the actual envoy.yaml needs to be created separately
-with K8s DNS names for service discovery
+Envoy ConfigMap with envoy.yaml configuration
+Loaded from files/envoy-k8s.yaml
 */}}
 {{- if .Values.envoy.enabled }}
 ---
@@ -45,8 +37,17 @@ metadata:
     app.kubernetes.io/name: envoy-gateway
     app.kubernetes.io/component: gateway
 data:
-  # Note: envoy.yaml and proto.pb need to be provided via 'kubectl create configmap'
-  # or mounted from a PersistentVolume / Secret
-  # Example: kubectl create configmap envoy-config --from-file=envoy.yaml --from-file=proto.pb -n redyx-app
-  placeholder: "true"
+  envoy.yaml: |-
+{{ .Files.Get "files/envoy-k8s.yaml" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-proto
+  labels:
+    {{- include "redyx-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: envoy-gateway
+    app.kubernetes.io/component: gateway
+binaryData:
+  proto.pb: {{ .Files.Get "files/proto.pb" | b64enc }}
 {{- end }}

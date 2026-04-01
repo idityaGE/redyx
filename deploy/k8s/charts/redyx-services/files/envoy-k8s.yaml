@@ -1,0 +1,369 @@
+# Envoy configuration adapted for Kubernetes DNS service discovery
+# All cluster addresses use K8s internal DNS names: {service}.{namespace}.svc.cluster.local
+
+admin:
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }
+
+static_resources:
+  listeners:
+  - name: main
+    address:
+      socket_address: { address: 0.0.0.0, port_value: 8080 }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend
+              domains: ["*"]
+              response_headers_to_add:
+              - header:
+                  key: access-control-allow-origin
+                  value: "*"
+              - header:
+                  key: access-control-allow-methods
+                  value: "GET, POST, PUT, DELETE, OPTIONS"
+              - header:
+                  key: access-control-allow-headers
+                  value: "content-type, authorization"
+              - header:
+                  key: access-control-expose-headers
+                  value: "grpc-status, grpc-message, retry-after"
+              routes:
+              # Routes match on incoming REST paths (match_incoming_request_route: true)
+              # Specific routes BEFORE catch-all (Envoy uses first-match)
+
+              # WebSocket for notifications — BEFORE all other routes
+              # Must bypass gRPC transcoder (WebSocket is raw HTTP/1.1 upgrade)
+              - match: { prefix: "/api/v1/ws/notifications" }
+                route:
+                  cluster: notification-ws
+                  timeout: 0s
+                  upgrade_configs:
+                    - upgrade_type: websocket
+
+              - match: { prefix: "/api/v1/auth/" }
+                route:
+                  cluster: auth-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/users/" }
+                route:
+                  cluster: user-service
+                  timeout: 30s
+              # Search routes
+              - match: { prefix: "/api/v1/search" }
+                route:
+                  cluster: search-service
+                  timeout: 30s
+              # Notification routes
+              - match: { prefix: "/api/v1/notifications" }
+                route:
+                  cluster: notification-service
+                  timeout: 30s
+              # Media routes
+              - match: { prefix: "/api/v1/media" }
+                route:
+                  cluster: media-service
+                  timeout: 30s
+              # Comment routes — BEFORE post catch-all (Pitfall 15)
+              # Matches: GET/POST /api/v1/posts/{post_id}/comments
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/posts/[^/]+/comments.*"
+                route:
+                  cluster: comment-service
+                  timeout: 30s
+              # Matches: GET/PATCH/DELETE /api/v1/comments/{comment_id} and /api/v1/comments/{comment_id}/replies
+              - match: { prefix: "/api/v1/comments" }
+                route:
+                  cluster: comment-service
+                  timeout: 30s
+              # Post-related routes — MUST be before /api/v1/communities catch-all
+              - match: { prefix: "/api/v1/posts" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/feed" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/saved" }
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              # Vote routes
+              - match: { prefix: "/api/v1/votes" }
+                route:
+                  cluster: vote-service
+                  timeout: 30s
+              # Community posts feed — route to post-service BEFORE community catch-all
+              # Matches /api/v1/communities/{name}/posts*
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/communities/[^/]+/posts.*"
+                route:
+                  cluster: post-service
+                  timeout: 30s
+              # Moderation routes — BEFORE community catch-all (Pitfall 1: first-match routing)
+              # Matches /api/v1/communities/{name}/moderation*
+              - match:
+                  safe_regex:
+                    regex: "/api/v1/communities/[^/]+/moderation.*"
+                route:
+                  cluster: moderation-service
+                  timeout: 30s
+              # Spam routes
+              - match: { prefix: "/api/v1/spam" }
+                route:
+                  cluster: spam-service
+                  timeout: 30s
+              - match: { prefix: "/api/v1/communities" }
+                route:
+                  cluster: community-service
+                  timeout: 30s
+              # Catch-all for remaining /api/v1/ routes (health, etc.)
+              - match: { prefix: "/api/v1/" }
+                route:
+                  cluster: skeleton-service
+                  timeout: 30s
+          http_filters:
+          - name: envoy.filters.http.grpc_json_transcoder
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+              proto_descriptor: "/etc/envoy/proto.pb"
+              services:
+                - redyx.health.v1.HealthService
+                - redyx.auth.v1.AuthService
+                - redyx.user.v1.UserService
+                - redyx.community.v1.CommunityService
+                - redyx.post.v1.PostService
+                - redyx.vote.v1.VoteService
+                - redyx.comment.v1.CommentService
+                - redyx.search.v1.SearchService
+                - redyx.notification.v1.NotificationService
+                - redyx.media.v1.MediaService
+                - redyx.moderation.v1.ModerationService
+                - redyx.spam.v1.SpamService
+              # CRITICAL: match routes on incoming REST path, not rewritten gRPC path (Pitfall 2)
+              match_incoming_request_route: true
+              print_options:
+                add_whitespace: true
+                always_print_primitive_fields: true
+                always_print_enums_as_ints: false
+                # camelCase JSON output — proto3 canonical (Pitfall 1)
+                preserve_proto_field_names: false
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  - name: skeleton-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    # CRITICAL: gRPC requires HTTP/2 upstream (Pitfall 5)
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: skeleton-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: skeleton-service.redyx-app.svc.cluster.local, port_value: 50051 }
+
+  - name: auth-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: auth-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: auth-service.redyx-app.svc.cluster.local, port_value: 50052 }
+
+  - name: user-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: user-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: user-service.redyx-app.svc.cluster.local, port_value: 50053 }
+
+  - name: community-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: community-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: community-service.redyx-app.svc.cluster.local, port_value: 50054 }
+
+  - name: post-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: post-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: post-service.redyx-app.svc.cluster.local, port_value: 50055 }
+
+  - name: vote-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: vote-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: vote-service.redyx-app.svc.cluster.local, port_value: 50056 }
+
+  - name: comment-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: comment-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: comment-service.redyx-app.svc.cluster.local, port_value: 50057 }
+
+  - name: search-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: search-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: search-service.redyx-app.svc.cluster.local, port_value: 50058 }
+
+  - name: notification-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: notification-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: notification-service.redyx-app.svc.cluster.local, port_value: 50059 }
+
+  - name: notification-ws
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    # CRITICAL: WebSocket requires HTTP/1.1, NOT HTTP/2
+    load_assignment:
+      cluster_name: notification-ws
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: notification-service.redyx-app.svc.cluster.local, port_value: 8081 }
+
+  - name: media-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: media-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: media-service.redyx-app.svc.cluster.local, port_value: 50060 }
+
+  - name: moderation-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: moderation-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: moderation-service.redyx-app.svc.cluster.local, port_value: 50061 }
+
+  - name: spam-service
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options: {}
+    load_assignment:
+      cluster_name: spam-service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: spam-service.redyx-app.svc.cluster.local, port_value: 50062 }

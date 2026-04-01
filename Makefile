@@ -137,6 +137,10 @@ k8s-monitoring-down:  ## Uninstall observability stack
 	-helm uninstall prometheus -n $(K8S_NAMESPACE_MON)
 
 k8s-app:  ## Deploy all microservices via Helm
+	@echo "Copying Envoy config files..."
+	@mkdir -p deploy/k8s/charts/redyx-services/files
+	@cp deploy/envoy/envoy-k8s.yaml deploy/k8s/charts/redyx-services/files/
+	@cp deploy/envoy/proto.pb deploy/k8s/charts/redyx-services/files/
 	helm upgrade --install redyx-app deploy/k8s/charts/redyx-services \
 		-n $(K8S_NAMESPACE_APP) \
 		-f deploy/k8s/charts/redyx-services/values-dev.yaml
