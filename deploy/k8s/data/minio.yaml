@@ -1,27 +1,141 @@
-# bitnami/minio chart values
-# Helm: helm upgrade --install minio bitnami/minio -n redyx-data -f deploy/k8s/data/minio.yaml
-
-auth:
-  rootUser: minioadmin
-  rootPassword: minioadmin
-
-defaultBuckets: "redyx-media"
-
-persistence:
-  enabled: true
-  size: 1Gi
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 256Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-
-# Console access
-service:
-  type: ClusterIP
+# MinIO StatefulSet for local development
+---
+# Internal ClusterIP service for in-cluster access
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: redyx-data
+  labels:
+    app: minio
+spec:
   ports:
-    api: 9000
-    console: 9001
+    - port: 9000
+      targetPort: 9000
+      name: api
+    - port: 9001
+      targetPort: 9001
+      name: console
+  selector:
+    app: minio
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  namespace: redyx-data
+spec:
+  serviceName: minio
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          ports:
+            - containerPort: 9000
+              name: api
+            - containerPort: 9001
+              name: console
+          env:
+            - name: MINIO_ROOT_USER
+              value: "minioadmin"
+            - name: MINIO_ROOT_PASSWORD
+              value: "minioadmin"
+            # CORS configuration for browser uploads
+            - name: MINIO_API_CORS_ALLOW_ORIGIN
+              value: "*"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Job to create the bucket after MinIO starts
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init
+  namespace: redyx-data
+spec:
+  template:
+    spec:
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              sleep 10
+              mc alias set local http://minio:9000 minioadmin minioadmin
+              mc mb local/redyx-media --ignore-existing
+              mc anonymous set download local/redyx-media
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      restartPolicy: OnFailure
+  backoffLimit: 5
+---
+# Ingress for browser access to MinIO (presigned URLs)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-ingress
+  namespace: redyx-data
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /redyx-media
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9000

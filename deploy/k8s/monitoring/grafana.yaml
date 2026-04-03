@@ -1,31 +1,57 @@
-# grafana/grafana chart values
-adminUser: admin
-adminPassword: admin
-
-persistence:
-  enabled: true
-  size: 1Gi
-
-datasources:
-  datasources.yaml:
+# Grafana StatefulSet for local development
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: redyx-monitoring
+data:
+  grafana.ini: |
+    [server]
+    root_url = %(protocol)s://%(domain)s/grafana
+    serve_from_sub_path = true
+    
+    [security]
+    admin_user = admin
+    admin_password = admin
+    
+    [users]
+    allow_sign_up = false
+    
+    [auth.anonymous]
+    enabled = false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: redyx-monitoring
+data:
+  datasources.yaml: |
     apiVersion: 1
     datasources:
       - name: Prometheus
+        uid: prometheus
         type: prometheus
-        url: http://prometheus-kube-prometheus-prometheus.redyx-monitoring.svc:9090
+        url: http://prometheus:9090/prometheus
         access: proxy
         isDefault: true
       - name: Loki
         type: loki
-        url: http://loki.redyx-monitoring.svc:3100
+        url: http://loki:3100
         access: proxy
       - name: Jaeger
         type: jaeger
-        url: http://jaeger-query.redyx-monitoring.svc:16686
+        url: http://jaeger-query:16686/jaeger
         access: proxy
-
-dashboardProviders:
-  dashboardproviders.yaml:
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: redyx-monitoring
+data:
+  dashboards.yaml: |
     apiVersion: 1
     providers:
       - name: 'redyx'
@@ -35,19 +61,100 @@ dashboardProviders:
         disableDeletion: true
         editable: false
         options:
-          path: /var/lib/grafana/dashboards/redyx
-
-dashboardsConfigMaps:
-  redyx: grafana-dashboards
-
-service:
-  type: ClusterIP
-  port: 3000
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 256Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: redyx-monitoring
+  labels:
+    app: grafana
+spec:
+  ports:
+    - port: 80
+      targetPort: 3000
+      name: http
+  selector:
+    app: grafana
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana
+  namespace: redyx-monitoring
+spec:
+  serviceName: grafana
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.1
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: GF_PATHS_PROVISIONING
+              value: /etc/grafana/provisioning
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /grafana/api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /grafana/api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            - name: config
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+      volumes:
+        - name: config
+          configMap:
+            name: grafana-config
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+  volumeClaimTemplates:
+    - metadata:
+        name: grafana-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

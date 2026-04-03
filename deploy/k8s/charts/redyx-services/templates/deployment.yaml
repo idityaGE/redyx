@@ -59,6 +59,13 @@ spec:
             # Kafka brokers for services that need it
             - name: KAFKA_BROKERS
               value: {{ $root.Values.global.kafka.brokers | quote }}
+            # OpenTelemetry tracing
+            {{- if $root.Values.global.otel.enabled }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ $root.Values.global.otel.endpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ printf "%s-service" $serviceName | quote }}
+            {{- end }}
           resources:
             {{- toYaml $serviceConfig.resources | nindent 12 }}
           readinessProbe:

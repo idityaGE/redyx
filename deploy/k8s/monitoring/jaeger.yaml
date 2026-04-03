@@ -1,39 +1,89 @@
-# jaegertracing/jaeger chart values
-provisionDataStore:
-  cassandra: false
-  elasticsearch: false
-  kafka: false
-
-storage:
-  type: memory  # Good enough for local dev, no persistence
-
-collector:
-  enabled: true
-  service:
-    otlp:
-      grpc:
-        name: otlp-grpc
-        port: 4317
-      http:
-        name: otlp-http
-        port: 4318
-
-query:
-  enabled: true
-  service:
-    type: ClusterIP
-    port: 16686
-
-agent:
-  enabled: false  # Services send directly to collector via OTLP
-
-allInOne:
-  enabled: false  # Use separate components for clarity
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
+# Jaeger All-in-One Deployment for local development
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: redyx-monitoring
+  labels:
+    app: jaeger
+spec:
+  ports:
+    - port: 4317
+      targetPort: 4317
+      name: otlp-grpc
+    - port: 4318
+      targetPort: 4318
+      name: otlp-http
+    - port: 14268
+      targetPort: 14268
+      name: jaeger-http
+  selector:
+    app: jaeger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: redyx-monitoring
+  labels:
+    app: jaeger
+spec:
+  ports:
+    - port: 16686
+      targetPort: 16686
+      name: http
+  selector:
+    app: jaeger
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: redyx-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:1.55
+          args:
+            - '--query.base-path=/jaeger'
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+            - containerPort: 14268
+              name: jaeger-http
+            - containerPort: 16686
+              name: query
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /jaeger
+              port: 16686
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /jaeger
+              port: 16686
+            initialDelaySeconds: 30
+            periodSeconds: 15

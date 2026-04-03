@@ -1,0 +1,48 @@
+# NGINX Ingress Controller helm values for kind
+# Helm: helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f deploy/k8s/ingress/nginx-values.yaml
+
+controller:
+  # Use hostPort for kind cluster (no LoadBalancer)
+  hostPort:
+    enabled: true
+    ports:
+      http: 80
+      https: 443
+  
+  # Node selector for ingress-ready node
+  nodeSelector:
+    ingress-ready: "true"
+  
+  # Tolerate control-plane taints
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Equal"
+      effect: "NoSchedule"
+  
+  # Use NodePort service type for kind
+  service:
+    type: NodePort
+  
+  # Enable metrics for Prometheus (ServiceMonitor created separately after Prometheus is installed)
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false  # Prometheus CRDs not available yet at ingress install time
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  # Websocket support and proxy configuration
+  config:
+    proxy-read-timeout: "3600"
+    proxy-send-timeout: "3600"
+    proxy-body-size: "50m"

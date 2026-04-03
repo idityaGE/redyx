@@ -17,6 +17,10 @@ import (
 // using structured zap logging.
 func Logging(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if info.FullMethod == "/grpc.health.v1.Health/Check" {
+			return handler(ctx, req)
+		}
+
 		start := time.Now()
 
 		// Extract trace context if present

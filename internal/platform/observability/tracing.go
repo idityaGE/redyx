@@ -6,11 +6,11 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -45,11 +45,11 @@ func InitTracing(ctx context.Context, logger *zap.Logger) (*Tracer, error) {
 	}
 
 	// Create resource with service name
+	// Use NewWithAttributes without SchemaURL to avoid version conflicts with resource.Default()
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
+		resource.NewSchemaless(
+			attribute.String("service.name", serviceName),
 		),
 	)
 	if err != nil {

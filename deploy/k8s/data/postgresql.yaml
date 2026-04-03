@@ -1,36 +1,120 @@
-# bitnami/postgresql chart values
-# Helm: helm upgrade --install postgresql bitnami/postgresql -n redyx-data -f deploy/k8s/data/postgresql.yaml
-
-global:
-  postgresql:
-    auth:
-      postgresPassword: "dev"
-      username: "redyx"
-      password: "dev"
-      database: "skeleton"
-
-primary:
-  persistence:
-    enabled: true
-    size: 1Gi
-  initdb:
-    scriptsConfigMap: postgresql-init-scripts  # Created from init-databases.sql
-
-service:
-  type: ClusterIP
+# PostgreSQL StatefulSet for local development
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init
+  namespace: redyx-data
+data:
+  init-databases.sql: |
+    -- Create all databases needed by services
+    CREATE DATABASE auth;
+    CREATE DATABASE user_profiles;
+    CREATE DATABASE community;
+    CREATE DATABASE posts_shard_0;
+    CREATE DATABASE posts_shard_1;
+    CREATE DATABASE notifications;
+    CREATE DATABASE media;
+    CREATE DATABASE moderation;
+    
+    -- Grant permissions
+    GRANT ALL PRIVILEGES ON DATABASE auth TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE user_profiles TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE community TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE posts_shard_0 TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE posts_shard_1 TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE notifications TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE media TO redyx;
+    GRANT ALL PRIVILEGES ON DATABASE moderation TO redyx;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: redyx-data
+  labels:
+    app: postgresql
+spec:
   ports:
-    postgresql: 5432
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 256Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-
-metrics:
-  enabled: true
-  serviceMonitor:
-    enabled: true
-    namespace: redyx-monitoring
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgresql
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: redyx-data
+spec:
+  serviceName: postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "skeleton"
+            - name: POSTGRES_USER
+              value: "redyx"
+            - name: POSTGRES_PASSWORD
+              value: "dev"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - redyx
+                - -d
+                - skeleton
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - redyx
+                - -d
+                - skeleton
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: postgresql-init
+  volumeClaimTemplates:
+    - metadata:
+        name: postgresql-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

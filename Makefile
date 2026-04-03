@@ -1,5 +1,5 @@
 .PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild web help \
-        k8s-create k8s-delete k8s-build k8s-load k8s-data k8s-data-down k8s-monitoring k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-port k8s-validate
+        k8s-create k8s-delete k8s-build k8s-load k8s-ingress k8s-ingress-down k8s-data k8s-data-down k8s-monitoring k8s-monitoring-down k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-urls k8s-validate
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -65,6 +65,27 @@ k8s-create:  ## Create kind cluster and namespaces
 k8s-delete:  ## Delete kind cluster
 	kind delete cluster --name $(K8S_CLUSTER)
 
+k8s-ingress:  ## Deploy NGINX Ingress Controller
+	@echo "Adding NGINX Ingress Helm repo..."
+	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+	helm repo update
+	@echo "Creating ingress-nginx namespace..."
+	kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+	@echo "Deploying NGINX Ingress Controller..."
+	helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+		-n ingress-nginx \
+		-f deploy/k8s/ingress/nginx-values.yaml \
+		--wait --timeout 5m
+	@echo "Waiting for Ingress Controller to be ready..."
+	kubectl wait --namespace ingress-nginx \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=120s
+	@echo "NGINX Ingress Controller deployed!"
+
+k8s-ingress-down:  ## Uninstall NGINX Ingress Controller
+	-helm uninstall ingress-nginx -n ingress-nginx
+
 k8s-build:  ## Build all service Docker images
 	@for svc in skeleton auth user community post vote comment search notification media moderation spam; do \
 		echo "Building $$svc..."; \
@@ -78,63 +99,73 @@ k8s-load:  ## Load all images into kind cluster
 	done
 
 k8s-data:  ## Deploy data stores (PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO)
-	@echo "Adding Helm repos..."
-	helm repo add bitnami https://charts.bitnami.com/bitnami
-	helm repo add meilisearch https://meilisearch.github.io/meilisearch-kubernetes
-	helm repo update
-	@echo "Creating PostgreSQL init ConfigMap..."
-	kubectl create configmap postgresql-init-scripts -n $(K8S_NAMESPACE_DATA) --from-file=init-databases.sql=deploy/docker/init-databases.sql --dry-run=client -o yaml | kubectl apply -f -
 	@echo "Deploying PostgreSQL..."
-	helm upgrade --install postgresql bitnami/postgresql -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/postgresql.yaml --wait
+	kubectl apply -f deploy/k8s/data/postgresql.yaml
 	@echo "Deploying Redis..."
-	helm upgrade --install redis bitnami/redis -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/redis.yaml --wait
+	kubectl apply -f deploy/k8s/data/redis.yaml
 	@echo "Deploying ScyllaDB..."
-	helm upgrade --install scylladb bitnami/cassandra -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/scylladb.yaml --wait --timeout 5m
+	kubectl apply -f deploy/k8s/data/scylladb.yaml
 	@echo "Deploying Kafka..."
-	helm upgrade --install kafka bitnami/kafka -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/kafka.yaml --wait --timeout 5m
+	kubectl apply -f deploy/k8s/data/kafka.yaml
 	@echo "Deploying Meilisearch..."
-	helm upgrade --install meilisearch meilisearch/meilisearch -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/meilisearch.yaml --wait
+	kubectl apply -f deploy/k8s/data/meilisearch.yaml
 	@echo "Deploying MinIO..."
-	helm upgrade --install minio bitnami/minio -n $(K8S_NAMESPACE_DATA) -f deploy/k8s/data/minio.yaml --wait
+	kubectl apply -f deploy/k8s/data/minio.yaml
+	@echo "Waiting for data stores to be ready..."
+	-kubectl wait --for=condition=ready pod -l app=postgresql -n $(K8S_NAMESPACE_DATA) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=redis -n $(K8S_NAMESPACE_DATA) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=scylladb -n $(K8S_NAMESPACE_DATA) --timeout=5m
+	-kubectl wait --for=condition=ready pod -l app=kafka -n $(K8S_NAMESPACE_DATA) --timeout=3m
+	-kubectl wait --for=condition=ready pod -l app=meilisearch -n $(K8S_NAMESPACE_DATA) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=minio -n $(K8S_NAMESPACE_DATA) --timeout=2m
 	@echo "Data stores deployed!"
 
 k8s-data-down:  ## Uninstall data stores
-	-helm uninstall postgresql -n $(K8S_NAMESPACE_DATA)
-	-helm uninstall redis -n $(K8S_NAMESPACE_DATA)
-	-helm uninstall scylladb -n $(K8S_NAMESPACE_DATA)
-	-helm uninstall kafka -n $(K8S_NAMESPACE_DATA)
-	-helm uninstall meilisearch -n $(K8S_NAMESPACE_DATA)
-	-helm uninstall minio -n $(K8S_NAMESPACE_DATA)
+	-kubectl delete -f deploy/k8s/data/minio.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/data/meilisearch.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/data/kafka.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/data/scylladb.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/data/redis.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/data/postgresql.yaml --ignore-not-found
+	-kubectl delete pvc -l app=postgresql -n $(K8S_NAMESPACE_DATA) --ignore-not-found
+	-kubectl delete pvc -l app=redis -n $(K8S_NAMESPACE_DATA) --ignore-not-found
+	-kubectl delete pvc -l app=scylladb -n $(K8S_NAMESPACE_DATA) --ignore-not-found
+	-kubectl delete pvc -l app=kafka -n $(K8S_NAMESPACE_DATA) --ignore-not-found
+	-kubectl delete pvc -l app=meilisearch -n $(K8S_NAMESPACE_DATA) --ignore-not-found
+	-kubectl delete pvc -l app=minio -n $(K8S_NAMESPACE_DATA) --ignore-not-found
 
 k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaeger)
-	@echo "Adding Helm repos..."
-	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-	helm repo add grafana https://grafana.github.io/helm-charts
-	helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
-	helm repo update
 	@echo "Creating dashboard ConfigMap..."
 	kubectl create configmap grafana-dashboards -n $(K8S_NAMESPACE_MON) \
 		--from-file=deploy/k8s/dashboards/ \
 		--dry-run=client -o yaml | kubectl apply -f -
 	@echo "Deploying Prometheus..."
-	helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
-		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/prometheus.yaml --wait --timeout 5m
+	kubectl apply -f deploy/k8s/monitoring/prometheus.yaml
 	@echo "Deploying Loki..."
-	helm upgrade --install loki grafana/loki-stack \
-		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/loki.yaml --wait
+	kubectl apply -f deploy/k8s/monitoring/loki.yaml
 	@echo "Deploying Jaeger..."
-	helm upgrade --install jaeger jaegertracing/jaeger \
-		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/jaeger.yaml --wait
+	kubectl apply -f deploy/k8s/monitoring/jaeger.yaml
 	@echo "Deploying Grafana..."
-	helm upgrade --install grafana grafana/grafana \
-		-n $(K8S_NAMESPACE_MON) -f deploy/k8s/monitoring/grafana.yaml --wait
+	kubectl apply -f deploy/k8s/monitoring/grafana.yaml
+	@echo "Deploying Monitoring Ingress..."
+	kubectl apply -f deploy/k8s/monitoring/ingress.yaml
+	@echo "Waiting for monitoring stack to be ready..."
+	-kubectl wait --for=condition=ready pod -l app=prometheus -n $(K8S_NAMESPACE_MON) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=loki -n $(K8S_NAMESPACE_MON) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=jaeger -n $(K8S_NAMESPACE_MON) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=grafana -n $(K8S_NAMESPACE_MON) --timeout=2m
 	@echo "Observability stack deployed!"
 
 k8s-monitoring-down:  ## Uninstall observability stack
-	-helm uninstall grafana -n $(K8S_NAMESPACE_MON)
-	-helm uninstall jaeger -n $(K8S_NAMESPACE_MON)
-	-helm uninstall loki -n $(K8S_NAMESPACE_MON)
-	-helm uninstall prometheus -n $(K8S_NAMESPACE_MON)
+	-kubectl delete -f deploy/k8s/monitoring/ingress.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/monitoring/grafana.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/monitoring/jaeger.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/monitoring/loki.yaml --ignore-not-found
+	-kubectl delete -f deploy/k8s/monitoring/prometheus.yaml --ignore-not-found
+	-kubectl delete configmap grafana-dashboards -n $(K8S_NAMESPACE_MON) --ignore-not-found
+	-kubectl delete pvc -l app=prometheus -n $(K8S_NAMESPACE_MON) --ignore-not-found
+	-kubectl delete pvc -l app=loki -n $(K8S_NAMESPACE_MON) --ignore-not-found
+	-kubectl delete pvc -l app=grafana -n $(K8S_NAMESPACE_MON) --ignore-not-found
 
 k8s-app:  ## Deploy all microservices via Helm
 	@echo "Copying Envoy config files..."
@@ -145,12 +176,15 @@ k8s-app:  ## Deploy all microservices via Helm
 		-n $(K8S_NAMESPACE_APP) \
 		-f deploy/k8s/charts/redyx-services/values-dev.yaml
 
-k8s-up: k8s-create k8s-build k8s-load k8s-data k8s-monitoring k8s-app  ## Full K8s stack deployment
+k8s-up: k8s-create k8s-ingress k8s-build k8s-load k8s-data k8s-monitoring k8s-app  ## Full K8s stack deployment
+	@echo ""
+	@$(MAKE) k8s-urls
 
 k8s-down:  ## Uninstall Helm releases and delete cluster
 	-helm uninstall redyx-app -n $(K8S_NAMESPACE_APP)
-	-helm uninstall redyx-monitoring -n $(K8S_NAMESPACE_MON)
-	-helm uninstall redyx-data -n $(K8S_NAMESPACE_DATA)
+	-$(MAKE) k8s-monitoring-down
+	-$(MAKE) k8s-data-down
+	-$(MAKE) k8s-ingress-down
 	kind delete cluster --name $(K8S_CLUSTER)
 
 k8s-logs:  ## Tail logs from all app services
@@ -161,16 +195,21 @@ k8s-status:  ## Show cluster status
 	@echo "\n=== Pods (app) ===" && kubectl get pods -n $(K8S_NAMESPACE_APP) -o wide
 	@echo "\n=== Pods (data) ===" && kubectl get pods -n $(K8S_NAMESPACE_DATA) -o wide
 	@echo "\n=== Pods (monitoring) ===" && kubectl get pods -n $(K8S_NAMESPACE_MON) -o wide
+	@echo "\n=== Ingresses ===" && kubectl get ingress -A
 	@echo "\n=== HPAs ===" && kubectl get hpa -n $(K8S_NAMESPACE_APP)
 
-k8s-port:  ## Port-forward observability UIs (Grafana:3000, Prometheus:9090, Jaeger:16686)
-	@echo "Starting port-forwards in background..."
-	@kubectl port-forward -n $(K8S_NAMESPACE_MON) svc/prometheus 9090:9090 &
-	@kubectl port-forward -n $(K8S_NAMESPACE_MON) svc/grafana 3000:3000 &
-	@kubectl port-forward -n $(K8S_NAMESPACE_MON) svc/jaeger 16686:16686 &
-	@echo "Grafana: http://localhost:3000 (admin/admin)"
-	@echo "Prometheus: http://localhost:9090"
-	@echo "Jaeger: http://localhost:16686"
+k8s-urls:  ## Show access URLs (Ingress handles routing)
+	@echo ""
+	@echo "========================================"
+	@echo "  Redyx K8s Local Development URLs"
+	@echo "========================================"
+	@echo ""
+	@echo "API Gateway:  http://localhost:8080/api/v1/"
+	@echo "Grafana:      http://localhost:8080/grafana  (admin/admin)"
+	@echo "Prometheus:   http://localhost:8080/prometheus"
+	@echo "Jaeger:       http://localhost:8080/jaeger"
+	@echo ""
+	@echo "========================================"
 
 k8s-validate:  ## Run validation script
 	./scripts/k8s-validate.sh

@@ -1,36 +1,84 @@
-# ScyllaDB via bitnami/cassandra chart with ScyllaDB image override
-# Helm: helm upgrade --install scylladb bitnami/cassandra -n redyx-data -f deploy/k8s/data/scylladb.yaml
-# Note: ScyllaDB operator is complex for local dev, using Cassandra chart with image override
-
-image:
-  registry: docker.io
-  repository: scylladb/scylla
-  tag: "6.2"
-
-cluster:
-  name: redyx-scylla
-
-persistence:
-  enabled: true
-  size: 1Gi
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 512Mi
-  limits:
-    cpu: 1000m
-    memory: 1Gi
-
-# Developer mode for local (reduced resource usage)
-extraEnvVars:
-  - name: SCYLLA_DEVELOPER_MODE
-    value: "1"
-
-startupProbe:
-  enabled: true
-  initialDelaySeconds: 60
-  periodSeconds: 10
-  failureThreshold: 30
-
-# Keyspace init handled by comment-service migrations
+# ScyllaDB StatefulSet for local development
+# Applied directly (not via Helm) for simplicity
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylladb
+  namespace: redyx-data
+  labels:
+    app: scylladb
+spec:
+  ports:
+    - port: 9042
+      targetPort: 9042
+      name: cql
+  selector:
+    app: scylladb
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: scylladb
+  namespace: redyx-data
+spec:
+  serviceName: scylladb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scylladb
+  template:
+    metadata:
+      labels:
+        app: scylladb
+    spec:
+      containers:
+        - name: scylladb
+          image: scylladb/scylla:6.2
+          args:
+            - "--smp"
+            - "1"
+            - "--memory"
+            - "512M"
+            - "--developer-mode"
+            - "1"
+          ports:
+            - containerPort: 9042
+              name: cql
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - "cqlsh -e 'describe cluster'"
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - "cqlsh -e 'describe cluster'"
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - name: scylladb-data
+              mountPath: /var/lib/scylla
+  volumeClaimTemplates:
+    - metadata:
+        name: scylladb-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

@@ -308,7 +308,7 @@ services:
       GRPC_PORT: "50060"
       METRICS_PORT: "9090"
       MINIO_ENDPOINT: "http://minio.redyx-data.svc.cluster.local:9000"
-      MINIO_PUBLIC_ENDPOINT: "http://localhost:30900"
+      MINIO_PUBLIC_ENDPOINT: "http://localhost:8080"
       MINIO_ACCESS_KEY: "minioadmin"
       MINIO_SECRET_KEY: "minioadmin"
       MINIO_BUCKET: "redyx-media"
@@ -385,3 +385,8 @@ envoy:
     limits:
       cpu: 500m
       memory: 256Mi
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx

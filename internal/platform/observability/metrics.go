@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,11 +18,26 @@ import (
 // Metrics holds the gRPC Prometheus metrics.
 type Metrics struct {
 	serverMetrics *grpc_prometheus.ServerMetrics
+	registry      *prometheus.Registry
 }
+
+var (
+	metricsOnce sync.Once
+	metricsInst *Metrics
+	metricsErr  error
+)
 
 // InitMetrics creates Prometheus metrics for gRPC and starts the /metrics HTTP server.
 // Returns metrics interceptors to add to the gRPC server.
+// This function is safe to call multiple times - it will only initialize once.
 func InitMetrics(logger *zap.Logger) (*Metrics, error) {
+	metricsOnce.Do(func() {
+		metricsInst, metricsErr = initMetricsInternal(logger)
+	})
+	return metricsInst, metricsErr
+}
+
+func initMetricsInternal(logger *zap.Logger) (*Metrics, error) {
 	// Get metrics port from env (default 9090)
 	metricsPort := 9090
 	if p := os.Getenv("METRICS_PORT"); p != "" {
@@ -30,16 +46,25 @@ func InitMetrics(logger *zap.Logger) (*Metrics, error) {
 		}
 	}
 
+	// Create a custom registry to avoid conflicts with default registry
+	// which may have metrics auto-registered by go-grpc-prometheus init()
+	registry := prometheus.NewRegistry()
+
+	// Register standard Go metrics
+	registry.MustRegister(prometheus.NewGoCollector())
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+
 	// Create server metrics with histogram
 	serverMetrics := grpc_prometheus.NewServerMetrics()
 	serverMetrics.EnableHandlingTimeHistogram()
 
-	// Register with default Prometheus registry
-	prometheus.MustRegister(serverMetrics)
+	// Register with our custom registry (not the default one)
+	registry.MustRegister(serverMetrics)
 
 	// Start HTTP server for Prometheus scraping
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
+	// Use HandlerFor with our custom registry instead of the default Handler()
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -52,7 +77,10 @@ func InitMetrics(logger *zap.Logger) (*Metrics, error) {
 		}
 	}()
 
-	return &Metrics{serverMetrics: serverMetrics}, nil
+	return &Metrics{
+		serverMetrics: serverMetrics,
+		registry:      registry,
+	}, nil
 }
 
 // UnaryInterceptor returns the Prometheus unary server interceptor.
