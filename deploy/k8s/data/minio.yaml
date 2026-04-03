@@ -38,6 +38,7 @@ spec:
       containers:
         - name: minio
           image: minio/minio:latest
+          imagePullPolicy: IfNotPresent
           args:
             - server
             - /data
@@ -101,6 +102,7 @@ spec:
       containers:
         - name: mc
           image: minio/mc:latest
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - -c

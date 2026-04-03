@@ -45,6 +45,10 @@ global:
     secretKey: "minioadmin"
     bucket: "redyx-media"
 
+# ServiceMonitor - requires Prometheus Operator CRDs
+serviceMonitor:
+  enabled: true
+
 # HPA defaults
 hpa:
   enabled: true

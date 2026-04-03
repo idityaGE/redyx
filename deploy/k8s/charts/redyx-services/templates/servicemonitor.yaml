@@ -1,8 +1,10 @@
 {{/*
 ServiceMonitor template for Prometheus scraping
 Creates a ServiceMonitor for each enabled service
+Requires Prometheus Operator CRDs — disable for raw-manifest monitoring stacks
 */}}
 
+{{- if .Values.serviceMonitor.enabled -}}
 {{- $root := . -}}
 {{- range $serviceName, $serviceConfig := .Values.services }}
 {{- if and $serviceConfig.enabled $serviceConfig.metricsPort }}
@@ -28,5 +30,6 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ $root.Release.Namespace }}
+{{- end }}
 {{- end }}
 {{- end }}

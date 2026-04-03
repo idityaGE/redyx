@@ -55,6 +55,7 @@ K8S_CLUSTER := redyx
 K8S_NAMESPACE_APP := redyx-app
 K8S_NAMESPACE_DATA := redyx-data
 K8S_NAMESPACE_MON := redyx-monitoring
+SERVICES := skeleton auth user community post vote comment search notification media moderation spam
 
 k8s-create:  ## Create kind cluster and namespaces
 	kind create cluster --name $(K8S_CLUSTER) --config deploy/k8s/kind-config.yaml
@@ -87,13 +88,13 @@ k8s-ingress-down:  ## Uninstall NGINX Ingress Controller
 	-helm uninstall ingress-nginx -n ingress-nginx
 
 k8s-build:  ## Build all service Docker images
-	@for svc in skeleton auth user community post vote comment search notification media moderation spam; do \
+	@for svc in $(SERVICES); do \
 		echo "Building $$svc..."; \
 		docker build -t redyx/$$svc-service:dev -f deploy/docker/Dockerfile --build-arg SERVICE=$$svc . ; \
 	done
 
 k8s-load:  ## Load all images into kind cluster
-	@for svc in skeleton auth user community post vote comment search notification media moderation spam; do \
+	@for svc in $(SERVICES); do \
 		echo "Loading $$svc..."; \
 		kind load docker-image redyx/$$svc-service:dev --name $(K8S_CLUSTER) ; \
 	done
@@ -112,12 +113,12 @@ k8s-data:  ## Deploy data stores (PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearc
 	@echo "Deploying MinIO..."
 	kubectl apply -f deploy/k8s/data/minio.yaml
 	@echo "Waiting for data stores to be ready..."
-	-kubectl wait --for=condition=ready pod -l app=postgresql -n $(K8S_NAMESPACE_DATA) --timeout=2m
-	-kubectl wait --for=condition=ready pod -l app=redis -n $(K8S_NAMESPACE_DATA) --timeout=2m
-	-kubectl wait --for=condition=ready pod -l app=scylladb -n $(K8S_NAMESPACE_DATA) --timeout=5m
-	-kubectl wait --for=condition=ready pod -l app=kafka -n $(K8S_NAMESPACE_DATA) --timeout=3m
-	-kubectl wait --for=condition=ready pod -l app=meilisearch -n $(K8S_NAMESPACE_DATA) --timeout=2m
-	-kubectl wait --for=condition=ready pod -l app=minio -n $(K8S_NAMESPACE_DATA) --timeout=2m
+	-kubectl wait --for=condition=ready pod -l app=postgresql -n $(K8S_NAMESPACE_DATA) --timeout=5m
+	-kubectl wait --for=condition=ready pod -l app=redis -n $(K8S_NAMESPACE_DATA) --timeout=5m
+	-kubectl wait --for=condition=ready pod -l app=scylladb -n $(K8S_NAMESPACE_DATA) --timeout=10m
+	-kubectl wait --for=condition=ready pod -l app=kafka -n $(K8S_NAMESPACE_DATA) --timeout=5m
+	-kubectl wait --for=condition=ready pod -l app=meilisearch -n $(K8S_NAMESPACE_DATA) --timeout=5m
+	-kubectl wait --for=condition=ready pod -l app=minio -n $(K8S_NAMESPACE_DATA) --timeout=5m
 	@echo "Data stores deployed!"
 
 k8s-data-down:  ## Uninstall data stores
@@ -147,8 +148,6 @@ k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaege
 	kubectl apply -f deploy/k8s/monitoring/jaeger.yaml
 	@echo "Deploying Grafana..."
 	kubectl apply -f deploy/k8s/monitoring/grafana.yaml
-	@echo "Deploying Monitoring Ingress..."
-	kubectl apply -f deploy/k8s/monitoring/ingress.yaml
 	@echo "Waiting for monitoring stack to be ready..."
 	-kubectl wait --for=condition=ready pod -l app=prometheus -n $(K8S_NAMESPACE_MON) --timeout=2m
 	-kubectl wait --for=condition=ready pod -l app=loki -n $(K8S_NAMESPACE_MON) --timeout=2m
@@ -157,7 +156,6 @@ k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaege
 	@echo "Observability stack deployed!"
 
 k8s-monitoring-down:  ## Uninstall observability stack
-	-kubectl delete -f deploy/k8s/monitoring/ingress.yaml --ignore-not-found
 	-kubectl delete -f deploy/k8s/monitoring/grafana.yaml --ignore-not-found
 	-kubectl delete -f deploy/k8s/monitoring/jaeger.yaml --ignore-not-found
 	-kubectl delete -f deploy/k8s/monitoring/loki.yaml --ignore-not-found

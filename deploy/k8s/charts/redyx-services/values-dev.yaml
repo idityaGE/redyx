@@ -234,6 +234,10 @@ services:
 hpa:
   enabled: false
 
+# ServiceMonitor disabled for local dev — raw Prometheus manifests, no Prometheus Operator CRDs
+serviceMonitor:
+  enabled: false
+
 # Ingress configuration for local dev
 ingress:
   enabled: true

@@ -1,5 +1,5 @@
 # Kind cluster configuration for Redyx development
-# Creates a single control-plane node with Ingress support
+# Creates one control-plane node (ingress) + two worker nodes
 
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -24,3 +24,5 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
+  - role: worker
+  - role: worker

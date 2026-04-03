@@ -11,7 +11,8 @@ data:
     
     server:
       http_listen_port: 3100
-    
+      http_path_prefix: /loki
+
     common:
       path_prefix: /loki
       storage:
@@ -22,20 +23,19 @@ data:
       ring:
         kvstore:
           store: inmemory
-    
+
     schema_config:
       configs:
-        - from: 2020-10-24
-          store: boltdb-shipper
+        - from: 2024-01-01
+          store: tsdb
           object_store: filesystem
-          schema: v11
+          schema: v13
           index:
             prefix: index_
             period: 24h
-    
+
     limits_config:
       retention_period: 168h
-      enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 168h
 ---
@@ -72,7 +72,8 @@ spec:
     spec:
       containers:
         - name: loki
-          image: grafana/loki:2.9.5
+          image: grafana/loki:3.3.2
+          imagePullPolicy: IfNotPresent
           args:
             - '-config.file=/etc/loki/loki.yaml'
           ports:
@@ -87,13 +88,13 @@ spec:
               memory: 512Mi
           readinessProbe:
             httpGet:
-              path: /ready
+              path: /loki/ready
               port: 3100
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /ready
+              path: /loki/ready
               port: 3100
             initialDelaySeconds: 30
             periodSeconds: 15
@@ -131,7 +132,7 @@ data:
       filename: /tmp/positions.yaml
     
     clients:
-      - url: http://loki:3100/loki/api/v1/push
+      - url: http://loki:3100/loki/loki/api/v1/push
     
     scrape_configs:
       - job_name: kubernetes-pods
@@ -211,6 +212,7 @@ spec:
       containers:
         - name: promtail
           image: grafana/promtail:2.9.5
+          imagePullPolicy: IfNotPresent
           args:
             - '-config.file=/etc/promtail/promtail.yaml'
           env:
@@ -244,3 +246,21 @@ spec:
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki-ingress
+  namespace: redyx-monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /loki
+            pathType: Prefix
+            backend:
+              service:
+                name: loki
+                port:
+                  number: 3100
