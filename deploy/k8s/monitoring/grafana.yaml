@@ -34,6 +34,15 @@ spec:
       securityContext:
         fsGroup: 472
         runAsUser: 472
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          securityContext:
+            runAsUser: 0
+          command: ["sh", "-c", "chown -R 472:472 /var/lib/grafana"]
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
       containers:
         - name: grafana
           image: grafana/grafana:10.4.2

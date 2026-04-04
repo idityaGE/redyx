@@ -33,6 +33,13 @@ spec:
       labels:
         app: scylladb
     spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 999:999 /var/lib/scylla"]
+          volumeMounts:
+            - name: scylladb-data
+              mountPath: /var/lib/scylla
       containers:
         - name: scylladb
           image: scylladb/scylla:2026.1
