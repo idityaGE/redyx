@@ -74,6 +74,10 @@ spec:
         name: redis-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: redis
         resources:
           requests:
             storage: 1Gi

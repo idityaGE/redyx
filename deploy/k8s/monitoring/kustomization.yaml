@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: redyx-monitoring
+
+resources:
+  - prometheus.yaml
+  - loki.yaml
+  - jaeger.yaml
+  - grafana.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: prometheus-config
+    files:
+      - config/prometheus.yml
+
+  - name: loki-config
+    files:
+      - config/loki.yaml
+
+  - name: promtail-config
+    files:
+      - config/promtail.yaml
+
+  - name: grafana-config
+    files:
+      - config/grafana.ini
+
+  - name: grafana-datasources
+    files:
+      - config/datasources.yaml
+
+  - name: grafana-dashboard-provider
+    files:
+      - config/dashboards.yaml
+
+  - name: grafana-dashboards
+    files:
+      - dashboards/global-overview.json
+      - dashboards/auth-service.json
+      - dashboards/user-service.json
+      - dashboards/community-service.json
+      - dashboards/post-service.json
+      - dashboards/vote-service.json
+      - dashboards/comment-service.json
+      - dashboards/search-service.json
+      - dashboards/notification-service.json
+      - dashboards/media-service.json
+      - dashboards/moderation-service.json
+      - dashboards/spam-service.json

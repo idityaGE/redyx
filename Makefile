@@ -1,5 +1,5 @@
 .PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild web help \
-        k8s-create k8s-delete k8s-build k8s-load k8s-ingress k8s-ingress-down k8s-data k8s-data-down k8s-monitoring k8s-monitoring-down k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-urls k8s-validate
+        k8s-create k8s-delete k8s-build k8s-load k8s-ingress k8s-ingress-down k8s-storage k8s-data k8s-data-down k8s-monitoring k8s-monitoring-down k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-urls k8s-validate k8s-data-reset
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -51,6 +51,8 @@ web:  ## Start the astro development server
 # Kubernetes (kind) Targets
 # ─────────────────────────────────────────────────────────────
 
+DATA_DIR ?= $(HOME)/.redyx-data
+
 K8S_CLUSTER := redyx
 K8S_NAMESPACE_APP := redyx-app
 K8S_NAMESPACE_DATA := redyx-data
@@ -58,10 +60,18 @@ K8S_NAMESPACE_MON := redyx-monitoring
 SERVICES := skeleton auth user community post vote comment search notification media moderation spam
 
 k8s-create:  ## Create kind cluster and namespaces
-	kind create cluster --name $(K8S_CLUSTER) --config deploy/k8s/kind-config.yaml
+	@mkdir -p $(DATA_DIR)/{postgresql,redis,scylladb,kafka,meilisearch,minio,prometheus,loki,grafana}
+	@sed 's|__DATA_DIR__|$(DATA_DIR)|g' deploy/k8s/kind-config.yaml > /tmp/redyx-kind-config.yaml
+	kind create cluster --name $(K8S_CLUSTER) --config /tmp/redyx-kind-config.yaml
 	kubectl create namespace $(K8S_NAMESPACE_APP) --dry-run=client -o yaml | kubectl apply -f -
 	kubectl create namespace $(K8S_NAMESPACE_DATA) --dry-run=client -o yaml | kubectl apply -f -
 	kubectl create namespace $(K8S_NAMESPACE_MON) --dry-run=client -o yaml | kubectl apply -f -
+
+k8s-storage:  ## Apply local StorageClass and PersistentVolumes (backed by host ~/.redyx-data)
+	kubectl apply -f deploy/k8s/storage/local-storage.yaml
+
+k8s-data-reset:  ## Wipe all persisted data from host (irreversible)
+	rm -rf $(DATA_DIR)
 
 k8s-delete:  ## Delete kind cluster
 	kind delete cluster --name $(K8S_CLUSTER)
@@ -136,18 +146,8 @@ k8s-data-down:  ## Uninstall data stores
 	-kubectl delete pvc -l app=minio -n $(K8S_NAMESPACE_DATA) --ignore-not-found
 
 k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaeger)
-	@echo "Creating dashboard ConfigMap..."
-	kubectl create configmap grafana-dashboards -n $(K8S_NAMESPACE_MON) \
-		--from-file=deploy/k8s/dashboards/ \
-		--dry-run=client -o yaml | kubectl apply -f -
-	@echo "Deploying Prometheus..."
-	kubectl apply -f deploy/k8s/monitoring/prometheus.yaml
-	@echo "Deploying Loki..."
-	kubectl apply -f deploy/k8s/monitoring/loki.yaml
-	@echo "Deploying Jaeger..."
-	kubectl apply -f deploy/k8s/monitoring/jaeger.yaml
-	@echo "Deploying Grafana..."
-	kubectl apply -f deploy/k8s/monitoring/grafana.yaml
+	@echo "Deploying observability stack..."
+	kubectl apply -k deploy/k8s/monitoring
 	@echo "Waiting for monitoring stack to be ready..."
 	-kubectl wait --for=condition=ready pod -l app=prometheus -n $(K8S_NAMESPACE_MON) --timeout=2m
 	-kubectl wait --for=condition=ready pod -l app=loki -n $(K8S_NAMESPACE_MON) --timeout=2m
@@ -156,11 +156,7 @@ k8s-monitoring:  ## Deploy observability stack (Prometheus, Grafana, Loki, Jaege
 	@echo "Observability stack deployed!"
 
 k8s-monitoring-down:  ## Uninstall observability stack
-	-kubectl delete -f deploy/k8s/monitoring/grafana.yaml --ignore-not-found
-	-kubectl delete -f deploy/k8s/monitoring/jaeger.yaml --ignore-not-found
-	-kubectl delete -f deploy/k8s/monitoring/loki.yaml --ignore-not-found
-	-kubectl delete -f deploy/k8s/monitoring/prometheus.yaml --ignore-not-found
-	-kubectl delete configmap grafana-dashboards -n $(K8S_NAMESPACE_MON) --ignore-not-found
+	-kubectl delete -k deploy/k8s/monitoring --ignore-not-found
 	-kubectl delete pvc -l app=prometheus -n $(K8S_NAMESPACE_MON) --ignore-not-found
 	-kubectl delete pvc -l app=loki -n $(K8S_NAMESPACE_MON) --ignore-not-found
 	-kubectl delete pvc -l app=grafana -n $(K8S_NAMESPACE_MON) --ignore-not-found
@@ -174,7 +170,7 @@ k8s-app:  ## Deploy all microservices via Helm
 		-n $(K8S_NAMESPACE_APP) \
 		-f deploy/k8s/charts/redyx-services/values-dev.yaml
 
-k8s-up: k8s-create k8s-ingress k8s-build k8s-load k8s-data k8s-monitoring k8s-app  ## Full K8s stack deployment
+k8s-up: k8s-create k8s-ingress k8s-storage k8s-build k8s-load k8s-data k8s-monitoring k8s-app  ## Full K8s stack deployment
 	@echo ""
 	@$(MAKE) k8s-urls
 

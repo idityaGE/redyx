@@ -80,6 +80,10 @@ spec:
         name: scylladb-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: scylladb
         resources:
           requests:
             storage: 1Gi

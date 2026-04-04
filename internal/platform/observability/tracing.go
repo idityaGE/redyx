@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/stats"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -82,6 +83,11 @@ func (t *Tracer) Shutdown(ctx context.Context) error {
 }
 
 // StatsHandler returns the OTEL gRPC stats handler for tracing.
+// Health check calls are excluded to avoid noisy spans.
 func StatsHandler() grpc.ServerOption {
-	return grpc.StatsHandler(otelgrpc.NewServerHandler())
+	return grpc.StatsHandler(otelgrpc.NewServerHandler(
+		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
+			return info.FullMethodName != "/grpc.health.v1.Health/Check"
+		}),
+	))
 }

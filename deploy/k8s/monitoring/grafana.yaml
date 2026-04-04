@@ -1,69 +1,6 @@
 # Grafana StatefulSet for local development
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-config
-  namespace: redyx-monitoring
-data:
-  grafana.ini: |
-    [server]
-    root_url = %(protocol)s://%(domain)s/grafana
-    serve_from_sub_path = true
-    
-    [security]
-    admin_user = admin
-    admin_password = admin
-    
-    [users]
-    allow_sign_up = false
-    
-    [auth.anonymous]
-    enabled = false
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-datasources
-  namespace: redyx-monitoring
-data:
-  datasources.yaml: |
-    apiVersion: 1
-    datasources:
-      - name: Prometheus
-        uid: prometheus
-        type: prometheus
-        url: http://prometheus:9090/prometheus
-        access: proxy
-        isDefault: true
-      - name: Loki
-        type: loki
-        url: http://loki:3100/loki
-        access: proxy
-      - name: Jaeger
-        type: jaeger
-        url: http://jaeger-query:16686/jaeger
-        access: proxy
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-dashboard-provider
-  namespace: redyx-monitoring
-data:
-  dashboards.yaml: |
-    apiVersion: 1
-    providers:
-      - name: 'redyx'
-        orgId: 1
-        folder: 'Redyx'
-        type: file
-        disableDeletion: true
-        editable: false
-        options:
-          path: /var/lib/grafana/dashboards
----
-apiVersion: v1
 kind: Service
 metadata:
   name: grafana
@@ -156,6 +93,10 @@ spec:
         name: grafana-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: grafana
         resources:
           requests:
             storage: 1Gi

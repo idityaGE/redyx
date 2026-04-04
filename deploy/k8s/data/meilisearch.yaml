@@ -72,6 +72,10 @@ spec:
         name: meilisearch-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: meilisearch
         resources:
           requests:
             storage: 1Gi

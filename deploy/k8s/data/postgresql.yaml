@@ -116,6 +116,10 @@ spec:
         name: postgresql-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: postgresql
         resources:
           requests:
             storage: 1Gi

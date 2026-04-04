@@ -89,6 +89,10 @@ spec:
         name: kafka-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            app: kafka
         resources:
           requests:
             storage: 1Gi

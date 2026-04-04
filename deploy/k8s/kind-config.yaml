@@ -1,5 +1,8 @@
 # Kind cluster configuration for Redyx development
 # Creates one control-plane node (ingress) + two worker nodes
+#
+# __DATA_DIR__ is replaced at cluster-creation time by `make k8s-create`
+# with the value of DATA_DIR (default: ~/.redyx-data).
 
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -17,6 +20,9 @@ nodes:
       - containerPort: 443
         hostPort: 8443
         protocol: TCP
+    extraMounts:
+      - hostPath: __DATA_DIR__
+        containerPath: /opt/redyx-data
     # Labels for ingress controller scheduling
     kubeadmConfigPatches:
       - |
@@ -25,4 +31,10 @@ nodes:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
   - role: worker
+    extraMounts:
+      - hostPath: __DATA_DIR__
+        containerPath: /opt/redyx-data
   - role: worker
+    extraMounts:
+      - hostPath: __DATA_DIR__
+        containerPath: /opt/redyx-data
