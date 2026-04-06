@@ -28,6 +28,10 @@ type Config struct {
 	GoogleClientID     string
 	GoogleClientSecret string
 	GoogleRedirectURL  string
+	EmailHost          string
+	EmailPort          int
+	EmailUsername      string
+	EmailPassword      string
 
 	// Rate limit fields
 	RateLimitEnabled bool
@@ -82,6 +86,10 @@ func Load(serviceName string) *Config {
 		GoogleClientID:     envStr("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: envStr("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectURL:  envStr("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
+		EmailHost:          envStr("EMAIL_HOST", "smtp.gmail.com"),
+		EmailPort:          envInt("EMAIL_PORT", 587),
+		EmailUsername:      envStr("EMAIL_USERNAME", "am44910606@gmail.com"),
+		EmailPassword:      envStr("EMAIL_PASSWORD", "pnja hplo qckj tmkx"),
 
 		// Rate limit
 		RateLimitEnabled: envBool("RATE_LIMIT_ENABLED", true),

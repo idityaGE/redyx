@@ -15,6 +15,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"gopkg.in/gomail.v2"
+
 
 	authv1 "github.com/redyx/redyx/gen/redyx/auth/v1"
 	authsvc "github.com/redyx/redyx/internal/auth"
@@ -77,11 +79,14 @@ func main() {
 	}
 	defer rdb.Close()
 
+	// Create email sender
+	dialer := gomail.NewDialer(cfg.EmailHost, cfg.EmailPort, cfg.EmailUsername, cfg.EmailPassword)
+	emailer := authsvc.NewEmailSender(dialer, logger)
+
 	// Create auth helper modules
 	jwtMgr := authsvc.NewJWTManager(cfg.JWTSecret, cfg.JWTAccessTTL)
 	otpMgr := authsvc.NewOTPManager(rdb, time.Duration(cfg.OTPTTLMinutes)*time.Minute)
 	oauthMgr := authsvc.NewOAuthManager(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
-	emailer := authsvc.NewLogSender(logger)
 
 	// Create auth interceptor and rate limiter
 	jwtValidator := platformauth.NewJWTValidator(cfg.JWTSecret)
