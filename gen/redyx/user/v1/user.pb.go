@@ -1024,8 +1024,8 @@ const file_redyx_user_v1_user_proto_rawDesc = "" +
 	"\rDeleteAccount\x12#.redyx.user.v1.DeleteAccountRequest\x1a$.redyx.user.v1.DeleteAccountResponse\"\x18\x82\xd3\xe4\x93\x02\x12*\x10/api/v1/users/me\x12\x7f\n" +
 	"\fGetUserPosts\x12\".redyx.user.v1.GetUserPostsRequest\x1a#.redyx.user.v1.GetUserPostsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/users/{username}/posts\x12\x8b\x01\n" +
 	"\x0fGetUserComments\x12%.redyx.user.v1.GetUserCommentsRequest\x1a&.redyx.user.v1.GetUserCommentsResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/users/{username}/comments\x12\x96\x01\n" +
-	"\x12GetUserCommunities\x12(.redyx.user.v1.GetUserCommunitiesRequest\x1a).redyx.user.v1.GetUserCommunitiesResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/users/{user_id}/communitiesB\xa5\x01\n" +
-	"\x11com.redyx.user.v1B\tUserProtoP\x01Z/github.com/idityaGE/redyx/gen/redyx/user/v1;userv1\xa2\x02\x03RUX\xaa\x02\rRedyx.User.V1\xca\x02\rRedyx\\User\\V1\xe2\x02\x19Redyx\\User\\V1\\GPBMetadata\xea\x02\x0fRedyx::User::V1b\x06proto3"
+	"\x12GetUserCommunities\x12(.redyx.user.v1.GetUserCommunitiesRequest\x1a).redyx.user.v1.GetUserCommunitiesResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/users/{user_id}/communitiesB\xa8\x01\n" +
+	"\x11com.redyx.user.v1B\tUserProtoP\x01Z2github.com/idityaGE/redyx/gen/redyx/user/v1;userv1\xa2\x02\x03RUX\xaa\x02\rRedyx.User.V1\xca\x02\rRedyx\\User\\V1\xe2\x02\x19Redyx\\User\\V1\\GPBMetadata\xea\x02\x0fRedyx::User::V1b\x06proto3"
 
 var (
 	file_redyx_user_v1_user_proto_rawDescOnce sync.Once

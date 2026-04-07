@@ -331,8 +331,8 @@ const file_redyx_common_v1_events_proto_rawDesc = "" +
 	"\x1bPOST_EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17POST_EVENT_TYPE_CREATED\x10\x01\x12\x1b\n" +
 	"\x17POST_EVENT_TYPE_UPDATED\x10\x02\x12\x1b\n" +
-	"\x17POST_EVENT_TYPE_DELETED\x10\x03B\xb5\x01\n" +
-	"\x13com.redyx.common.v1B\vEventsProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/common/v1;commonv1\xa2\x02\x03RCX\xaa\x02\x0fRedyx.Common.V1\xca\x02\x0fRedyx\\Common\\V1\xe2\x02\x1bRedyx\\Common\\V1\\GPBMetadata\xea\x02\x11Redyx::Common::V1b\x06proto3"
+	"\x17POST_EVENT_TYPE_DELETED\x10\x03B\xb8\x01\n" +
+	"\x13com.redyx.common.v1B\vEventsProtoP\x01Z6github.com/idityaGE/redyx/gen/redyx/common/v1;commonv1\xa2\x02\x03RCX\xaa\x02\x0fRedyx.Common.V1\xca\x02\x0fRedyx\\Common\\V1\xe2\x02\x1bRedyx\\Common\\V1\\GPBMetadata\xea\x02\x11Redyx::Common::V1b\x06proto3"
 
 var (
 	file_redyx_common_v1_events_proto_rawDescOnce sync.Once

@@ -1485,8 +1485,8 @@ const file_redyx_community_v1_community_proto_rawDesc = "" +
 	"\vListMembers\x12&.redyx.community.v1.ListMembersRequest\x1a'.redyx.community.v1.ListMembersResponse\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/communities/{name}/members\x12\x9c\x01\n" +
 	"\x0fAssignModerator\x12*.redyx.community.v1.AssignModeratorRequest\x1a+.redyx.community.v1.AssignModeratorResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/communities/{name}/moderators\x12\xa3\x01\n" +
 	"\x0fRevokeModerator\x12*.redyx.community.v1.RevokeModeratorRequest\x1a+.redyx.community.v1.RevokeModeratorResponse\"7\x82\xd3\xe4\x93\x021*//api/v1/communities/{name}/moderators/{user_id}\x12x\n" +
-	"\x13ListUserCommunities\x12..redyx.community.v1.ListUserCommunitiesRequest\x1a/.redyx.community.v1.ListUserCommunitiesResponse\"\x00B\xcd\x01\n" +
-	"\x16com.redyx.community.v1B\x0eCommunityProtoP\x01Z9github.com/idityaGE/redyx/gen/redyx/community/v1;communityv1\xa2\x02\x03RCX\xaa\x02\x12Redyx.Community.V1\xca\x02\x12Redyx\\Community\\V1\xe2\x02\x1eRedyx\\Community\\V1\\GPBMetadata\xea\x02\x14Redyx::Community::V1b\x06proto3"
+	"\x13ListUserCommunities\x12..redyx.community.v1.ListUserCommunitiesRequest\x1a/.redyx.community.v1.ListUserCommunitiesResponse\"\x00B\xd0\x01\n" +
+	"\x16com.redyx.community.v1B\x0eCommunityProtoP\x01Z<github.com/idityaGE/redyx/gen/redyx/community/v1;communityv1\xa2\x02\x03RCX\xaa\x02\x12Redyx.Community.V1\xca\x02\x12Redyx\\Community\\V1\xe2\x02\x1eRedyx\\Community\\V1\\GPBMetadata\xea\x02\x14Redyx::Community::V1b\x06proto3"
 
 var (
 	file_redyx_community_v1_community_proto_rawDescOnce sync.Once

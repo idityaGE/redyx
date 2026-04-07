@@ -153,8 +153,8 @@ const file_redyx_common_v1_common_proto_rawDesc = "" +
 	"nextCursor\x12\x19\n" +
 	"\bhas_more\x18\x02 \x01(\bR\ahasMore\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCountB\xb5\x01\n" +
-	"\x13com.redyx.common.v1B\vCommonProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/common/v1;commonv1\xa2\x02\x03RCX\xaa\x02\x0fRedyx.Common.V1\xca\x02\x0fRedyx\\Common\\V1\xe2\x02\x1bRedyx\\Common\\V1\\GPBMetadata\xea\x02\x11Redyx::Common::V1b\x06proto3"
+	"totalCountB\xb8\x01\n" +
+	"\x13com.redyx.common.v1B\vCommonProtoP\x01Z6github.com/idityaGE/redyx/gen/redyx/common/v1;commonv1\xa2\x02\x03RCX\xaa\x02\x0fRedyx.Common.V1\xca\x02\x0fRedyx\\Common\\V1\xe2\x02\x1bRedyx\\Common\\V1\\GPBMetadata\xea\x02\x11Redyx::Common::V1b\x06proto3"
 
 var (
 	file_redyx_common_v1_common_proto_rawDescOnce sync.Once

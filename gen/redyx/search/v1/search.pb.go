@@ -437,8 +437,8 @@ const file_redyx_search_v1_search_proto_rawDesc = "" +
 	"\vsuggestions\x18\x01 \x03(\v2$.redyx.search.v1.CommunitySuggestionR\vsuggestions2\xaa\x02\n" +
 	"\rSearchService\x12v\n" +
 	"\vSearchPosts\x12#.redyx.search.v1.SearchPostsRequest\x1a$.redyx.search.v1.SearchPostsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/search/posts\x12\xa0\x01\n" +
-	"\x17AutocompleteCommunities\x12/.redyx.search.v1.AutocompleteCommunitiesRequest\x1a0.redyx.search.v1.AutocompleteCommunitiesResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/search/communitiesB\xb5\x01\n" +
-	"\x13com.redyx.search.v1B\vSearchProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/search/v1;searchv1\xa2\x02\x03RSX\xaa\x02\x0fRedyx.Search.V1\xca\x02\x0fRedyx\\Search\\V1\xe2\x02\x1bRedyx\\Search\\V1\\GPBMetadata\xea\x02\x11Redyx::Search::V1b\x06proto3"
+	"\x17AutocompleteCommunities\x12/.redyx.search.v1.AutocompleteCommunitiesRequest\x1a0.redyx.search.v1.AutocompleteCommunitiesResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/search/communitiesB\xb8\x01\n" +
+	"\x13com.redyx.search.v1B\vSearchProtoP\x01Z6github.com/idityaGE/redyx/gen/redyx/search/v1;searchv1\xa2\x02\x03RSX\xaa\x02\x0fRedyx.Search.V1\xca\x02\x0fRedyx\\Search\\V1\xe2\x02\x1bRedyx\\Search\\V1\\GPBMetadata\xea\x02\x11Redyx::Search::V1b\x06proto3"
 
 var (
 	file_redyx_search_v1_search_proto_rawDescOnce sync.Once

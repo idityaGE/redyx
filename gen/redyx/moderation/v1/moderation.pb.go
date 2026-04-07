@@ -1900,8 +1900,8 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\rDismissReport\x12).redyx.moderation.v1.DismissReportRequest\x1a*.redyx.moderation.v1.DismissReportResponse\"J\x82\xd3\xe4\x93\x02D:\x01*\"?/api/v1/communities/{community_name}/moderation/reports/dismiss\x12\xad\x01\n" +
 	"\x0eRestoreContent\x12*.redyx.moderation.v1.RestoreContentRequest\x1a+.redyx.moderation.v1.RestoreContentResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/communities/{community_name}/moderation/restore\x12\x95\x01\n" +
 	"\bListBans\x12$.redyx.moderation.v1.ListBansRequest\x1a%.redyx.moderation.v1.ListBansResponse\"<\x82\xd3\xe4\x93\x026\x124/api/v1/communities/{community_name}/moderation/bans\x12\x9d\x01\n" +
-	"\bCheckBan\x12$.redyx.moderation.v1.CheckBanRequest\x1a%.redyx.moderation.v1.CheckBanResponse\"D\x82\xd3\xe4\x93\x02>:\x01*\"9/api/v1/communities/{community_name}/moderation/check-banB\xd5\x01\n" +
-	"\x17com.redyx.moderation.v1B\x0fModerationProtoP\x01Z;github.com/idityaGE/redyx/gen/redyx/moderation/v1;moderationv1\xa2\x02\x03RMX\xaa\x02\x13Redyx.Moderation.V1\xca\x02\x13Redyx\\Moderation\\V1\xe2\x02\x1fRedyx\\Moderation\\V1\\GPBMetadata\xea\x02\x15Redyx::Moderation::V1b\x06proto3"
+	"\bCheckBan\x12$.redyx.moderation.v1.CheckBanRequest\x1a%.redyx.moderation.v1.CheckBanResponse\"D\x82\xd3\xe4\x93\x02>:\x01*\"9/api/v1/communities/{community_name}/moderation/check-banB\xd8\x01\n" +
+	"\x17com.redyx.moderation.v1B\x0fModerationProtoP\x01Z>github.com/idityaGE/redyx/gen/redyx/moderation/v1;moderationv1\xa2\x02\x03RMX\xaa\x02\x13Redyx.Moderation.V1\xca\x02\x13Redyx\\Moderation\\V1\xe2\x02\x1fRedyx\\Moderation\\V1\\GPBMetadata\xea\x02\x15Redyx::Moderation::V1b\x06proto3"
 
 var (
 	file_redyx_moderation_v1_moderation_proto_rawDescOnce sync.Once

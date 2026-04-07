@@ -865,8 +865,8 @@ const file_redyx_auth_v1_auth_proto_rawDesc = "" +
 	"\x06Logout\x12\x1c.redyx.auth.v1.LogoutRequest\x1a\x1d.redyx.auth.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logout\x12r\n" +
 	"\tVerifyOTP\x12\x1f.redyx.auth.v1.VerifyOTPRequest\x1a .redyx.auth.v1.VerifyOTPResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/auth/verify-otp\x12\x82\x01\n" +
 	"\rResetPassword\x12#.redyx.auth.v1.ResetPasswordRequest\x1a$.redyx.auth.v1.ResetPasswordResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/auth/reset-password\x12t\n" +
-	"\vGoogleOAuth\x12!.redyx.auth.v1.GoogleOAuthRequest\x1a\".redyx.auth.v1.GoogleOAuthResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/googleB\xa5\x01\n" +
-	"\x11com.redyx.auth.v1B\tAuthProtoP\x01Z/github.com/idityaGE/redyx/gen/redyx/auth/v1;authv1\xa2\x02\x03RAX\xaa\x02\rRedyx.Auth.V1\xca\x02\rRedyx\\Auth\\V1\xe2\x02\x19Redyx\\Auth\\V1\\GPBMetadata\xea\x02\x0fRedyx::Auth::V1b\x06proto3"
+	"\vGoogleOAuth\x12!.redyx.auth.v1.GoogleOAuthRequest\x1a\".redyx.auth.v1.GoogleOAuthResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/googleB\xa8\x01\n" +
+	"\x11com.redyx.auth.v1B\tAuthProtoP\x01Z2github.com/idityaGE/redyx/gen/redyx/auth/v1;authv1\xa2\x02\x03RAX\xaa\x02\rRedyx.Auth.V1\xca\x02\rRedyx\\Auth\\V1\xe2\x02\x19Redyx\\Auth\\V1\\GPBMetadata\xea\x02\x0fRedyx::Auth::V1b\x06proto3"
 
 var (
 	file_redyx_auth_v1_auth_proto_rawDescOnce sync.Once

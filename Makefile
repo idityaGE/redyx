@@ -135,7 +135,7 @@ k8s-pull:  ## Download missing external images to cache, then load all into kind
 		fname=$(IMAGES_CACHE_DIR)/$$(echo $$img | tr '/:' '_').tar; \
 		if [ ! -f $$fname ]; then \
 			echo "  Downloading $$img..."; \
-			skopeo copy --override-arch amd64 --override-os linux \
+			skopeo copy --src-no-creds --override-arch amd64 --override-os linux \
 				docker://$$img docker-archive:$$fname:$$img & \
 		else \
 			echo "  $$img already cached, skipping."; \
