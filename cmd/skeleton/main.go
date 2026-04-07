@@ -9,14 +9,14 @@ import (
 
 	"go.uber.org/zap"
 
-	healthv1 "github.com/redyx/redyx/gen/redyx/health/v1"
-	"github.com/redyx/redyx/internal/platform/config"
-	"github.com/redyx/redyx/internal/platform/database"
-	"github.com/redyx/redyx/internal/platform/grpcserver"
-	"github.com/redyx/redyx/internal/platform/middleware"
-	"github.com/redyx/redyx/internal/platform/observability"
-	platformredis "github.com/redyx/redyx/internal/platform/redis"
-	"github.com/redyx/redyx/internal/skeleton"
+	healthv1 "github.com/idityaGE/redyx/gen/redyx/health/v1"
+	"github.com/idityaGE/redyx/internal/platform/config"
+	"github.com/idityaGE/redyx/internal/platform/database"
+	"github.com/idityaGE/redyx/internal/platform/grpcserver"
+	"github.com/idityaGE/redyx/internal/platform/middleware"
+	"github.com/idityaGE/redyx/internal/platform/observability"
+	platformredis "github.com/idityaGE/redyx/internal/platform/redis"
+	"github.com/idityaGE/redyx/internal/skeleton"
 )
 
 func main() {

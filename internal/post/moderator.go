@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	postv1 "github.com/idityaGE/redyx/gen/redyx/post/v1"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 // ModeratorRemovePost soft-deletes a post by ID within a community shard.

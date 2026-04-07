@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
-	spamv1 "github.com/redyx/redyx/gen/redyx/spam/v1"
+	spamv1 "github.com/idityaGE/redyx/gen/redyx/spam/v1"
 )
 
 // ---------- Blocklist Tests ----------

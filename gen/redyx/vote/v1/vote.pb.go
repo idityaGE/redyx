@@ -371,7 +371,7 @@ const file_redyx_vote_v1_vote_proto_rawDesc = "" +
 	"\vVoteService\x12Y\n" +
 	"\x04Vote\x12\x1a.redyx.vote.v1.VoteRequest\x1a\x1b.redyx.vote.v1.VoteResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/votes\x12\x88\x01\n" +
 	"\fGetVoteState\x12\".redyx.vote.v1.GetVoteStateRequest\x1a#.redyx.vote.v1.GetVoteStateResponse\"/\x82\xd3\xe4\x93\x02)\x12'/api/v1/votes/{target_type}/{target_id}B\xa5\x01\n" +
-	"\x11com.redyx.vote.v1B\tVoteProtoP\x01Z/github.com/redyx/redyx/gen/redyx/vote/v1;votev1\xa2\x02\x03RVX\xaa\x02\rRedyx.Vote.V1\xca\x02\rRedyx\\Vote\\V1\xe2\x02\x19Redyx\\Vote\\V1\\GPBMetadata\xea\x02\x0fRedyx::Vote::V1b\x06proto3"
+	"\x11com.redyx.vote.v1B\tVoteProtoP\x01Z/github.com/idityaGE/redyx/gen/redyx/vote/v1;votev1\xa2\x02\x03RVX\xaa\x02\rRedyx.Vote.V1\xca\x02\rRedyx\\Vote\\V1\xe2\x02\x19Redyx\\Vote\\V1\\GPBMetadata\xea\x02\x0fRedyx::Vote::V1b\x06proto3"
 
 var (
 	file_redyx_vote_v1_vote_proto_rawDescOnce sync.Once

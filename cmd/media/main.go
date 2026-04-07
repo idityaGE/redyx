@@ -18,16 +18,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
-	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
-	"github.com/redyx/redyx/internal/media"
-	"github.com/redyx/redyx/internal/platform/auth"
-	"github.com/redyx/redyx/internal/platform/config"
-	"github.com/redyx/redyx/internal/platform/database"
-	"github.com/redyx/redyx/internal/platform/grpcserver"
-	"github.com/redyx/redyx/internal/platform/middleware"
-	"github.com/redyx/redyx/internal/platform/observability"
-	"github.com/redyx/redyx/internal/platform/ratelimit"
-	platformredis "github.com/redyx/redyx/internal/platform/redis"
+	mediav1 "github.com/idityaGE/redyx/gen/redyx/media/v1"
+	"github.com/idityaGE/redyx/internal/media"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	"github.com/idityaGE/redyx/internal/platform/config"
+	"github.com/idityaGE/redyx/internal/platform/database"
+	"github.com/idityaGE/redyx/internal/platform/grpcserver"
+	"github.com/idityaGE/redyx/internal/platform/middleware"
+	"github.com/idityaGE/redyx/internal/platform/observability"
+	"github.com/idityaGE/redyx/internal/platform/ratelimit"
+	platformredis "github.com/idityaGE/redyx/internal/platform/redis"
 )
 
 func main() {

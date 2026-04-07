@@ -198,7 +198,7 @@ const file_redyx_health_v1_health_proto_rawDesc = "" +
 	"\x1aSERVING_STATUS_NOT_SERVING\x10\x022o\n" +
 	"\rHealthService\x12^\n" +
 	"\x05Check\x12\x1d.redyx.health.v1.CheckRequest\x1a\x1e.redyx.health.v1.CheckResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/v1/healthB\xb5\x01\n" +
-	"\x13com.redyx.health.v1B\vHealthProtoP\x01Z3github.com/redyx/redyx/gen/redyx/health/v1;healthv1\xa2\x02\x03RHX\xaa\x02\x0fRedyx.Health.V1\xca\x02\x0fRedyx\\Health\\V1\xe2\x02\x1bRedyx\\Health\\V1\\GPBMetadata\xea\x02\x11Redyx::Health::V1b\x06proto3"
+	"\x13com.redyx.health.v1B\vHealthProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/health/v1;healthv1\xa2\x02\x03RHX\xaa\x02\x0fRedyx.Health.V1\xca\x02\x0fRedyx\\Health\\V1\xe2\x02\x1bRedyx\\Health\\V1\\GPBMetadata\xea\x02\x11Redyx::Health::V1b\x06proto3"
 
 var (
 	file_redyx_health_v1_health_proto_rawDescOnce sync.Once

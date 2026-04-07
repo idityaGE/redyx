@@ -7,7 +7,7 @@
 package postv1
 
 import (
-	v1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	v1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1963,7 +1963,7 @@ const file_redyx_post_v1_post_proto_rawDesc = "" +
 	"\rSetPostPinned\x12#.redyx.post.v1.SetPostPinnedRequest\x1a$.redyx.post.v1.SetPostPinnedResponse\"\x00\x12e\n" +
 	"\x10CountPinnedPosts\x12&.redyx.post.v1.CountPinnedPostsRequest\x1a'.redyx.post.v1.CountPinnedPostsResponse\"\x00\x12h\n" +
 	"\x11RemovePostsByUser\x12'.redyx.post.v1.RemovePostsByUserRequest\x1a(.redyx.post.v1.RemovePostsByUserResponse\"\x00B\xa5\x01\n" +
-	"\x11com.redyx.post.v1B\tPostProtoP\x01Z/github.com/redyx/redyx/gen/redyx/post/v1;postv1\xa2\x02\x03RPX\xaa\x02\rRedyx.Post.V1\xca\x02\rRedyx\\Post\\V1\xe2\x02\x19Redyx\\Post\\V1\\GPBMetadata\xea\x02\x0fRedyx::Post::V1b\x06proto3"
+	"\x11com.redyx.post.v1B\tPostProtoP\x01Z/github.com/idityaGE/redyx/gen/redyx/post/v1;postv1\xa2\x02\x03RPX\xaa\x02\rRedyx.Post.V1\xca\x02\rRedyx\\Post\\V1\xe2\x02\x19Redyx\\Post\\V1\\GPBMetadata\xea\x02\x0fRedyx::Post::V1b\x06proto3"
 
 var (
 	file_redyx_post_v1_post_proto_rawDescOnce sync.Once

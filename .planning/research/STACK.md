@@ -225,7 +225,7 @@
 
 ```bash
 # Initialize Go module
-go mod init github.com/redyx/redyx
+go mod init github.com/idityaGE/redyx
 
 # Core gRPC
 go get google.golang.org/grpc@v1.79.1

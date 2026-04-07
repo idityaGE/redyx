@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	modv1 "github.com/redyx/redyx/gen/redyx/moderation/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
+	modv1 "github.com/idityaGE/redyx/gen/redyx/moderation/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
 )
 
 // TestVerifyModerator_NoClaims verifies that unauthenticated requests are rejected.

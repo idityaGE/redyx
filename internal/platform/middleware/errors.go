@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 // ErrorMapping returns a gRPC UnaryServerInterceptor that maps domain errors

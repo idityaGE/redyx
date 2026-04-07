@@ -10,7 +10,7 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
-	healthv1 "github.com/redyx/redyx/gen/redyx/health/v1"
+	healthv1 "github.com/idityaGE/redyx/gen/redyx/health/v1"
 )
 
 // Server implements the HealthServiceServer interface from the generated proto code.

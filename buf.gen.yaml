@@ -4,7 +4,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/redyx/redyx/gen
+      value: github.com/idityaGE/redyx/gen
     - file_option: go_package
       module: buf.build/googleapis/googleapis
       path: google/api/annotations.proto

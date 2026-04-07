@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
+	postv1 "github.com/idityaGE/redyx/gen/redyx/post/v1"
 )
 
 // PostResolver resolves post metadata (author, community) via gRPC.

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import VoteButtons from '../post/VoteButtons.svelte';
   import ReportDialog from '../moderation/ReportDialog.svelte';
   import { api } from '../../lib/api';

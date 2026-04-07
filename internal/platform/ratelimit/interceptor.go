@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	"github.com/redyx/redyx/internal/platform/auth"
+	"github.com/idityaGE/redyx/internal/platform/auth"
 )
 
 // UnaryInterceptor returns a gRPC unary interceptor that enforces

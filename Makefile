@@ -1,5 +1,5 @@
 .PHONY: proto proto-lint proto-breaking proto-descriptor build test clean docker-build docker-up docker-down docker-logs docker-rebuild web help \
-        k8s-create k8s-delete k8s-build k8s-load k8s-ingress k8s-ingress-down k8s-storage k8s-data k8s-data-down k8s-monitoring k8s-monitoring-down k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-urls k8s-validate k8s-data-reset
+        k8s-create k8s-delete k8s-build k8s-load k8s-pull k8s-ingress k8s-ingress-down k8s-storage k8s-data k8s-data-down k8s-monitoring k8s-monitoring-down k8s-app k8s-up k8s-down k8s-logs k8s-status k8s-urls k8s-validate k8s-data-reset
 
 proto: proto-lint  ## Generate Go code + Envoy descriptor from protos
 	buf generate
@@ -108,6 +108,45 @@ k8s-load:  ## Load all images into kind cluster
 		echo "Loading $$svc..."; \
 		kind load docker-image redyx/$$svc-service:dev --name $(K8S_CLUSTER) ; \
 	done
+
+# External images used by data stores, monitoring, and init containers
+EXTERNAL_IMAGES := \
+    postgres:18-alpine \
+    redis:8-alpine \
+    scylladb/scylla:2026.1 \
+    apache/kafka:3.7.2 \
+    getmeili/meilisearch:v1.41 \
+    minio/minio:latest \
+    minio/mc:latest \
+    prom/prometheus:v2.51.0 \
+    grafana/grafana:10.4.2 \
+    grafana/loki:3.3.2 \
+    grafana/promtail:2.9.5 \
+    jaegertracing/all-in-one:1.55 \
+    envoyproxy/envoy:v1.37.0 \
+    busybox
+
+IMAGES_CACHE_DIR ?= $(HOME)/.redyx-images
+
+k8s-pull:  ## Download missing external images to cache, then load all into kind
+	@mkdir -p $(IMAGES_CACHE_DIR)
+	@echo "Downloading missing images to $(IMAGES_CACHE_DIR)..."
+	@for img in $(EXTERNAL_IMAGES); do \
+		fname=$(IMAGES_CACHE_DIR)/$$(echo $$img | tr '/:' '_').tar; \
+		if [ ! -f $$fname ]; then \
+			echo "  Downloading $$img..."; \
+			skopeo copy --override-arch amd64 --override-os linux \
+				docker://$$img docker-archive:$$fname:$$img & \
+		else \
+			echo "  $$img already cached, skipping."; \
+		fi; \
+	done; wait
+	@echo "Loading images into kind cluster..."
+	@for img in $(EXTERNAL_IMAGES); do \
+		fname=$(IMAGES_CACHE_DIR)/$$(echo $$img | tr '/:' '_').tar; \
+		kind load image-archive $$fname --name $(K8S_CLUSTER); \
+	done
+	@echo "All external images loaded into kind."
 
 k8s-data:  ## Deploy data stores (PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO)
 	@echo "Deploying PostgreSQL..."

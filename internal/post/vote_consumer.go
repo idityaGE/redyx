@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
 )
 
 const (

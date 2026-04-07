@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	spamv1 "github.com/redyx/redyx/gen/redyx/spam/v1"
+	spamv1 "github.com/idityaGE/redyx/gen/redyx/spam/v1"
 )
 
 // Server implements the SpamServiceServer gRPC interface.

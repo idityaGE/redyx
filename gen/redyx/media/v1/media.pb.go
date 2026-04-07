@@ -571,7 +571,7 @@ const file_redyx_media_v1_media_proto_rawDesc = "" +
 	"\x0eCompleteUpload\x12%.redyx.media.v1.CompleteUploadRequest\x1a&.redyx.media.v1.CompleteUploadResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/media/{media_id}/complete\x12o\n" +
 	"\bGetMedia\x12\x1f.redyx.media.v1.GetMediaRequest\x1a .redyx.media.v1.GetMediaResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/media/{media_id}B\xad\x01\n" +
 	"\x12com.redyx.media.v1B\n" +
-	"MediaProtoP\x01Z1github.com/redyx/redyx/gen/redyx/media/v1;mediav1\xa2\x02\x03RMX\xaa\x02\x0eRedyx.Media.V1\xca\x02\x0eRedyx\\Media\\V1\xe2\x02\x1aRedyx\\Media\\V1\\GPBMetadata\xea\x02\x10Redyx::Media::V1b\x06proto3"
+	"MediaProtoP\x01Z1github.com/idityaGE/redyx/gen/redyx/media/v1;mediav1\xa2\x02\x03RMX\xaa\x02\x0eRedyx.Media.V1\xca\x02\x0eRedyx\\Media\\V1\xe2\x02\x1aRedyx\\Media\\V1\\GPBMetadata\xea\x02\x10Redyx::Media::V1b\x06proto3"
 
 var (
 	file_redyx_media_v1_media_proto_rawDescOnce sync.Once

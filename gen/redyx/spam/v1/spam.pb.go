@@ -368,7 +368,7 @@ const file_redyx_spam_v1_spam_proto_rawDesc = "" +
 	"\fCheckContent\x12\".redyx.spam.v1.CheckContentRequest\x1a#.redyx.spam.v1.CheckContentResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/spam/check\x12q\n" +
 	"\n" +
 	"ReportSpam\x12 .redyx.spam.v1.ReportSpamRequest\x1a!.redyx.spam.v1.ReportSpamResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/spam/reportB\xa5\x01\n" +
-	"\x11com.redyx.spam.v1B\tSpamProtoP\x01Z/github.com/redyx/redyx/gen/redyx/spam/v1;spamv1\xa2\x02\x03RSX\xaa\x02\rRedyx.Spam.V1\xca\x02\rRedyx\\Spam\\V1\xe2\x02\x19Redyx\\Spam\\V1\\GPBMetadata\xea\x02\x0fRedyx::Spam::V1b\x06proto3"
+	"\x11com.redyx.spam.v1B\tSpamProtoP\x01Z/github.com/idityaGE/redyx/gen/redyx/spam/v1;spamv1\xa2\x02\x03RSX\xaa\x02\rRedyx.Spam.V1\xca\x02\rRedyx\\Spam\\V1\xe2\x02\x19Redyx\\Spam\\V1\\GPBMetadata\xea\x02\x0fRedyx::Spam::V1b\x06proto3"
 
 var (
 	file_redyx_spam_v1_spam_proto_rawDescOnce sync.Once

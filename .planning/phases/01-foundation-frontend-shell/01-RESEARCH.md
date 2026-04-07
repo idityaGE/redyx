@@ -86,7 +86,7 @@ None — discussion stayed within phase scope
 **Installation — Backend:**
 ```bash
 # Go module init
-go mod init github.com/redyx/redyx
+go mod init github.com/idityaGE/redyx
 
 # Core gRPC + proto
 go get google.golang.org/grpc@v1.79.1
@@ -122,7 +122,7 @@ npm install -D tailwindcss @tailwindcss/vite
 
 ```
 redyx/
-├── go.mod                          # Single module: github.com/redyx/redyx
+├── go.mod                          # Single module: github.com/idityaGE/redyx
 ├── go.sum
 ├── buf.yaml                        # Buf v2 workspace config
 ├── buf.gen.yaml                    # Buf code generation config
@@ -329,7 +329,7 @@ import (
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
-    perrors "github.com/redyx/redyx/internal/platform/errors"
+    perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 func ErrorMapping() grpc.UnaryServerInterceptor {
@@ -459,7 +459,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/redyx/redyx/gen
+      value: github.com/idityaGE/redyx/gen
 plugins:
   - remote: buf.build/protocolbuffers/go
     out: gen

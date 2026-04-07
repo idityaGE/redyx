@@ -9,11 +9,11 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	votev1 "github.com/redyx/redyx/gen/redyx/vote/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
-	"github.com/redyx/redyx/internal/platform/ratelimit"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	votev1 "github.com/idityaGE/redyx/gen/redyx/vote/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
+	"github.com/idityaGE/redyx/internal/platform/ratelimit"
 )
 
 // Server implements the VoteServiceServer gRPC interface.

@@ -7,7 +7,7 @@
 package searchv1
 
 import (
-	v1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	v1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -438,7 +438,7 @@ const file_redyx_search_v1_search_proto_rawDesc = "" +
 	"\rSearchService\x12v\n" +
 	"\vSearchPosts\x12#.redyx.search.v1.SearchPostsRequest\x1a$.redyx.search.v1.SearchPostsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/search/posts\x12\xa0\x01\n" +
 	"\x17AutocompleteCommunities\x12/.redyx.search.v1.AutocompleteCommunitiesRequest\x1a0.redyx.search.v1.AutocompleteCommunitiesResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/search/communitiesB\xb5\x01\n" +
-	"\x13com.redyx.search.v1B\vSearchProtoP\x01Z3github.com/redyx/redyx/gen/redyx/search/v1;searchv1\xa2\x02\x03RSX\xaa\x02\x0fRedyx.Search.V1\xca\x02\x0fRedyx\\Search\\V1\xe2\x02\x1bRedyx\\Search\\V1\\GPBMetadata\xea\x02\x11Redyx::Search::V1b\x06proto3"
+	"\x13com.redyx.search.v1B\vSearchProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/search/v1;searchv1\xa2\x02\x03RSX\xaa\x02\x0fRedyx.Search.V1\xca\x02\x0fRedyx\\Search\\V1\xe2\x02\x1bRedyx\\Search\\V1\\GPBMetadata\xea\x02\x11Redyx::Search::V1b\x06proto3"
 
 var (
 	file_redyx_search_v1_search_proto_rawDescOnce sync.Once

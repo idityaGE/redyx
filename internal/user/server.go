@@ -14,13 +14,13 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
-	postv1 "github.com/redyx/redyx/gen/redyx/post/v1"
-	userv1 "github.com/redyx/redyx/gen/redyx/user/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	commentv1 "github.com/idityaGE/redyx/gen/redyx/comment/v1"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	communityv1 "github.com/idityaGE/redyx/gen/redyx/community/v1"
+	postv1 "github.com/idityaGE/redyx/gen/redyx/post/v1"
+	userv1 "github.com/idityaGE/redyx/gen/redyx/user/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 // Server implements the UserServiceServer gRPC interface.

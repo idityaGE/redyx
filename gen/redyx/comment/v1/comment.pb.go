@@ -7,7 +7,7 @@
 package commentv1
 
 import (
-	v1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	v1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1422,7 +1422,7 @@ const file_redyx_comment_v1_comment_proto_rawDesc = "" +
 	"\x16ModeratorRemoveComment\x12/.redyx.comment.v1.ModeratorRemoveCommentRequest\x1a0.redyx.comment.v1.ModeratorRemoveCommentResponse\"\x00\x12\x80\x01\n" +
 	"\x17ModeratorRestoreComment\x120.redyx.comment.v1.ModeratorRestoreCommentRequest\x1a1.redyx.comment.v1.ModeratorRestoreCommentResponse\"\x00\x12w\n" +
 	"\x14RemoveCommentsByUser\x12-.redyx.comment.v1.RemoveCommentsByUserRequest\x1a..redyx.comment.v1.RemoveCommentsByUserResponse\"\x00B\xbd\x01\n" +
-	"\x14com.redyx.comment.v1B\fCommentProtoP\x01Z5github.com/redyx/redyx/gen/redyx/comment/v1;commentv1\xa2\x02\x03RCX\xaa\x02\x10Redyx.Comment.V1\xca\x02\x10Redyx\\Comment\\V1\xe2\x02\x1cRedyx\\Comment\\V1\\GPBMetadata\xea\x02\x12Redyx::Comment::V1b\x06proto3"
+	"\x14com.redyx.comment.v1B\fCommentProtoP\x01Z5github.com/idityaGE/redyx/gen/redyx/comment/v1;commentv1\xa2\x02\x03RCX\xaa\x02\x10Redyx.Comment.V1\xca\x02\x10Redyx\\Comment\\V1\xe2\x02\x1cRedyx\\Comment\\V1\\GPBMetadata\xea\x02\x12Redyx::Comment::V1b\x06proto3"
 
 var (
 	file_redyx_comment_v1_comment_proto_rawDescOnce sync.Once

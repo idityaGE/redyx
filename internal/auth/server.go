@@ -18,8 +18,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	authv1 "github.com/redyx/redyx/gen/redyx/auth/v1"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	authv1 "github.com/idityaGE/redyx/gen/redyx/auth/v1"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 var (

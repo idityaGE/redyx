@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	eventsv1 "github.com/redyx/redyx/gen/redyx/events/v1"
+	eventsv1 "github.com/idityaGE/redyx/gen/redyx/events/v1"
 )
 
 const (

@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	mediav1 "github.com/redyx/redyx/gen/redyx/media/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
+	mediav1 "github.com/idityaGE/redyx/gen/redyx/media/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
 )
 
 // Allowed content types and size limits.

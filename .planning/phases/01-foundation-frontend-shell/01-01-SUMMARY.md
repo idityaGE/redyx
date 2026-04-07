@@ -11,7 +11,7 @@ provides:
   - Generated Go code in gen/ for type-safe gRPC service stubs
   - Envoy proto descriptor at deploy/envoy/proto.pb for REST-to-gRPC transcoding
   - Makefile with `make proto` single-command generation
-  - Go module github.com/redyx/redyx with gRPC dependencies
+  - Go module github.com/idityaGE/redyx with gRPC dependencies
 affects: [02-platform-libs-docker-envoy, all future service phases]
 
 # Tech tracking
@@ -90,7 +90,7 @@ Each task was committed atomically:
 3. **Task 3: Create Makefile and run proto generation** - `8422ee2` (feat)
 
 ## Files Created/Modified
-- `go.mod` - Go module definition (github.com/redyx/redyx)
+- `go.mod` - Go module definition (github.com/idityaGE/redyx)
 - `buf.yaml` - Buf v2 workspace config with STANDARD lint, WIRE_JSON breaking, googleapis dep
 - `buf.gen.yaml` - Code generation config with managed mode and googleapis go_package override
 - `buf.lock` - Locked googleapis dependency
@@ -132,7 +132,7 @@ Each task was committed atomically:
 
 **2. [Rule 1 - Bug] Fixed buf.gen.yaml managed mode googleapis import path**
 - **Found during:** Task 3
-- **Issue:** buf managed mode rewrote googleapis go_package to `github.com/redyx/redyx/gen/google/api`, causing `go build` to fail (package not found)
+- **Issue:** buf managed mode rewrote googleapis go_package to `github.com/idityaGE/redyx/gen/google/api`, causing `go build` to fail (package not found)
 - **Fix:** Added per-file go_package overrides in buf.gen.yaml for `google/api/annotations.proto` and `google/api/http.proto` to use `google.golang.org/genproto/googleapis/api/annotations`
 - **Files modified:** buf.gen.yaml
 - **Verification:** `go build ./gen/...` compiles successfully

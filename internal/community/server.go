@@ -12,12 +12,12 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	commv1 "github.com/redyx/redyx/gen/redyx/community/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
-	"github.com/redyx/redyx/internal/platform/pagination"
-	"github.com/redyx/redyx/internal/platform/ratelimit"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	commv1 "github.com/idityaGE/redyx/gen/redyx/community/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
+	"github.com/idityaGE/redyx/internal/platform/pagination"
+	"github.com/idityaGE/redyx/internal/platform/ratelimit"
 )
 
 var nameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,21}$`)

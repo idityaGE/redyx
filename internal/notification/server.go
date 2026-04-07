@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	notificationv1 "github.com/redyx/redyx/gen/redyx/notification/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	notificationv1 "github.com/idityaGE/redyx/gen/redyx/notification/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 // Server implements the NotificationServiceServer gRPC interface.

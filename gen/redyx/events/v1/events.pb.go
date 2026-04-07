@@ -362,7 +362,7 @@ const file_redyx_events_v1_events_proto_rawDesc = "" +
 	"\x17POST_EVENT_TYPE_CREATED\x10\x01\x12\x1b\n" +
 	"\x17POST_EVENT_TYPE_UPDATED\x10\x02\x12\x1b\n" +
 	"\x17POST_EVENT_TYPE_DELETED\x10\x03B\xb5\x01\n" +
-	"\x13com.redyx.events.v1B\vEventsProtoP\x01Z3github.com/redyx/redyx/gen/redyx/events/v1;eventsv1\xa2\x02\x03REX\xaa\x02\x0fRedyx.Events.V1\xca\x02\x0fRedyx\\Events\\V1\xe2\x02\x1bRedyx\\Events\\V1\\GPBMetadata\xea\x02\x11Redyx::Events::V1b\x06proto3"
+	"\x13com.redyx.events.v1B\vEventsProtoP\x01Z3github.com/idityaGE/redyx/gen/redyx/events/v1;eventsv1\xa2\x02\x03REX\xaa\x02\x0fRedyx.Events.V1\xca\x02\x0fRedyx\\Events\\V1\xe2\x02\x1bRedyx\\Events\\V1\\GPBMetadata\xea\x02\x11Redyx::Events::V1b\x06proto3"
 
 var (
 	file_redyx_events_v1_events_proto_rawDescOnce sync.Once

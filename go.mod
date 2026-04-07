@@ -1,4 +1,4 @@
-module github.com/redyx/redyx
+module github.com/idityaGE/redyx
 
 go 1.25.0
 

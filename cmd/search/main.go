@@ -16,17 +16,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	communityv1 "github.com/redyx/redyx/gen/redyx/community/v1"
-	searchv1 "github.com/redyx/redyx/gen/redyx/search/v1"
-	"github.com/redyx/redyx/internal/platform/auth"
-	"github.com/redyx/redyx/internal/platform/config"
-	"github.com/redyx/redyx/internal/platform/grpcserver"
-	"github.com/redyx/redyx/internal/platform/middleware"
-	"github.com/redyx/redyx/internal/platform/observability"
-	"github.com/redyx/redyx/internal/platform/ratelimit"
-	platformredis "github.com/redyx/redyx/internal/platform/redis"
-	"github.com/redyx/redyx/internal/search"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	communityv1 "github.com/idityaGE/redyx/gen/redyx/community/v1"
+	searchv1 "github.com/idityaGE/redyx/gen/redyx/search/v1"
+	"github.com/idityaGE/redyx/internal/platform/auth"
+	"github.com/idityaGE/redyx/internal/platform/config"
+	"github.com/idityaGE/redyx/internal/platform/grpcserver"
+	"github.com/idityaGE/redyx/internal/platform/middleware"
+	"github.com/idityaGE/redyx/internal/platform/observability"
+	"github.com/idityaGE/redyx/internal/platform/ratelimit"
+	platformredis "github.com/idityaGE/redyx/internal/platform/redis"
+	"github.com/idityaGE/redyx/internal/search"
 )
 
 func main() {

@@ -7,7 +7,7 @@
 package notificationv1
 
 import (
-	v1 "github.com/redyx/redyx/gen/redyx/common/v1"
+	v1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -785,7 +785,7 @@ const file_redyx_notification_v1_notification_proto_rawDesc = "" +
 	"\vMarkAllRead\x12).redyx.notification.v1.MarkAllReadRequest\x1a*.redyx.notification.v1.MarkAllReadResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/notifications/read-all\x12\x98\x01\n" +
 	"\x0eGetPreferences\x12,.redyx.notification.v1.GetPreferencesRequest\x1a-.redyx.notification.v1.GetPreferencesResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/notifications/preferences\x12\xa4\x01\n" +
 	"\x11UpdatePreferences\x12/.redyx.notification.v1.UpdatePreferencesRequest\x1a0.redyx.notification.v1.UpdatePreferencesResponse\",\x82\xd3\xe4\x93\x02&:\x01*2!/api/v1/notifications/preferencesB\xe5\x01\n" +
-	"\x19com.redyx.notification.v1B\x11NotificationProtoP\x01Z?github.com/redyx/redyx/gen/redyx/notification/v1;notificationv1\xa2\x02\x03RNX\xaa\x02\x15Redyx.Notification.V1\xca\x02\x15Redyx\\Notification\\V1\xe2\x02!Redyx\\Notification\\V1\\GPBMetadata\xea\x02\x17Redyx::Notification::V1b\x06proto3"
+	"\x19com.redyx.notification.v1B\x11NotificationProtoP\x01Z?github.com/idityaGE/redyx/gen/redyx/notification/v1;notificationv1\xa2\x02\x03RNX\xaa\x02\x15Redyx.Notification.V1\xca\x02\x15Redyx\\Notification\\V1\xe2\x02!Redyx\\Notification\\V1\\GPBMetadata\xea\x02\x17Redyx::Notification::V1b\x06proto3"
 
 var (
 	file_redyx_notification_v1_notification_proto_rawDescOnce sync.Once

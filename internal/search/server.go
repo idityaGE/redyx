@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	commonv1 "github.com/redyx/redyx/gen/redyx/common/v1"
-	searchv1 "github.com/redyx/redyx/gen/redyx/search/v1"
+	commonv1 "github.com/idityaGE/redyx/gen/redyx/common/v1"
+	searchv1 "github.com/idityaGE/redyx/gen/redyx/search/v1"
 )
 
 // Server implements the SearchServiceServer gRPC interface.

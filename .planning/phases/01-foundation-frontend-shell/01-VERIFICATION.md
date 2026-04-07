@@ -30,7 +30,7 @@ score: 5/5 must-haves verified
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `go.mod` | Go module definition | ✓ VERIFIED | Module `github.com/redyx/redyx`, has pgx v5.8.0, go-redis v9.18.0, zap v1.27.1, grpc v1.79.1, protobuf v1.36.11 |
+| `go.mod` | Go module definition | ✓ VERIFIED | Module `github.com/idityaGE/redyx`, has pgx v5.8.0, go-redis v9.18.0, zap v1.27.1, grpc v1.79.1, protobuf v1.36.11 |
 | `buf.yaml` | Buf v2 workspace config | ✓ VERIFIED | `version: v2`, modules path: proto, STANDARD lint, WIRE_JSON breaking, googleapis dep |
 | `buf.gen.yaml` | Buf code generation config | ✓ VERIFIED | `version: v2`, managed mode with go_package_prefix, outputs to gen/, googleapis override |
 | `Makefile` | Build targets including proto generation | ✓ VERIFIED | `proto:` target runs lint → generate → build descriptor. Also has proto-lint, proto-breaking, build, test, clean |

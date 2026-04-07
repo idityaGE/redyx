@@ -7,8 +7,8 @@ import (
 	"github.com/gocql/gocql"
 	"go.uber.org/zap"
 
-	commentv1 "github.com/redyx/redyx/gen/redyx/comment/v1"
-	perrors "github.com/redyx/redyx/internal/platform/errors"
+	commentv1 "github.com/idityaGE/redyx/gen/redyx/comment/v1"
+	perrors "github.com/idityaGE/redyx/internal/platform/errors"
 )
 
 // ModeratorRemoveComment soft-deletes a comment by setting is_deleted = true

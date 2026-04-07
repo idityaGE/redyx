@@ -17,17 +17,16 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/gomail.v2"
 
-
-	authv1 "github.com/redyx/redyx/gen/redyx/auth/v1"
-	authsvc "github.com/redyx/redyx/internal/auth"
-	platformauth "github.com/redyx/redyx/internal/platform/auth"
-	"github.com/redyx/redyx/internal/platform/config"
-	"github.com/redyx/redyx/internal/platform/database"
-	"github.com/redyx/redyx/internal/platform/grpcserver"
-	"github.com/redyx/redyx/internal/platform/middleware"
-	"github.com/redyx/redyx/internal/platform/observability"
-	"github.com/redyx/redyx/internal/platform/ratelimit"
-	platformredis "github.com/redyx/redyx/internal/platform/redis"
+	authv1 "github.com/idityaGE/redyx/gen/redyx/auth/v1"
+	authsvc "github.com/idityaGE/redyx/internal/auth"
+	platformauth "github.com/idityaGE/redyx/internal/platform/auth"
+	"github.com/idityaGE/redyx/internal/platform/config"
+	"github.com/idityaGE/redyx/internal/platform/database"
+	"github.com/idityaGE/redyx/internal/platform/grpcserver"
+	"github.com/idityaGE/redyx/internal/platform/middleware"
+	"github.com/idityaGE/redyx/internal/platform/observability"
+	"github.com/idityaGE/redyx/internal/platform/ratelimit"
+	platformredis "github.com/idityaGE/redyx/internal/platform/redis"
 )
 
 func main() {

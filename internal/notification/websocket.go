@@ -11,7 +11,7 @@ import (
 	"github.com/coder/websocket/wsjson"
 	"go.uber.org/zap"
 
-	"github.com/redyx/redyx/internal/platform/auth"
+	"github.com/idityaGE/redyx/internal/platform/auth"
 )
 
 // Hub manages WebSocket connections for real-time notification delivery.
