@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS posts (
     is_deleted      BOOLEAN     NOT NULL DEFAULT false,
     is_pinned       BOOLEAN     NOT NULL DEFAULT false,
     is_anonymous    BOOLEAN     NOT NULL DEFAULT false,
+    media_urls      TEXT[]      NOT NULL DEFAULT '{}',
     thumbnail_url   TEXT        NOT NULL DEFAULT '',
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     edited_at       TIMESTAMPTZ
