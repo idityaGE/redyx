@@ -1029,6 +1029,12 @@ make proto-lint         # Lint proto files
 
 ---
 
+## Screenshots
+
+Screenshots of the application are available in the [`.github/images`](.github/images) directory.
+
+---
+
 ## License
 
 This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
