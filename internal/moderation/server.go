@@ -262,6 +262,13 @@ func (s *Server) BanUser(ctx context.Context, req *modv1.BanUserRequest) (*modv1
 		}
 	}
 
+	// Resolve active reports for the reported content (if content_id provided)
+	if req.ContentId != "" {
+		if err := s.store.UpdateReportStatus(ctx, req.ContentId, int16(req.ContentType), "banned", claims.UserID); err != nil {
+			s.logger.Error("failed to resolve reports for banned user", zap.Error(err))
+		}
+	}
+
 	return &modv1.BanUserResponse{}, nil
 }
 
@@ -471,6 +478,7 @@ func (s *Server) ListReportQueue(ctx context.Context, req *modv1.ListReportQueue
 			if postErr == nil && postResp.Post != nil {
 				report.ContentTitle = postResp.Post.Title
 				report.ContentAuthor = postResp.Post.AuthorUsername
+				report.ContentAuthorId = postResp.Post.AuthorId
 			}
 		} else if r.ContentType == 2 { // CONTENT_TYPE_COMMENT
 			commentResp, commentErr := s.commentClient.GetComment(ctx, &commentv1.GetCommentRequest{
@@ -479,6 +487,7 @@ func (s *Server) ListReportQueue(ctx context.Context, req *modv1.ListReportQueue
 			if commentErr == nil && commentResp.Comment != nil {
 				report.ContentTitle = commentResp.Comment.Body
 				report.ContentAuthor = commentResp.Comment.AuthorUsername
+				report.ContentAuthorId = commentResp.Comment.AuthorId
 			}
 		}
 

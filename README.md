@@ -6,35 +6,6 @@ The backend consists of **12 Go microservices** communicating over **gRPC**, fro
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Tech Stack](#tech-stack)
-- [Services](#services)
-  - [Auth Service](#1-auth-service)
-  - [User Service](#2-user-service)
-  - [Community Service](#3-community-service)
-  - [Post Service](#4-post-service)
-  - [Comment Service](#5-comment-service)
-  - [Vote Service](#6-vote-service)
-  - [Search Service](#7-search-service)
-  - [Media Service](#8-media-service)
-  - [Notification Service](#9-notification-service)
-  - [Moderation Service](#10-moderation-service)
-  - [Spam and Abuse Detection Service](#11-spam-and-abuse-detection-service)
-  - [Rate Limiting](#12-rate-limiting)
-- [Database Architecture](#database-architecture)
-- [Post Sharding with Consistent Hashing](#post-sharding-with-consistent-hashing)
-- [Communication Patterns](#communication-patterns)
-- [Caching Strategy](#caching-strategy)
-- [Security and Privacy](#security-and-privacy)
-- [Observability](#observability)
-- [Deployment](#deployment)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-
----
-
 ## Architecture Overview
 
 ```
@@ -83,27 +54,27 @@ The backend consists of **12 Go microservices** communicating over **gRPC**, fro
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend** | Astro (SSR) + Svelte (Islands) | Content-driven pages with minimal JS; interactive components hydrate as Svelte islands |
-| **API Gateway** | Envoy Proxy | REST-to-gRPC transcoding, rate limiting, CORS, load balancing, WebSocket upgrades |
-| **Backend** | Go (Golang) | All 12 microservices; high concurrency, strong gRPC ecosystem |
-| **Service Communication** | gRPC + Protocol Buffers | Type-safe, binary protocol for inter-service calls; 15 `.proto` definitions |
-| **Frontend-to-Backend** | REST/JSON | Standard HTTP via Envoy's gRPC-JSON transcoder filter |
-| **Message Queue** | Apache Kafka | Event-driven workflows: vote processing, search indexing, notifications, spam analysis |
-| **Cache / Real-Time State** | Redis | Session store, vote counts, rate limiting, hot feeds, OTP codes, WebSocket registry |
-| **Primary Database** | PostgreSQL 16 | ACID-compliant relational storage across 5 instances (one sharded) |
-| **Comment Store** | ScyllaDB 6.2 | High-throughput wide-column store for nested comment trees |
-| **Search Engine** | Meilisearch v1.12 | Full-text search with typo tolerance, ranked by relevance + recency + score |
-| **Object Storage** | MinIO (S3-compatible) | Image/video uploads, thumbnails; production uses AWS S3 + CloudFront |
-| **Orchestration** | Kubernetes (kind for local dev) | Helm charts, HPA, namespace isolation, NGINX Ingress |
-| **Monitoring** | Prometheus + Grafana | Metrics collection via `/metrics` endpoints; per-service dashboards |
-| **Logging** | Loki + Promtail | Centralized structured JSON log aggregation, queryable through Grafana |
-| **Tracing** | OpenTelemetry + Jaeger | Distributed request tracing across all microservices |
-| **Protobuf Tooling** | Buf | Linting, breaking change detection, code generation |
-| **Password Hashing** | Argon2id | Memory-hard, GPU-resistant hashing (RFC 9106 parameters) |
-| **Auth Tokens** | JWT (access 15 min + refresh 7 days) | Stateless authentication with short-lived access and long-lived refresh tokens |
-| **OAuth** | Google OAuth 2.0 | Social login; user still picks a username |
+| Layer                       | Technology                           | Purpose                                                                                |
+| --------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------- |
+| **Frontend**                | Astro (SSR) + Svelte (Islands)       | Content-driven pages with minimal JS; interactive components hydrate as Svelte islands |
+| **API Gateway**             | Envoy Proxy                          | REST-to-gRPC transcoding, rate limiting, CORS, load balancing, WebSocket upgrades      |
+| **Backend**                 | Go (Golang)                          | All 12 microservices; high concurrency, strong gRPC ecosystem                          |
+| **Service Communication**   | gRPC + Protocol Buffers              | Type-safe, binary protocol for inter-service calls; 15 `.proto` definitions            |
+| **Frontend-to-Backend**     | REST/JSON                            | Standard HTTP via Envoy's gRPC-JSON transcoder filter                                  |
+| **Message Queue**           | Apache Kafka                         | Event-driven workflows: vote processing, search indexing, notifications, spam analysis |
+| **Cache / Real-Time State** | Redis                                | Session store, vote counts, rate limiting, hot feeds, OTP codes, WebSocket registry    |
+| **Primary Database**        | PostgreSQL 16                        | ACID-compliant relational storage across 5 instances (one sharded)                     |
+| **Comment Store**           | ScyllaDB 6.2                         | High-throughput wide-column store for nested comment trees                             |
+| **Search Engine**           | Meilisearch v1.12                    | Full-text search with typo tolerance, ranked by relevance + recency + score            |
+| **Object Storage**          | MinIO (S3-compatible)                | Image/video uploads, thumbnails; production uses AWS S3 + CloudFront                   |
+| **Orchestration**           | Kubernetes (kind for local dev)      | Helm charts, HPA, namespace isolation, NGINX Ingress                                   |
+| **Monitoring**              | Prometheus + Grafana                 | Metrics collection via `/metrics` endpoints; per-service dashboards                    |
+| **Logging**                 | Loki + Promtail                      | Centralized structured JSON log aggregation, queryable through Grafana                 |
+| **Tracing**                 | OpenTelemetry + Jaeger               | Distributed request tracing across all microservices                                   |
+| **Protobuf Tooling**        | Buf                                  | Linting, breaking change detection, code generation                                    |
+| **Password Hashing**        | Argon2id                             | Memory-hard, GPU-resistant hashing (RFC 9106 parameters)                               |
+| **Auth Tokens**             | JWT (access 15 min + refresh 7 days) | Stateless authentication with short-lived access and long-lived refresh tokens         |
+| **OAuth**                   | Google OAuth 2.0                     | Social login; user still picks a username                                              |
 
 ---
 
@@ -111,9 +82,12 @@ The backend consists of **12 Go microservices** communicating over **gRPC**, fro
 
 ### 1. Auth Service
 
-**Port:** 50052 | **Database:** PostgreSQL (`auth`) | **Proto:** `redyx.auth.v1.AuthService`
+**Port:** 50052 -- **Database:** PostgreSQL (`auth`) -- **Proto:** `redyx.auth.v1.AuthService`
 
 Handles all authentication workflows. Stores only credentials -- no profile data.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Auth Service
@@ -146,21 +120,29 @@ Auth Service
     |-- Email encrypted at rest
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/auth/server.go` -- gRPC handler implementations
 - `internal/auth/hasher.go` -- Argon2id password hashing with RFC 9106 parameters
 - `internal/auth/jwt.go` -- JWT token generation and validation
 - `internal/auth/oauth.go` -- Google OAuth token exchange
 - `internal/auth/otp.go` -- OTP generation and verification
 - `internal/auth/email.go` -- Email delivery (OTP, password reset)
+</details>
 
 ---
 
 ### 2. User Service
 
-**Port:** 50053 | **Database:** PostgreSQL (`user_profiles`) | **Proto:** `redyx.user.v1.UserService`
+**Port:** 50053 -- **Database:** PostgreSQL (`user_profiles`) -- **Proto:** `redyx.user.v1.UserService`
 
 Manages user profiles and karma. Separated from Auth to isolate profile data from credentials.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 User Service
@@ -185,13 +167,18 @@ User Service
     |-- Consumes Kafka vote events for karma updates
 ```
 
+</details>
+
 ---
 
 ### 3. Community Service
 
-**Port:** 50054 | **Database:** PostgreSQL (`community`) | **Proto:** `redyx.community.v1.CommunityService`
+**Port:** 50054 -- **Database:** PostgreSQL (`community`) -- **Proto:** `redyx.community.v1.CommunityService`
 
 CRUD for communities (subreddits), membership management, and role assignment.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Community Service
@@ -220,17 +207,25 @@ Community Service
     |-- Cache invalidation on community update
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/community/server.go` -- gRPC handlers
 - `internal/community/cache.go` -- Redis caching layer
+</details>
 
 ---
 
 ### 4. Post Service
 
-**Port:** 50055 | **Database:** PostgreSQL (sharded: `posts_shard_0`, `posts_shard_1`) | **Proto:** `redyx.post.v1.PostService`
+**Port:** 50055 -- **Database:** PostgreSQL (sharded: `posts_shard_0`, `posts_shard_1`) -- **Proto:** `redyx.post.v1.PostService`
 
 Handles post CRUD, feed generation, and ranking. The database is **sharded by `community_id` using consistent hashing** -- the most architecturally significant service.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Post Service
@@ -280,7 +275,11 @@ Post Service
     |-- Cache invalidation on post create/update/delete
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/post/server.go` -- gRPC handlers (46 KB, largest service)
 - `internal/post/shard.go` -- `ShardRouter` with consistent hashing via `serialx/hashring`
 - `internal/post/ranking.go` -- `HotScore` and `RisingScore` algorithms
@@ -288,14 +287,18 @@ Post Service
 - `internal/post/producer.go` -- Kafka event publisher
 - `internal/post/vote_consumer.go` -- Kafka consumer for vote score updates
 - `internal/post/moderator.go` -- Moderation integration (ban checks, pin, remove)
+</details>
 
 ---
 
 ### 5. Comment Service
 
-**Port:** 50057 | **Database:** ScyllaDB (`redyx_comments` keyspace) | **Proto:** `redyx.comment.v1.CommentService`
+**Port:** 50057 -- **Database:** ScyllaDB (`redyx_comments` keyspace) -- **Proto:** `redyx.comment.v1.CommentService`
 
 Nested, threaded comments stored in ScyllaDB. Uses materialized paths for tree ordering and Wilson score for "Best" sorting.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Comment Service
@@ -331,7 +334,11 @@ Comment Service
     |-- Updates comment score in ScyllaDB
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/comment/server.go` -- gRPC handlers
 - `internal/comment/scylla.go` -- ScyllaDB storage layer (19 KB)
 - `internal/comment/path.go` -- Materialized path generation (`NextPath`, `ParentPath`, `Depth`)
@@ -339,14 +346,18 @@ Comment Service
 - `internal/comment/kafka.go` -- Kafka vote event consumer
 - `internal/comment/producer.go` -- Kafka event publisher
 - `internal/comment/moderator.go` -- Moderation integration
+</details>
 
 ---
 
 ### 6. Vote Service
 
-**Port:** 50056 | **Database:** Redis (primary) + Kafka (event log) | **Proto:** `redyx.vote.v1.VoteService`
+**Port:** 50056 -- **Database:** Redis (primary) + Kafka (event log) -- **Proto:** `redyx.vote.v1.VoteService`
 
 Highest throughput service. Manages upvotes/downvotes with atomic Redis Lua scripts and publishes events consumed by four other services.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Vote Service
@@ -379,19 +390,27 @@ Vote Service
     |-- GetVoteState: current user's vote direction on a target
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/vote/server.go` -- gRPC handlers
 - `internal/vote/redis.go` -- `VoteStore` with atomic Lua scripts, batch pipelining
 - `internal/vote/kafka.go` -- Kafka producer
 - `internal/vote/consumer.go` -- Kafka consumer
+</details>
 
 ---
 
 ### 7. Search Service
 
-**Port:** 50058 | **Database:** Meilisearch | **Proto:** `redyx.search.v1.SearchService`
+**Port:** 50058 -- **Database:** Meilisearch -- **Proto:** `redyx.search.v1.SearchService`
 
 Full-text search powered by Meilisearch. Consumes Kafka events to keep the search index in sync.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Search Service
@@ -414,18 +433,26 @@ Search Service
     |-- Typo tolerance enabled
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/search/server.go` -- gRPC handlers
 - `internal/search/indexer.go` -- Kafka consumer that routes events to Meilisearch
 - `internal/search/meili.go` -- Meilisearch client wrapper (index/delete/search)
+</details>
 
 ---
 
 ### 8. Media Service
 
-**Port:** 50060 | **Database:** PostgreSQL (`media`) + MinIO (S3) | **Proto:** `redyx.media.v1.MediaService`
+**Port:** 50060 -- **Database:** PostgreSQL (`media`) + MinIO (S3) -- **Proto:** `redyx.media.v1.MediaService`
 
 Handles file uploads, validation, thumbnail generation, and S3 storage.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Media Service
@@ -452,19 +479,27 @@ Media Service
     |-- Status tracking: PENDING -> PROCESSING -> READY / FAILED
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/media/server.go` -- gRPC handlers
 - `internal/media/s3.go` -- S3/MinIO client wrapper
 - `internal/media/thumbnail.go` -- Image resize and upload (uses `disintegration/imaging`)
 - `internal/media/store.go` -- PostgreSQL metadata storage
+</details>
 
 ---
 
 ### 9. Notification Service
 
-**Port:** 50059 (gRPC) + 8081 (WebSocket) | **Database:** PostgreSQL (`notifications`) + Redis | **Proto:** `redyx.notification.v1.NotificationService`
+**Port:** 50059 (gRPC) + 8081 (WebSocket) -- **Database:** PostgreSQL (`notifications`) + Redis -- **Proto:** `redyx.notification.v1.NotificationService`
 
 Real-time notification delivery via WebSocket with offline persistence.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Notification Service
@@ -495,22 +530,28 @@ Notification Service
     |-- Generates mention notifications for matching users
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/notification/server.go` -- gRPC handlers
 - `internal/notification/websocket.go` -- `Hub` with register/unregister/send and WebSocket upgrade handler
 - `internal/notification/consumer.go` -- Kafka consumer for notification events
 - `internal/notification/store.go` -- PostgreSQL persistence
 - `internal/notification/mention.go` -- u/username mention extraction
-- `internal/notification/events.go` -- Event type definitions
-- `internal/notification/post_resolver.go` -- Cross-service post title resolution
+</details>
 
 ---
 
 ### 10. Moderation Service
 
-**Port:** 50061 | **Database:** PostgreSQL (`moderation`) | **Proto:** `redyx.moderation.v1.ModerationService`
+**Port:** 50061 -- **Database:** PostgreSQL (`moderation`) -- **Proto:** `redyx.moderation.v1.ModerationService`
 
 Community-level content moderation, user bans, and transparency tools.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Moderation Service
@@ -541,17 +582,18 @@ Moderation Service
     |-- Calls Comment Service for comment operations
 ```
 
-**Key implementation files:**
-- `internal/moderation/server.go` -- gRPC handlers (23 KB)
-- `internal/moderation/store.go` -- PostgreSQL storage for mod logs, bans, reports
+</details>
 
 ---
 
 ### 11. Spam and Abuse Detection Service
 
-**Port:** 50062 | **Database:** Redis (real-time scoring) | **Proto:** `redyx.spam.v1.SpamService`
+**Port:** 50062 -- **Database:** Redis (real-time scoring) -- **Proto:** `redyx.spam.v1.SpamService`
 
 Multi-layer spam prevention with both synchronous pre-publish checks and asynchronous behavior analysis.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Spam Service
@@ -589,20 +631,28 @@ Spam Service
     |-- SET NX (set if not exists) for atomic duplicate detection
 ```
 
-**Key implementation files:**
+</details>
+
+<details>
+<summary>Key implementation files</summary>
+
 - `internal/spam/server.go` -- gRPC handlers (synchronous checks)
 - `internal/spam/blocklist.go` -- Keyword/domain blocklist with URL extraction
 - `internal/spam/dedup.go` -- SHA-256 content deduplication via Redis SET NX
 - `internal/spam/consumer.go` -- Kafka consumer for async behavior analysis
 - `internal/spam/data/` -- Blocklist seed data (keywords, domains)
+</details>
 
 ---
 
 ### 12. Rate Limiting
 
-**Database:** Redis | **Implementation:** `internal/platform/ratelimit/`
+**Database:** Redis -- **Implementation:** `internal/platform/ratelimit/`
 
-Redis-backed token bucket rate limiter with tiered limits and per-action quotas. Enforced at the gRPC interceptor level.
+Redis-backed token bucket rate limiter with tiered limits and per-action quotas.
+
+<details>
+<summary>Feature tree</summary>
 
 ```
 Rate Limiting
@@ -626,9 +676,7 @@ Rate Limiting
     |-- gRPC ResourceExhausted status code
 ```
 
-**Key implementation files:**
-- `internal/platform/ratelimit/limiter.go` -- `Limiter` with atomic Lua token bucket script
-- `internal/platform/ratelimit/interceptor.go` -- gRPC unary interceptor
+</details>
 
 ---
 
@@ -636,41 +684,65 @@ Rate Limiting
 
 The system uses **9 data stores** across 5 technologies:
 
-### PostgreSQL (5 instances)
+<details>
+<summary>PostgreSQL (5 instances)</summary>
 
-| Instance | Owner | Sharded | Data |
-|---|---|---|---|
-| `pg-auth` | Auth Service | No | Hashed passwords, OAuth tokens, OTP records, encrypted emails |
-| `pg-user` | User Service | No | Profiles, karma, settings, avatars |
-| `pg-community` | Community Service | No | Communities, memberships, roles, rules |
-| `pg-post` | Post Service | Yes | Posts, sharded by `community_id` via consistent hashing |
-| `pg-platform` | Moderation, Notification, Media | No | Mod logs, ban records, notification history, media metadata |
+| Instance       | Owner                           | Sharded | Data                                                          |
+| -------------- | ------------------------------- | ------- | ------------------------------------------------------------- |
+| `pg-auth`      | Auth Service                    | No      | Hashed passwords, OAuth tokens, OTP records, encrypted emails |
+| `pg-user`      | User Service                    | No      | Profiles, karma, settings, avatars                            |
+| `pg-community` | Community Service               | No      | Communities, memberships, roles, rules                        |
+| `pg-post`      | Post Service                    | Yes     | Posts, sharded by `community_id` via consistent hashing       |
+| `pg-platform`  | Moderation, Notification, Media | No      | Mod logs, ban records, notification history, media metadata   |
 
-### ScyllaDB (1 cluster)
+</details>
 
-| Cluster | Owner | Data |
-|---|---|---|
+<details>
+<summary>ScyllaDB (1 cluster)</summary>
+
+| Cluster           | Owner           | Data                                                                   |
+| ----------------- | --------------- | ---------------------------------------------------------------------- |
 | `scylla-comments` | Comment Service | All comments, partitioned by `post_id`, clustered by materialized path |
 
-### Redis (1 instance, 12 logical databases)
+</details>
 
-Each service uses a dedicated Redis logical database (db0 through db11) for isolation.
+<details>
+<summary>Redis (1 instance, 12 logical databases)</summary>
 
-### Meilisearch (1 instance)
+Each service uses a dedicated Redis logical database (db0 through db11) for isolation. Highlights:
 
-Full-text search index for posts, communities, and autocomplete.
+| DB   | Owner                | Contents                                            |
+| ---- | -------------------- | --------------------------------------------------- |
+| db0  | Skeleton Service     | Dev/template                                        |
+| db1  | Auth Service         | OTP codes (5 min TTL), refresh token blacklist      |
+| db2  | User Service         | Karma cache                                         |
+| db3  | Community Service    | Community metadata cache                            |
+| db4  | Post Service         | Hot feed cache                                      |
+| db5  | Vote Service         | Vote state per user per item, real-time vote counts |
+| db6  | Comment Service      | Comment score cache                                 |
+| db7  | Search Service       | Autocomplete cache                                  |
+| db8  | Notification Service | WebSocket connection registry, unread counts        |
+| db9  | Media Service        | Upload status cache                                 |
+| db10 | Moderation Service   | Ban cache                                           |
+| db11 | Spam Service         | Behavior scores, dedup hashes, hashed IPs (24h TTL) |
 
-### MinIO / S3 (1 bucket)
+</details>
 
-Object storage for user-uploaded images, videos, thumbnails, and community banners.
+<details>
+<summary>Meilisearch and S3</summary>
+
+- **Meilisearch (1 instance):** Full-text search index for posts, communities, and autocomplete.
+- **MinIO / S3 (1 bucket):** Object storage for user-uploaded images, videos, thumbnails, and community banners.
+</details>
 
 ---
 
 ## Post Sharding with Consistent Hashing
 
-The Post Service implements **application-level database sharding** using consistent hashing. This is the core scalability mechanism.
+The Post Service implements **application-level database sharding** using consistent hashing.
 
-**How it works:**
+<details>
+<summary>How it works</summary>
 
 1. Each `community_id` is hashed onto a ring using `serialx/hashring`
 2. The ring has 40 virtual nodes per physical shard for even distribution
@@ -688,21 +760,20 @@ The Post Service implements **application-level database sharding** using consis
 
 **Current deployment:** 2 shards (`posts_shard_0`, `posts_shard_1`), each in its own PostgreSQL database.
 
+</details>
+
 ---
 
 ## Communication Patterns
 
-### Synchronous (gRPC -- Request/Response)
+### Synchronous (gRPC)
 
-Used when the caller needs an immediate answer:
+Request-response calls for operations where the caller needs an immediate answer (page loads, comment submissions, pre-publish spam checks).
 
-- User requests a page -> Envoy -> Post Service -> returns posts
-- User submits a comment -> Envoy -> Comment Service -> returns created comment
-- Pre-publish spam check -> Post Service -> Spam Service -> returns allow/reject
+### Asynchronous (Kafka)
 
-### Asynchronous (Kafka -- Event-Driven)
-
-Used for fan-out and eventual consistency:
+<details>
+<summary>Event flows</summary>
 
 ```
 VoteCreated event:
@@ -722,31 +793,38 @@ PostRemoved event:
   -> Search Service: remove from index
 ```
 
+</details>
+
 ### Real-Time (WebSocket)
 
-- User authenticates and opens a persistent WebSocket connection
-- Notification Service pushes events: replies, mentions, mod actions
-- Offline users receive stored notifications on reconnect (last 24 hours)
-- JWT authentication via query parameter (WebSocket limitation)
+Each authenticated user opens a persistent WebSocket connection. The Notification Service pushes events (replies, mentions, mod actions). Offline users receive stored notifications on reconnect.
 
 ---
 
 ## Caching Strategy
 
-| Cache Target | TTL | Invalidation |
-|---|---|---|
-| Community metadata | 1 hour | On community update |
-| Hot post feed | 5 min | TTL-based, regenerate on expiry |
-| Post vote count | Real-time | Write-through from Vote Service |
-| User session/token | 15 min | On logout |
-| Rate limit counters | Per-window | Auto-expire with TTL |
-| User karma | 10 min | On Kafka vote event |
-| Search autocomplete | 30 min | TTL-based |
-| OTP codes | 5 min | Auto-expire |
+<details>
+<summary>Cache targets and TTLs</summary>
+
+| Cache Target        | TTL        | Invalidation                    |
+| ------------------- | ---------- | ------------------------------- |
+| Community metadata  | 1 hour     | On community update             |
+| Hot post feed       | 5 min      | TTL-based, regenerate on expiry |
+| Post vote count     | Real-time  | Write-through from Vote Service |
+| User session/token  | 15 min     | On logout                       |
+| Rate limit counters | Per-window | Auto-expire with TTL            |
+| User karma          | 10 min     | On Kafka vote event             |
+| Search autocomplete | 30 min     | TTL-based                       |
+| OTP codes           | 5 min      | Auto-expire                     |
+
+</details>
 
 ---
 
 ## Security and Privacy
+
+<details>
+<summary>Details</summary>
 
 - **Anonymity by design:** Users identified only by username; no real name, phone, or location
 - **Argon2id:** Password hashing with RFC 9106 parameters (64 MiB memory, GPU-resistant)
@@ -757,10 +835,14 @@ PostRemoved event:
 - **Parameterized queries:** No string concatenation in SQL (injection prevention)
 - **Account deletion:** True PII purge; posts become `[deleted]`, vote records anonymized
 - **Constant-time comparison:** Password verification uses `subtle.ConstantTimeCompare`
+</details>
 
 ---
 
 ## Observability
+
+<details>
+<summary>Monitoring stack</summary>
 
 The full observability stack is deployed in the `redyx-monitoring` Kubernetes namespace:
 
@@ -769,14 +851,13 @@ The full observability stack is deployed in the `redyx-monitoring` Kubernetes na
 - **Loki + Promtail:** Centralized structured JSON log aggregation from all services, queryable through Grafana.
 - **Jaeger:** Distributed tracing via OpenTelemetry SDK (`otlptracegrpc` exporter). Health check spans are filtered out to reduce noise. Trace context propagated across gRPC calls.
 - **Alerting:** Grafana alerts on error rate spikes, P99 latency thresholds, pod restarts, and Kafka consumer lag.
+</details>
 
 ---
 
 ## Deployment
 
 ### Docker Compose (Local Development)
-
-Start the full stack with all 12 services, databases, and Envoy gateway:
 
 ```bash
 make docker-up          # Start all services
@@ -786,21 +867,23 @@ make docker-down        # Stop everything
 
 ### Kubernetes (kind)
 
-Full Kubernetes deployment with Helm charts, NGINX Ingress, and observability stack:
-
 ```bash
 make k8s-up             # Full deployment: cluster + ingress + storage + data + monitoring + app
-make k8s-status         # Show cluster status (pods, ingresses, HPAs)
-make k8s-logs           # Tail app service logs
+make k8s-status         # Show cluster status
 make k8s-down           # Tear down everything
 ```
 
-**K8s namespaces:**
+<details>
+<summary>K8s details</summary>
+
+**Namespaces:**
+
 - `redyx-app` -- All 12 microservices + Envoy gateway (deployed via Helm chart)
 - `redyx-data` -- PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO
 - `redyx-monitoring` -- Prometheus, Grafana, Loki, Jaeger
 
-**K8s features:**
+**Features:**
+
 - Helm chart: `deploy/k8s/charts/redyx-services/`
 - HPA (Horizontal Pod Autoscaler) per service
 - Readiness and liveness probes (gRPC health checks)
@@ -809,6 +892,7 @@ make k8s-down           # Tear down everything
 - Local PersistentVolumes backed by `~/.redyx-data`
 
 **Access URLs (local):**
+
 ```
 API Gateway:  http://localhost:8080/api/v1/
 Grafana:      http://localhost:8080/grafana
@@ -816,9 +900,14 @@ Prometheus:   http://localhost:8080/prometheus
 Jaeger:       http://localhost:8080/jaeger
 ```
 
+</details>
+
 ---
 
 ## Project Structure
+
+<details>
+<summary>Full directory tree</summary>
 
 ```
 redyx/
@@ -862,82 +951,43 @@ redyx/
 |       |-- redis/                  # Redis connection helpers
 |
 |-- proto/redyx/                    # Protocol Buffer definitions (15 .proto files)
-|   |-- auth/v1/auth.proto
-|   |-- comment/v1/comment.proto
-|   |-- common/v1/common.proto
-|   |-- common/v1/events.proto
-|   |-- community/v1/community.proto
-|   |-- events/v1/events.proto
-|   |-- health/v1/health.proto
-|   |-- media/v1/media.proto
-|   |-- moderation/v1/moderation.proto
-|   |-- notification/v1/notification.proto
-|   |-- post/v1/post.proto
-|   |-- search/v1/search.proto
-|   |-- spam/v1/spam.proto
-|   |-- user/v1/user.proto
-|   |-- vote/v1/vote.proto
-|
 |-- gen/                            # Generated Go code from protobuf
 |-- migrations/                     # SQL migrations per database
-|   |-- auth/
-|   |-- comment/
-|   |-- community/
-|   |-- media/
-|   |-- moderation/
-|   |-- notification/
-|   |-- post_shard_0/
-|   |-- post_shard_1/
-|   |-- skeleton/
-|   |-- user/
 |
 |-- deploy/
 |   |-- docker/
-|   |   |-- Dockerfile              # Multi-stage Go build (golang:1.26-alpine -> alpine:3.21)
-|   |   |-- init-databases.sql      # PostgreSQL initialization (creates all databases)
+|   |   |-- Dockerfile              # Multi-stage Go build
+|   |   |-- init-databases.sql      # PostgreSQL initialization
 |   |-- envoy/
-|   |   |-- envoy.yaml              # Envoy config: REST->gRPC transcoding, routing, CORS
-|   |   |-- envoy-k8s.yaml          # Envoy config for Kubernetes deployment
-|   |   |-- proto.pb                # Compiled protobuf descriptor for Envoy transcoder
+|   |   |-- envoy.yaml              # Envoy config: REST->gRPC transcoding, routing
+|   |   |-- envoy-k8s.yaml          # Envoy config for Kubernetes
+|   |   |-- proto.pb                # Compiled protobuf descriptor for Envoy
 |   |-- k8s/
-|       |-- kind-config.yaml        # kind cluster configuration
+|       |-- kind-config.yaml
 |       |-- storage/                # Local StorageClass and PersistentVolumes
-|       |-- data/                   # StatefulSets: PostgreSQL, Redis, ScyllaDB, Kafka, Meilisearch, MinIO
-|       |-- monitoring/             # Prometheus, Grafana, Loki, Jaeger configs
-|       |-- ingress/                # NGINX Ingress Controller values
-|       |-- charts/redyx-services/  # Helm chart for all 12 microservices
+|       |-- data/                   # StatefulSets for all data stores
+|       |-- monitoring/             # Prometheus, Grafana, Loki, Jaeger
+|       |-- ingress/                # NGINX Ingress Controller
+|       |-- charts/redyx-services/  # Helm chart for all microservices
 |
 |-- web/                            # Astro + Svelte frontend
-|   |-- src/
-|   |   |-- pages/                  # Astro pages (SSR)
-|   |   |-- components/             # Svelte interactive islands
-|   |   |-- lib/                    # API client, utilities
-|   |   |-- layouts/                # Page layouts
-|   |   |-- styles/                 # CSS
-|   |-- prisma/                     # Prisma schemas for DB introspection (dev tooling)
-|
-|-- diagrams/                       # UML diagrams
-|   |-- activity-diagrams/
-|   |-- class-diagrams/
-|   |-- data-flow-diagrams/
-|   |-- sequence-diagrams/
-|   |-- use-case-diagram/
-|
-|-- docs/                           # Documentation
-|   |-- Architecture Plan.md
-|   |-- Core Concepts.md
-|   |-- Software Requirement Specification Document.md
-|
+|-- diagrams/                       # UML diagrams (activity, class, DFD, sequence, use-case)
+|-- docs/                           # Architecture Plan, Core Concepts, SRS
 |-- scripts/                        # Validation and testing scripts
-|-- docker-compose.yml              # Full local development stack
-|-- Makefile                        # Build, test, deploy targets
-|-- buf.yaml / buf.gen.yaml         # Protobuf tooling configuration
-|-- go.mod / go.sum                 # Go module dependencies
+|-- docker-compose.yml
+|-- Makefile
+|-- buf.yaml / buf.gen.yaml
+|-- go.mod / go.sum
 ```
+
+</details>
 
 ---
 
 ## Getting Started
+
+<details>
+<summary>Prerequisites and commands</summary>
 
 ### Prerequisites
 
@@ -950,55 +1000,32 @@ redyx/
 ### Local Development (Docker Compose)
 
 ```bash
-# Generate protobuf code and Envoy descriptor
-make proto
-
-# Start all services
-make docker-up
-
-# The API is available at http://localhost:8080/api/v1/
-
-# Start the frontend dev server
-make web
-
-# View logs
-make docker-logs
-
-# Stop
-make docker-down
+make proto              # Generate protobuf code and Envoy descriptor
+make docker-up          # Start all services (API at http://localhost:8080/api/v1/)
+make web                # Start the frontend dev server
+make docker-logs        # View logs
+make docker-down        # Stop
 ```
 
 ### Kubernetes Deployment
 
 ```bash
-# Full stack: creates cluster, deploys everything
-make k8s-up
-
-# Check status
-make k8s-status
-
-# Validate deployment
-make k8s-validate
-
-# Tear down
-make k8s-down
+make k8s-up             # Full stack: creates cluster, deploys everything
+make k8s-status         # Check status
+make k8s-validate       # Validate deployment
+make k8s-down           # Tear down
 ```
 
 ### Building
 
 ```bash
-# Build all services
-make build
-
-# Run tests
-make test
-
-# Generate protobuf code
-make proto
-
-# Lint proto files
-make proto-lint
+make build              # Build all services
+make test               # Run tests
+make proto              # Generate protobuf code
+make proto-lint         # Lint proto files
 ```
+
+</details>
 
 ---
 

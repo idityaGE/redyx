@@ -257,6 +257,10 @@ type BanUserRequest struct {
 	Username string `protobuf:"bytes,5,opt,name=username,proto3" json:"username,omitempty"`
 	// Whether to also remove all posts/comments by this user in the community.
 	RemoveContent bool `protobuf:"varint,6,opt,name=remove_content,json=removeContent,proto3" json:"remove_content,omitempty"`
+	// Optional: content_id of the reported content (to resolve its report on ban).
+	ContentId string `protobuf:"bytes,7,opt,name=content_id,json=contentId,proto3" json:"content_id,omitempty"`
+	// Optional: content_type of the reported content (to resolve its report on ban).
+	ContentType   ContentType `protobuf:"varint,8,opt,name=content_type,json=contentType,proto3,enum=redyx.moderation.v1.ContentType" json:"content_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -331,6 +335,20 @@ func (x *BanUserRequest) GetRemoveContent() bool {
 		return x.RemoveContent
 	}
 	return false
+}
+
+func (x *BanUserRequest) GetContentId() string {
+	if x != nil {
+		return x.ContentId
+	}
+	return ""
+}
+
+func (x *BanUserRequest) GetContentType() ContentType {
+	if x != nil {
+		return x.ContentType
+	}
+	return ContentType_CONTENT_TYPE_UNSPECIFIED
 }
 
 type BanUserResponse struct {
@@ -867,6 +885,8 @@ type Report struct {
 	ContentTitle string `protobuf:"bytes,9,opt,name=content_title,json=contentTitle,proto3" json:"content_title,omitempty"`
 	// Author of the reported content (for display in queue).
 	ContentAuthor string `protobuf:"bytes,10,opt,name=content_author,json=contentAuthor,proto3" json:"content_author,omitempty"`
+	// Author ID of the reported content (for ban actions).
+	ContentAuthorId string `protobuf:"bytes,13,opt,name=content_author_id,json=contentAuthorId,proto3" json:"content_author_id,omitempty"`
 	// Status: "active" or "resolved".
 	Status string `protobuf:"bytes,11,opt,name=status,proto3" json:"status,omitempty"`
 	// Action taken when resolved: "removed", "dismissed", "banned".
@@ -971,6 +991,13 @@ func (x *Report) GetContentTitle() string {
 func (x *Report) GetContentAuthor() string {
 	if x != nil {
 		return x.ContentAuthor
+	}
+	return ""
+}
+
+func (x *Report) GetContentAuthorId() string {
+	if x != nil {
+		return x.ContentAuthorId
 	}
 	return ""
 }
@@ -1752,14 +1779,17 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"content_id\x18\x02 \x01(\tR\tcontentId\x12C\n" +
 	"\fcontent_type\x18\x03 \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x17\n" +
-	"\x15RemoveContentResponse\"\xd6\x01\n" +
+	"\x15RemoveContentResponse\"\xba\x02\n" +
 	"\x0eBanUserRequest\x12%\n" +
 	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
 	"\x10duration_seconds\x18\x04 \x01(\x03R\x0fdurationSeconds\x12\x1a\n" +
 	"\busername\x18\x05 \x01(\tR\busername\x12%\n" +
-	"\x0eremove_content\x18\x06 \x01(\bR\rremoveContent\"\x11\n" +
+	"\x0eremove_content\x18\x06 \x01(\bR\rremoveContent\x12\x1d\n" +
+	"\n" +
+	"content_id\x18\a \x01(\tR\tcontentId\x12C\n" +
+	"\fcontent_type\x18\b \x01(\x0e2 .redyx.moderation.v1.ContentTypeR\vcontentType\"\x11\n" +
 	"\x0fBanUserResponse\"R\n" +
 	"\x10UnbanUserRequest\x12%\n" +
 	"\x0ecommunity_name\x18\x01 \x01(\tR\rcommunityName\x12\x17\n" +
@@ -1794,7 +1824,7 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\aentries\x18\x01 \x03(\v2 .redyx.moderation.v1.ModLogEntryR\aentries\x12C\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2#.redyx.common.v1.PaginationResponseR\n" +
-	"pagination\"\xc5\x03\n" +
+	"pagination\"\xf1\x03\n" +
 	"\x06Report\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x12\x1d\n" +
 	"\n" +
@@ -1809,7 +1839,8 @@ const file_redyx_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x06source\x18\b \x01(\tR\x06source\x12#\n" +
 	"\rcontent_title\x18\t \x01(\tR\fcontentTitle\x12%\n" +
 	"\x0econtent_author\x18\n" +
-	" \x01(\tR\rcontentAuthor\x12\x16\n" +
+	" \x01(\tR\rcontentAuthor\x12*\n" +
+	"\x11content_author_id\x18\r \x01(\tR\x0fcontentAuthorId\x12\x16\n" +
 	"\x06status\x18\v \x01(\tR\x06status\x12'\n" +
 	"\x0fresolved_action\x18\f \x01(\tR\x0eresolvedAction\"\xb3\x01\n" +
 	"\x16ListReportQueueRequest\x12%\n" +
@@ -1953,55 +1984,56 @@ var file_redyx_moderation_v1_moderation_proto_goTypes = []any{
 }
 var file_redyx_moderation_v1_moderation_proto_depIdxs = []int32{
 	0,  // 0: redyx.moderation.v1.RemoveContentRequest.content_type:type_name -> redyx.moderation.v1.ContentType
-	1,  // 1: redyx.moderation.v1.ModLogEntry.action:type_name -> redyx.moderation.v1.ModAction
-	29, // 2: redyx.moderation.v1.ModLogEntry.created_at:type_name -> google.protobuf.Timestamp
-	30, // 3: redyx.moderation.v1.GetModLogRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
-	1,  // 4: redyx.moderation.v1.GetModLogRequest.action_filter:type_name -> redyx.moderation.v1.ModAction
-	12, // 5: redyx.moderation.v1.GetModLogResponse.entries:type_name -> redyx.moderation.v1.ModLogEntry
-	31, // 6: redyx.moderation.v1.GetModLogResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	0,  // 7: redyx.moderation.v1.Report.content_type:type_name -> redyx.moderation.v1.ContentType
-	29, // 8: redyx.moderation.v1.Report.created_at:type_name -> google.protobuf.Timestamp
-	30, // 9: redyx.moderation.v1.ListReportQueueRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
-	15, // 10: redyx.moderation.v1.ListReportQueueResponse.reports:type_name -> redyx.moderation.v1.Report
-	31, // 11: redyx.moderation.v1.ListReportQueueResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	0,  // 12: redyx.moderation.v1.SubmitReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
-	0,  // 13: redyx.moderation.v1.DismissReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
-	0,  // 14: redyx.moderation.v1.RestoreContentRequest.content_type:type_name -> redyx.moderation.v1.ContentType
-	30, // 15: redyx.moderation.v1.ListBansRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
-	26, // 16: redyx.moderation.v1.ListBansResponse.bans:type_name -> redyx.moderation.v1.Ban
-	31, // 17: redyx.moderation.v1.ListBansResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
-	29, // 18: redyx.moderation.v1.Ban.expires_at:type_name -> google.protobuf.Timestamp
-	29, // 19: redyx.moderation.v1.Ban.created_at:type_name -> google.protobuf.Timestamp
-	29, // 20: redyx.moderation.v1.CheckBanResponse.expires_at:type_name -> google.protobuf.Timestamp
-	2,  // 21: redyx.moderation.v1.ModerationService.RemoveContent:input_type -> redyx.moderation.v1.RemoveContentRequest
-	4,  // 22: redyx.moderation.v1.ModerationService.BanUser:input_type -> redyx.moderation.v1.BanUserRequest
-	6,  // 23: redyx.moderation.v1.ModerationService.UnbanUser:input_type -> redyx.moderation.v1.UnbanUserRequest
-	8,  // 24: redyx.moderation.v1.ModerationService.PinPost:input_type -> redyx.moderation.v1.PinPostRequest
-	10, // 25: redyx.moderation.v1.ModerationService.UnpinPost:input_type -> redyx.moderation.v1.UnpinPostRequest
-	13, // 26: redyx.moderation.v1.ModerationService.GetModLog:input_type -> redyx.moderation.v1.GetModLogRequest
-	16, // 27: redyx.moderation.v1.ModerationService.ListReportQueue:input_type -> redyx.moderation.v1.ListReportQueueRequest
-	18, // 28: redyx.moderation.v1.ModerationService.SubmitReport:input_type -> redyx.moderation.v1.SubmitReportRequest
-	20, // 29: redyx.moderation.v1.ModerationService.DismissReport:input_type -> redyx.moderation.v1.DismissReportRequest
-	22, // 30: redyx.moderation.v1.ModerationService.RestoreContent:input_type -> redyx.moderation.v1.RestoreContentRequest
-	24, // 31: redyx.moderation.v1.ModerationService.ListBans:input_type -> redyx.moderation.v1.ListBansRequest
-	27, // 32: redyx.moderation.v1.ModerationService.CheckBan:input_type -> redyx.moderation.v1.CheckBanRequest
-	3,  // 33: redyx.moderation.v1.ModerationService.RemoveContent:output_type -> redyx.moderation.v1.RemoveContentResponse
-	5,  // 34: redyx.moderation.v1.ModerationService.BanUser:output_type -> redyx.moderation.v1.BanUserResponse
-	7,  // 35: redyx.moderation.v1.ModerationService.UnbanUser:output_type -> redyx.moderation.v1.UnbanUserResponse
-	9,  // 36: redyx.moderation.v1.ModerationService.PinPost:output_type -> redyx.moderation.v1.PinPostResponse
-	11, // 37: redyx.moderation.v1.ModerationService.UnpinPost:output_type -> redyx.moderation.v1.UnpinPostResponse
-	14, // 38: redyx.moderation.v1.ModerationService.GetModLog:output_type -> redyx.moderation.v1.GetModLogResponse
-	17, // 39: redyx.moderation.v1.ModerationService.ListReportQueue:output_type -> redyx.moderation.v1.ListReportQueueResponse
-	19, // 40: redyx.moderation.v1.ModerationService.SubmitReport:output_type -> redyx.moderation.v1.SubmitReportResponse
-	21, // 41: redyx.moderation.v1.ModerationService.DismissReport:output_type -> redyx.moderation.v1.DismissReportResponse
-	23, // 42: redyx.moderation.v1.ModerationService.RestoreContent:output_type -> redyx.moderation.v1.RestoreContentResponse
-	25, // 43: redyx.moderation.v1.ModerationService.ListBans:output_type -> redyx.moderation.v1.ListBansResponse
-	28, // 44: redyx.moderation.v1.ModerationService.CheckBan:output_type -> redyx.moderation.v1.CheckBanResponse
-	33, // [33:45] is the sub-list for method output_type
-	21, // [21:33] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	0,  // 1: redyx.moderation.v1.BanUserRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	1,  // 2: redyx.moderation.v1.ModLogEntry.action:type_name -> redyx.moderation.v1.ModAction
+	29, // 3: redyx.moderation.v1.ModLogEntry.created_at:type_name -> google.protobuf.Timestamp
+	30, // 4: redyx.moderation.v1.GetModLogRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	1,  // 5: redyx.moderation.v1.GetModLogRequest.action_filter:type_name -> redyx.moderation.v1.ModAction
+	12, // 6: redyx.moderation.v1.GetModLogResponse.entries:type_name -> redyx.moderation.v1.ModLogEntry
+	31, // 7: redyx.moderation.v1.GetModLogResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	0,  // 8: redyx.moderation.v1.Report.content_type:type_name -> redyx.moderation.v1.ContentType
+	29, // 9: redyx.moderation.v1.Report.created_at:type_name -> google.protobuf.Timestamp
+	30, // 10: redyx.moderation.v1.ListReportQueueRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	15, // 11: redyx.moderation.v1.ListReportQueueResponse.reports:type_name -> redyx.moderation.v1.Report
+	31, // 12: redyx.moderation.v1.ListReportQueueResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	0,  // 13: redyx.moderation.v1.SubmitReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	0,  // 14: redyx.moderation.v1.DismissReportRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	0,  // 15: redyx.moderation.v1.RestoreContentRequest.content_type:type_name -> redyx.moderation.v1.ContentType
+	30, // 16: redyx.moderation.v1.ListBansRequest.pagination:type_name -> redyx.common.v1.PaginationRequest
+	26, // 17: redyx.moderation.v1.ListBansResponse.bans:type_name -> redyx.moderation.v1.Ban
+	31, // 18: redyx.moderation.v1.ListBansResponse.pagination:type_name -> redyx.common.v1.PaginationResponse
+	29, // 19: redyx.moderation.v1.Ban.expires_at:type_name -> google.protobuf.Timestamp
+	29, // 20: redyx.moderation.v1.Ban.created_at:type_name -> google.protobuf.Timestamp
+	29, // 21: redyx.moderation.v1.CheckBanResponse.expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 22: redyx.moderation.v1.ModerationService.RemoveContent:input_type -> redyx.moderation.v1.RemoveContentRequest
+	4,  // 23: redyx.moderation.v1.ModerationService.BanUser:input_type -> redyx.moderation.v1.BanUserRequest
+	6,  // 24: redyx.moderation.v1.ModerationService.UnbanUser:input_type -> redyx.moderation.v1.UnbanUserRequest
+	8,  // 25: redyx.moderation.v1.ModerationService.PinPost:input_type -> redyx.moderation.v1.PinPostRequest
+	10, // 26: redyx.moderation.v1.ModerationService.UnpinPost:input_type -> redyx.moderation.v1.UnpinPostRequest
+	13, // 27: redyx.moderation.v1.ModerationService.GetModLog:input_type -> redyx.moderation.v1.GetModLogRequest
+	16, // 28: redyx.moderation.v1.ModerationService.ListReportQueue:input_type -> redyx.moderation.v1.ListReportQueueRequest
+	18, // 29: redyx.moderation.v1.ModerationService.SubmitReport:input_type -> redyx.moderation.v1.SubmitReportRequest
+	20, // 30: redyx.moderation.v1.ModerationService.DismissReport:input_type -> redyx.moderation.v1.DismissReportRequest
+	22, // 31: redyx.moderation.v1.ModerationService.RestoreContent:input_type -> redyx.moderation.v1.RestoreContentRequest
+	24, // 32: redyx.moderation.v1.ModerationService.ListBans:input_type -> redyx.moderation.v1.ListBansRequest
+	27, // 33: redyx.moderation.v1.ModerationService.CheckBan:input_type -> redyx.moderation.v1.CheckBanRequest
+	3,  // 34: redyx.moderation.v1.ModerationService.RemoveContent:output_type -> redyx.moderation.v1.RemoveContentResponse
+	5,  // 35: redyx.moderation.v1.ModerationService.BanUser:output_type -> redyx.moderation.v1.BanUserResponse
+	7,  // 36: redyx.moderation.v1.ModerationService.UnbanUser:output_type -> redyx.moderation.v1.UnbanUserResponse
+	9,  // 37: redyx.moderation.v1.ModerationService.PinPost:output_type -> redyx.moderation.v1.PinPostResponse
+	11, // 38: redyx.moderation.v1.ModerationService.UnpinPost:output_type -> redyx.moderation.v1.UnpinPostResponse
+	14, // 39: redyx.moderation.v1.ModerationService.GetModLog:output_type -> redyx.moderation.v1.GetModLogResponse
+	17, // 40: redyx.moderation.v1.ModerationService.ListReportQueue:output_type -> redyx.moderation.v1.ListReportQueueResponse
+	19, // 41: redyx.moderation.v1.ModerationService.SubmitReport:output_type -> redyx.moderation.v1.SubmitReportResponse
+	21, // 42: redyx.moderation.v1.ModerationService.DismissReport:output_type -> redyx.moderation.v1.DismissReportResponse
+	23, // 43: redyx.moderation.v1.ModerationService.RestoreContent:output_type -> redyx.moderation.v1.RestoreContentResponse
+	25, // 44: redyx.moderation.v1.ModerationService.ListBans:output_type -> redyx.moderation.v1.ListBansResponse
+	28, // 45: redyx.moderation.v1.ModerationService.CheckBan:output_type -> redyx.moderation.v1.CheckBanResponse
+	34, // [34:46] is the sub-list for method output_type
+	22, // [22:34] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_redyx_moderation_v1_moderation_proto_init() }

@@ -5,11 +5,13 @@
     communityName: string;
     userId: string;
     username: string;
+    contentId?: string;
+    contentType?: string;
     onClose: () => void;
     onBanned: () => void;
   }
 
-  let { communityName, userId, username, onClose, onBanned }: Props = $props();
+  let { communityName, userId, username, contentId, contentType, onClose, onBanned }: Props = $props();
 
   const durations = [
     { label: '1 day', seconds: 86400 },
@@ -41,6 +43,8 @@
           reason: reason.trim(),
           durationSeconds: selectedDuration,
           removeContent,
+          ...(contentId ? { contentId } : {}),
+          ...(contentType ? { contentType } : {}),
         }),
       });
       onBanned();

@@ -132,6 +132,10 @@ message BanUserRequest {
   string username = 5;
   // Whether to also remove all posts/comments by this user in the community.
   bool remove_content = 6;
+  // Optional: content_id of the reported content (to resolve its report on ban).
+  string content_id = 7;
+  // Optional: content_type of the reported content (to resolve its report on ban).
+  ContentType content_type = 8;
 }
 
 message BanUserResponse {}
@@ -223,6 +227,8 @@ message Report {
   string content_title = 9;
   // Author of the reported content (for display in queue).
   string content_author = 10;
+  // Author ID of the reported content (for ban actions).
+  string content_author_id = 13;
   // Status: "active" or "resolved".
   string status = 11;
   // Action taken when resolved: "removed", "dismissed", "banned".

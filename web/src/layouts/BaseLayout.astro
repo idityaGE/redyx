@@ -18,6 +18,8 @@ const { title } = Astro.props;
   <title>{title} | redyx</title>
   <link rel="preconnect" href="https://fonts.bunny.net" />
   <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400,500,600,700" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <ClientRouter />
   <!-- Prevent flash of wrong theme (data-astro-rerun ensures this re-executes on each ClientRouter navigation,
        since swapRootAttributes replaces <html> attrs with the hardcoded class="dark" from the template) -->

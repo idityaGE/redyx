@@ -16,6 +16,7 @@
     reporterId: string;
     contentTitle: string;
     contentAuthor: string;
+    contentAuthorId: string;
     reportCount: number;
     reason: string;
     createdAt: string;
@@ -42,7 +43,7 @@
   let confirmingUndo = $state<string | null>(null);
 
   // Ban dialog state
-  let banDialogTarget = $state<{ userId: string; username: string } | null>(null);
+  let banDialogTarget = $state<{ userId: string; username: string; contentId: string; contentType: string } | null>(null);
 
   // Action in-progress tracking
   let actionInProgress = $state<string | null>(null);
@@ -142,8 +143,10 @@
 
   function openBanDialog(report: Report) {
     banDialogTarget = {
-      userId: report.reporterId,
+      userId: report.contentAuthorId,
       username: report.contentAuthor || 'unknown',
+      contentId: report.contentId,
+      contentType: report.contentType,
     };
   }
 
@@ -169,7 +172,7 @@
         await api(`/communities/${encodeURIComponent(communityName)}/moderation/unban`, {
           method: 'POST',
           body: JSON.stringify({
-            userId: report.reporterId,
+            userId: report.contentAuthorId,
           }),
         });
       } else {
@@ -378,6 +381,8 @@
     {communityName}
     userId={banDialogTarget.userId}
     username={banDialogTarget.username}
+    contentId={banDialogTarget.contentId}
+    contentType={banDialogTarget.contentType}
     onClose={() => { banDialogTarget = null; }}
     onBanned={handleBanned}
   />
