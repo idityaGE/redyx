@@ -50,6 +50,27 @@ func HashPassword(password string, p *Params) (string, error) {
 
 // VerifyPassword checks whether the given password matches the encoded argon2id hash.
 // Uses constant-time comparison to prevent timing attacks.
+// Why not just use `==`?
+// A normal `==` comparison in most languages **short-circuits** — it stops at the first differing byte:
+
+// ```go
+// // Pseudo-code for normal comparison
+// for i := 0; i < len(a); i++ {
+//     if a[i] != b[i] {
+//         return false  // STOPS EARLY!
+//     }
+// }
+// ```
+
+// #### The Timing Attack
+
+// An attacker can exploit this:
+// 1. They guess a password and measure how long verification takes
+// 2. If the first byte is wrong, the function returns **immediately** (fast)
+// 3. If the first byte is right, it checks the second byte (slightly slower)
+// 4. By measuring **microsecond differences** over thousands of requests, they can reconstruct the correct hash byte-by-byte
+
+// Even tiny timing differences leak information. This is a **side-channel attack**.
 func VerifyPassword(password, encodedHash string) (bool, error) {
 	p, salt, hash, err := decodeHash(encodedHash)
 	if err != nil {
